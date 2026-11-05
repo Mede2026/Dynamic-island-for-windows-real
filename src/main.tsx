@@ -2,8 +2,17 @@
 import "@fontsource-variable/inter/opsz.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import App from "./App";
 import "./index.css";
+
+/** Les erreurs de la page vont dans le journal du backend (%APPDATA%\com.mederic.dynamicisland\journal.txt). */
+function journaliser(message: string) {
+  console.error(message);
+  if (isTauri()) void invoke("journal_ecrire", { module: new URLSearchParams(location.search).toString() || "ile", message }).catch(() => undefined);
+}
+window.addEventListener("error", (e) => journaliser(`${e.message} (${e.filename}:${e.lineno})`));
+window.addEventListener("unhandledrejection", (e) => journaliser(`promesse rejetée : ${String(e.reason)}`));
 
 /**
  * Charger Inter AVANT le premier affichage : la largeur des alertes est mesurée avec la

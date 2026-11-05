@@ -36,7 +36,9 @@ fn app_quitter(app: tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    journal::initialiser();
+    journal!("app", "version {}", env!("CARGO_PKG_VERSION"));
+    let resultat = tauri::Builder::default()
         // Une seule île à la fois (ex. démarrage auto + double-clic).
         // Une 2e instance transmet ses arguments (ex. --minuteur 5m) à la 1re, puis se ferme.
         .plugin(tauri_plugin_single_instance::init(|app, args, _dossier| {
@@ -45,9 +47,9 @@ pub fn run() {
         }))
         .plugin(demarrage::plugin())
         .plugin(
+            // Les raccourcis sont enregistrés plus bas, un par un : un raccourci déjà pris par
+            // un autre programme ne doit JAMAIS empêcher l'île de démarrer.
             tauri_plugin_global_shortcut::Builder::new()
-                .with_shortcuts([plateau::RACCOURCI_PANNEAU, plateau::RACCOURCI_LANCEUR])
-                .expect("raccourci invalide")
                 .with_handler(plateau::gestion_raccourci)
                 .build(),
         )
@@ -86,6 +88,7 @@ pub fn run() {
             parametres::parametres_definir_affichage,
             parametres::parametres_definir_clics_classiques,
             ile_reinitialiser,
+            journal::journal_ecrire,
             app_quitter,
             demarrage::demarrage_auto_etat,
             demarrage::demarrage_auto_definir,
@@ -119,6 +122,7 @@ pub fn run() {
                     f.open_devtools();
                 }
             }
+            plateau::enregistrer_raccourcis(handle);
             if let Err(e) = plateau::installer(handle) {
                 journal!("plateau", "icône de notification impossible : {e}");
             }
@@ -128,6 +132,9 @@ pub fn run() {
             minuteur::executer_arguments(handle, &std::env::args().collect::<Vec<_>>());
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("erreur au lancement de l'application Tauri");
+        .run(tauri::generate_context!());
+    if let Err(e) = resultat {
+        journal!("app", "erreur au lancement : {e}");
+        journal::afficher_erreur(&e.to_string());
+    }
 }

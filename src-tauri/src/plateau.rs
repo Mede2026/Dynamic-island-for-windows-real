@@ -29,6 +29,32 @@ pub const RACCOURCI_PANNEAU: &str = "ctrl+alt+d";
 pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
 const LABEL_LANCEUR: &str = "lanceur";
 
+/// Enregistre les raccourcis un par un ; en cas de refus (déjà pris par un autre programme),
+/// essaie un raccourci de secours et le note dans le journal — sans jamais bloquer le démarrage.
+pub fn enregistrer_raccourcis(app: &AppHandle) {
+    use tauri_plugin_global_shortcut::GlobalShortcutExt;
+    let essais: [(&str, &[&str]); 2] = [
+        ("réglages", &[RACCOURCI_PANNEAU, "ctrl+alt+shift+d"]),
+        ("lanceur", &[RACCOURCI_LANCEUR, "ctrl+alt+shift+m"]),
+    ];
+    for (nom, raccourcis) in essais {
+        let ok = raccourcis.iter().find(|r| match app.global_shortcut().register(**r) {
+            Ok(()) => true,
+            Err(e) => {
+                journal!("plateau", "raccourci {r} refusé ({nom}) : {e}");
+                false
+            }
+        });
+        match ok {
+            Some(r) => journal!("plateau", "raccourci {nom} : {r}"),
+            None => journal!(
+                "plateau",
+                "aucun raccourci pour {nom} (menu de l'icône toujours disponible)"
+            ),
+        }
+    }
+}
+
 /// Ctrl+Alt+M : petit panneau « Minuteur » (durées prêtes, durée libre), ou le ferme.
 pub fn basculer_lanceur(app: &AppHandle) {
     if let Some(f) = app.get_webview_window(LABEL_LANCEUR) {
@@ -89,8 +115,13 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     if evenement.state() != ShortcutState::Pressed {
         return;
     }
-    let lanceur: Result<Shortcut, _> = RACCOURCI_LANCEUR.parse();
-    if lanceur.map(|l| l.id() == raccourci.id()).unwrap_or(false) {
+    let est = |texte: &str| {
+        texte
+            .parse::<Shortcut>()
+            .map(|l| l.id() == raccourci.id())
+            .unwrap_or(false)
+    };
+    if est(RACCOURCI_LANCEUR) || est("ctrl+alt+shift+m") {
         basculer_lanceur(app);
     } else {
         basculer_panneau(app);
