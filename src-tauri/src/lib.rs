@@ -86,7 +86,7 @@ pub fn run() {
             parametres::parametres_lire,
             parametres::parametres_definir_taille,
             parametres::parametres_definir_affichage,
-            parametres::parametres_definir_clics_classiques,
+            parametres::parametres_definir_clics_region,
             ile_reinitialiser,
             journal::journal_ecrire,
             app_quitter,
@@ -112,7 +112,7 @@ pub fn run() {
                 etat.cacher_en_plein_ecran
                     .store(prefs.cacher_en_plein_ecran, std::sync::atomic::Ordering::Relaxed);
             }
-            if let Err(e) = fenetre::initialiser(handle, prefs.clics_classiques) {
+            if let Err(e) = fenetre::initialiser(handle, !prefs.clics_region) {
                 journal!("fenetre", "initialisation impossible : {e}");
             }
             // Mode développement : `ILE_DEVTOOLS=1` ouvre la console de la page (journal du front-end).

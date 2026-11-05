@@ -27,6 +27,8 @@ export interface SpecAlerte {
   /** À droite : valeur (et batterie). */
   valeur?: string;
   couleurValeur?: string;
+  /** Deuxième ligne, SOUS la caméra (toute la largeur) : texte d'une notification. */
+  detail?: string;
   /** Texte servant à mesurer la valeur (ex. « 100 % ») pour une largeur stable. */
   valeurReference?: string;
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
@@ -100,7 +102,9 @@ export function specAlerte(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
     }
     case "notification": {
       const n = { application: "", textes: [], ...(alerte.donnees as Partial<Notification>) } as Notification;
-      return { icone: "cloche", libelle: n.application || "Notification", valeur: n.textes[0] };
+      // Ligne 1 (à côté de la caméra) : l'app ; ligne 2 (sous la caméra) : le texte.
+      // Pas d'icône : le nom de l'app a besoin de toute la place à gauche de la caméra.
+      return { libelle: n.application || "Notification", detail: n.textes.join(" — ") || undefined };
     }
     case "pressePapiers": {
       const p = { type: "autre", apercu: "", ...(alerte.donnees as Partial<PressePapiers>) } as PressePapiers;
@@ -171,7 +175,8 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
   const gauche = Math.min(debutGauche + libelle + ecart, coteMax);
   const droite = Math.min(finDroite + valeur + ecart, coteMax);
   // Place réelle de chaque côté = moitié de l'île moins la caméra (+1 pt d'arrondi).
-  const cote = Math.max(gauche, droite);
+  // Notification sur deux lignes : l'île prend toute la largeur → toute la place du côté.
+  const cote = spec.detail ? coteMax : Math.max(gauche, droite);
   return {
     gauche,
     droite,
@@ -181,7 +186,21 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
 }
 
 /** Largeur de l'île pour cette alerte (pt) : jamais plus large que l'alerte mesurée. */
+/** Hauteur de l'alerte : une ligne (mesurée) ou deux lignes (texte sous la caméra). */
+export function hauteurAlerte(spec: SpecAlerte, cfg: IslandConfig): number {
+  const h = v(cfg.formes.alerte.taille.pt.hauteur);
+  if (!spec.detail) return h;
+  // Ligne sous la caméra + même marge en bas que la marge gauche du texte.
+  return h + v(cfg.alerte.texte.taillePt) * 1.25 + v(cfg.alerte.texteXPt) * 0.6;
+}
+
+/** Ligne de base du détail (pt depuis le haut de l'île). */
+export function baselineDetail(cfg: IslandConfig): number {
+  return v(cfg.zoneCamera.hauteurPt) + v(cfg.alerte.texte.taillePt) * 0.95;
+}
+
 export function largeurAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesureur): number {
+  if (spec.detail) return v(cfg.formes.etendu.taille.pt.largeur); // texte sur toute la largeur
   const c = cotesAlerte(spec, cfg, mesurer);
   const camera = v(cfg.zoneCamera.largeurPt);
   const min = v(cfg.formes.compact.taille.pt.largeur);

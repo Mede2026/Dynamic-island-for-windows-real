@@ -85,6 +85,9 @@ export class Traducteur {
   }
 
   notification(n: Notification): Evenement[] {
+    // L'outil de capture envoie une notification à chaque capture : l'alerte « Capture »
+    // (avec miniature) s'affiche déjà, on ne la double pas.
+    if (/capture|snipping|screen ?clip/i.test(n.application)) return [];
     return [{ type: "ALERTE", alerte: { type: "notification", donnees: n } }];
   }
 

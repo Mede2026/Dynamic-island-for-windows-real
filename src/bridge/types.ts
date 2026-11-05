@@ -151,8 +151,8 @@ export interface Parametres {
   taille: number;
   ecran: string | null;
   cacherEnPleinEcran: boolean;
-  /** Mode de compatibilité des clics traversants (prend effet au redémarrage). */
-  clicsClassiques: boolean;
+  /** Clics traversants par région de fenêtre (expérimental, au redémarrage). */
+  clicsRegion: boolean;
   /** Préférences d'affichage (voir src/config/store.ts, `Preferences`). */
   affichage: Record<string, unknown>;
 }

@@ -69,10 +69,9 @@ export function IconeFermer({ taille, couleur, style }: P) {
 }
 
 /**
- * Minuteur (comme sur la capture iPhone fournie) : anneau ouvert en haut, aiguille qui part
- * du haut vers le centre, pas de piste grise. L'anneau se vide EN CONTINU : l'animation est
- * confiée au navigateur (Web Animations, aucun calcul par seconde) et ne repart que si le
- * minuteur change (démarrage, pause, reprise).
+ * Minuteur : anneau (piste atténuée) qui se vide, et aiguille du centre vers le haut.
+ * L'anneau se vide EN CONTINU : animation confiée au navigateur (Web Animations, aucun calcul
+ * par seconde), relancée seulement si le minuteur change (démarrage, pause, reprise).
  */
 export function IconeMinuteur({
   taille,
@@ -84,10 +83,8 @@ export function IconeMinuteur({
 }: P & { progression?: number; finAMs?: number | null; dureeMs?: number }) {
   const r = 9;
   const c = 2 * Math.PI * r;
-  const OUVERTURE_DEG = 44; // ouverture autour de l'aiguille, en haut
-  const utile = c * (1 - OUVERTURE_DEG / 360);
   const arc = useRef<SVGCircleElement>(null);
-  const trait = (p: number) => `${Math.max(utile * Math.min(Math.max(p, 0), 1), 0.001)} ${c}`;
+  const trait = (p: number) => `${Math.max(c * Math.min(Math.max(p, 0), 1), 0.001)} ${c}`;
 
   useEffect(() => {
     const el = arc.current;
@@ -111,17 +108,9 @@ export function IconeMinuteur({
 
   return (
     <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
-      <circle
-        ref={arc}
-        cx="12"
-        cy="12"
-        r={r}
-        stroke={couleur}
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        transform={`rotate(${-90 + OUVERTURE_DEG / 2} 12 12)`}
-      />
-      <path d="M12 2.6V11.2" stroke={couleur} strokeWidth="2.4" strokeLinecap="round" />
+      <circle cx="12" cy="12" r={r} stroke={couleur} strokeOpacity="0.3" strokeWidth="2.6" />
+      <circle ref={arc} cx="12" cy="12" r={r} stroke={couleur} strokeWidth="2.6" strokeLinecap="round" transform="rotate(-90 12 12)" />
+      <path d="M12 12V7" stroke={couleur} strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }

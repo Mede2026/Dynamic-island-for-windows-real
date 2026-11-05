@@ -73,7 +73,7 @@ export const backend = {
   parametres: () => invoke<Parametres | null>("parametres_lire"),
   definirTaille: (taille: number) => invoke<Parametres>("parametres_definir_taille", { taille }),
   definirAffichage: (affichage: Record<string, unknown>) => invoke<Parametres>("parametres_definir_affichage", { affichage }),
-  definirClicsClassiques: (actif: boolean) => invoke<Parametres>("parametres_definir_clics_classiques", { actif }),
+  definirClicsRegion: (actif: boolean) => invoke<Parametres>("parametres_definir_clics_region", { actif }),
   /** Arrêter le test : prévient l'île (et toutes les fenêtres). */
   reinitialiser: () => invoke<void>("ile_reinitialiser"),
   quitter: () => invoke<void>("app_quitter"),

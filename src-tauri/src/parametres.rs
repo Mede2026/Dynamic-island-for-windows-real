@@ -18,8 +18,11 @@ pub struct Parametres {
     /// Écran choisi (None = écran principal).
     pub ecran: Option<String>,
     pub cacher_en_plein_ecran: bool,
-    /// Mode de compatibilité : clics traversants « classiques » (si la région pose problème).
+    /// Ancien réglage (ignoré) : le mode classique est maintenant celui par défaut.
     pub clics_classiques: bool,
+    /// Clics traversants par RÉGION de fenêtre (expérimental) : sur certains PC, Windows
+    /// affiche alors un rectangle clair et coupe l'île. Désactivé par défaut.
+    pub clics_region: bool,
     /// Préférences d'affichage gérées par l'interface (vitesse, onde, alertes…), stockées telles quelles.
     pub affichage: serde_json::Map<String, serde_json::Value>,
 }
@@ -31,6 +34,7 @@ impl Default for Parametres {
             ecran: None,
             cacher_en_plein_ecran: false,
             clics_classiques: false,
+            clics_region: false,
             affichage: Default::default(),
         }
     }
@@ -116,8 +120,8 @@ pub fn parametres_definir_affichage(
 
 /// Prend effet au prochain démarrage.
 #[tauri::command]
-pub fn parametres_definir_clics_classiques(app: AppHandle, actif: bool) -> Parametres {
-    modifier(&app, |p| p.clics_classiques = actif)
+pub fn parametres_definir_clics_region(app: AppHandle, actif: bool) -> Parametres {
+    modifier(&app, |p| p.clics_region = actif)
 }
 
 #[cfg(test)]

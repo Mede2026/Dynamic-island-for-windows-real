@@ -129,7 +129,7 @@ export function Panneau() {
   const [ecrans, setEcrans] = useState<InfoEcran[]>([]);
   const [auto, setAuto] = useState(false);
   const [cacher, setCacher] = useState(false);
-  const [clicsClassiques, setClicsClassiques] = useState(false);
+  const [clicsRegion, setClicsRegion] = useState(false);
   const [taille, setTaille] = useState(1);
   const [prefs, setPrefs] = useState<Preferences>({});
   const [message, setMessage] = useState("");
@@ -143,7 +143,7 @@ export function Panneau() {
       if (!p) return;
       setTaille(p.taille);
       setCacher(p.cacherEnPleinEcran);
-      setClicsClassiques(p.clicsClassiques);
+      setClicsRegion(p.clicsRegion);
       setPrefs((p.affichage ?? {}) as Preferences);
     });
   }, []);
@@ -270,13 +270,13 @@ export function Panneau() {
           Cacher quand une app est en plein écran
         </Case>
         <Case
-          coche={clicsClassiques}
+          coche={clicsRegion}
           changer={(v) => {
-            setClicsClassiques(v);
-            void backend.definirClicsClassiques(v);
+            setClicsRegion(v);
+            void backend.definirClicsRegion(v);
           }}
         >
-          Mode de compatibilité des clics (seulement si l'île bloque des clics ; au prochain démarrage)
+          Clics « région » (expérimental, peut-être plus fluide ; si un rectangle clair apparaît, décoche ; au prochain démarrage)
         </Case>
       </Section>
 

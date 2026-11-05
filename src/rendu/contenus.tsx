@@ -8,7 +8,17 @@ import { backend } from "../bridge/backend";
 import { formaterDuree, formaterMinuteurCompact, majDonnees, positionActuelle, type Donnees } from "../bridge/donnees";
 import type { EtatMinuteur } from "../bridge/types";
 import type { IslandConfig, Texte } from "../island.config";
-import { cotesAlerte, ECART_ICONE_PT, hauteurMiniature, largeurMiniature, mesureConfig, specAlerte, tailleIcone } from "./alertes";
+import {
+  baselineDetail,
+  cotesAlerte,
+  ECART_ICONE_PT,
+  hauteurMiniature,
+  largeurAlerte,
+  largeurMiniature,
+  mesureConfig,
+  specAlerte,
+  tailleIcone,
+} from "./alertes";
 import type { Alerte, EtatMachine } from "../state/islandMachine";
 import { v } from "../config/store";
 import { Onde } from "./onde";
@@ -568,6 +578,22 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
           })}
         >
           {spec.valeur}
+        </div>
+      )}
+      {spec.detail && (
+        <div
+          style={texte(a.texte, S, {
+            left: v(a.texteXPt) * S,
+            top: haut(baselineDetail(cfg), a.texte, S),
+            maxWidth: (largeurAlerte(spec, cfg, mesureConfig(cfg)) - 2 * v(a.texteXPt)) * S,
+            color: v(cfg.media.etendu.artiste.couleur),
+            fontWeight: 400,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            paddingBottom: 2 * S,
+          })}
+        >
+          {spec.detail}
         </div>
       )}
       {spec.batterie && (
