@@ -12,6 +12,12 @@ Ajouts demandés pendant la phase 1 :
 - **Démarrage automatique avec Windows** (à l'ouverture de session, comme Windhawk) — option.
 - **Minuteur** : piloté par notre app (Windows ne permet pas de lire les minuteurs de l'app Horloge).
 
+Décisions de la phase 2 (voir `docs/mesures.md`) :
+- Référence : enregistrements d'écran d'un **iPhone 16 Pro** (iOS 27) fournis par le propriétaire.
+- `ISLAND_SCALE` = 1,0 par défaut (le propriétaire a demandé de tout terminer ; réglable dans le panneau).
+- Priorité mesurée : musique > minuteur (le minuteur va dans la bulle).
+- Ajouts demandés : alerte presse-papiers, points caméra (vert) / micro (orange), icône de notification.
+
 Stack : Tauri 2 (Rust) · React + TypeScript + Vite · Framer Motion · Python 3 + OpenCV + NumPy + SciPy + Matplotlib.
 
 Phases :

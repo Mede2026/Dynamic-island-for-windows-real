@@ -146,6 +146,12 @@ pub async fn media_aller_a(position_ms: i64) -> Result<(), String> {
     plateforme::agir(Action::AllerA(position_ms.max(0)))
 }
 
+/// Met au premier plan l'application qui joue (clic court sur l'île).
+#[tauri::command]
+pub async fn media_ouvrir_source() -> Result<(), String> {
+    plateforme::ouvrir_source()
+}
+
 /// `app_id = null` → choix automatique.
 #[tauri::command]
 pub async fn media_choisir_source(app_id: Option<String>) -> Result<(), String> {

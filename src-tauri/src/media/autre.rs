@@ -13,3 +13,7 @@ pub fn rafraichir_maintenant() {}
 pub fn agir(_action: Action) -> Result<(), String> {
     Err("média non disponible sur ce système".into())
 }
+
+pub fn ouvrir_source() -> Result<(), String> {
+    Err("non disponible sur ce système".into())
+}

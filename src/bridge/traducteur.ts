@@ -81,6 +81,10 @@ export class Traducteur {
     return [{ type: "ALERTE", alerte: { type: "notification", donnees: n } }];
   }
 
+  pressePapiers(p: { type: "texte" | "image" | "fichiers" | "autre"; apercu: string }): Evenement[] {
+    return [{ type: "ALERTE", alerte: { type: "pressePapiers", donnees: p } }];
+  }
+
   survol(dedans: boolean): Evenement[] {
     return [{ type: dedans ? "SURVOL_DEBUT" : "SURVOL_FIN" }];
   }

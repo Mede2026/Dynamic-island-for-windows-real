@@ -14,3 +14,5 @@ pub const VOLUME: &str = "volume";
 pub const NE_PAS_DERANGER: &str = "ne-pas-deranger";
 pub const MINUTEUR: &str = "minuteur";
 pub const NOTIFICATION: &str = "notification";
+pub const PRESSE_PAPIERS: &str = "presse-papiers";
+pub const CONFIDENTIALITE: &str = "confidentialite";

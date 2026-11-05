@@ -26,16 +26,24 @@ import { islandConfig, type EtatIle, type NomTransition } from "../island.config
 export type TypeActivite = "minuteur" | "musique";
 
 /** Alertes brèves (affichées puis retour automatique). */
-export type TypeAlerte = "batterie" | "chargeur" | "volume" | "neDerangePas" | "notification" | "minuteurTermine";
+export type TypeAlerte =
+  | "batterie"
+  | "chargeur"
+  | "volume"
+  | "neDerangePas"
+  | "notification"
+  | "minuteurTermine"
+  | "pressePapiers";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.
  * Une alerte passe toujours devant toutes les activités (état `alerte`).
- * Ordre demandé : alerte > minuteur > musique.
+ * Ordre MESURÉ sur iPhone (iOS 27) : alerte > musique > minuteur — un minuteur lancé
+ * pendant la musique va dans la bulle (capture split fournie + V4728).
  */
 export const PRIORITES: Record<TypeActivite, number> = {
-  minuteur: 2,
-  musique: 1,
+  musique: 2,
+  minuteur: 1,
 };
 
 export interface Activite {

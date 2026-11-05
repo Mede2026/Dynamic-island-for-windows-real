@@ -1,82 +1,84 @@
 # Dynamic Island pour Windows
 
 Réplique fidèle du Dynamic Island de l'iPhone, en overlay en haut au centre de l'écran Windows.
+Toutes les tailles, courbes de coins, ressorts et délais ont été **mesurés** sur des enregistrements
+d'écran d'un iPhone 16 Pro (iOS 27) — voir [`docs/mesures.md`](docs/mesures.md) — puis **validés** :
+écart < 3 % sur les 10 transitions comparées, contenu à ±1 image ([`docs/fidelite.md`](docs/fidelite.md)).
 
-**État : fin de la phase 1** — tout l'invisible est prêt (fenêtre, média, système, machine à états,
-outils de mesure). **Rien n'est dessiné** : la fenêtre est transparente et vide. Le visuel (phase 2)
-sera construit à partir des **mesures** faites sur des vidéos du Simulateur iPhone.
+![Aperçu : repos, compact, split, alertes, vue étendue](docs/img/apercu.png)
 
-| Dossier | Contenu |
+## Ce que fait l'île
+
+| Situation | Affichage |
 |---|---|
-| `src/island.config.ts` | **Seul** fichier de valeurs visuelles (toutes à `null` en phase 1) |
-| `src/state/islandMachine.ts` | Machine à états (repos, compact, split, étendu, alerte) + tests |
-| `src/bridge/` | Lien avec le backend Rust (commandes, événements, journal console) |
-| `src-tauri/src/` | Backend Rust : `fenetre`, `media`, `systeme`, `minuteur`, `demarrage` |
-| `tools/` | Outils Python d'analyse vidéo/capture + tests synthétiques |
-| `docs/` | `limites.md`, `mesures.md`, `instructions.md` |
+| Rien en cours | Pilule noire au repos |
+| Musique (Spotify, navigateurs, Apple Music…) | Compact : pochette + onde à la couleur de la pochette. **Appui long** : lecteur complet (titre, artiste, barre de progression déplaçable, précédent / lecture-pause / suivant, ouvrir l'app, changer de source). **Clic court** : ouvre l'app qui joue |
+| Minuteur | Compact : icône + temps restant ; étendu : pause / annuler + compte à rebours |
+| Musique + minuteur | Mode **split** : île + bulle (effet goutte) |
+| Chargeur branché / débranché, batterie faible (20 %, 10 %), volume, Ne pas déranger, notifications, **presse-papiers**, fin du minuteur | Alerte (forme mesurée sur « En charge 98 % ») puis retour automatique |
+| Caméra / micro utilisés | Point **vert** (caméra, avec ou sans micro) ou **orange** (micro seul), comme sur iPhone |
 
-## Installation (Windows 11)
+Chorégraphie iOS reproduite : rétraction avant un changement d'activité, gonflement à l'appui long,
+la bulle qui se refond puis se détache, contenu qui apparaît flou puis net.
 
-1. **Node.js LTS** — https://nodejs.org
-2. **Rust** — https://rustup.rs (choisir l'option par défaut)
-3. **Visual Studio Build Tools** — charge de travail « Développement Desktop en C++ »
-4. **WebView2** — déjà inclus dans Windows 11
-5. **Python 3** — https://python.org (cocher « Add to PATH »)
+## Installer (Windows 11)
 
-Puis, dans un terminal PowerShell, dans le dossier du projet :
+**Le plus simple** : sur GitHub, onglet **Actions** → workflow **Windows** → dernier passage → artefact
+`installateur-windows` (`.msi` ou `.exe`).
+
+**Depuis le code** (Node.js LTS, Rust, Visual Studio Build Tools « C++ », Python 3) :
 
 ```bash
 npm install
 ```
 
 ```bash
-python -m venv tools/.venv
+npm run tauri build
 ```
 
-```bash
-tools\.venv\Scripts\pip install -r tools/requirements.txt
-```
+L'installateur est dans `src-tauri/target/release/bundle/`.
 
-## Lancer
+## Utiliser
 
-```bash
-npm run tauri dev
-```
-
-La fenêtre est invisible (c'est voulu). Le **journal** s'affiche dans le terminal (backend Rust) :
-`[media] …`, `[batterie] …`, `[volume] …`.
-
-Pour voir aussi le journal du front-end (machine à états), ouvrir la console de la page
-automatiquement (PowerShell) :
-
-```bash
-$env:ILE_DEVTOOLS=1; npm run tauri dev
-```
-
-Outils de débogage dans la console de la page (`window.__ile`) :
-
-```js
-__ile.backend.minuteurDemarrer(10000)   // minuteur de 10 s
-__ile.backend.definirDemarrageAuto(true) // démarrer avec Windows
-__ile.machine.etat                       // état de la machine
-```
-
-## Minuteur depuis l'extérieur
-
-L'île a son propre minuteur. On peut le piloter en ligne de commande (raccourci Windows,
-MacroPad, Stream Deck…). Si l'île tourne déjà, la commande est transmise à l'île ouverte :
+- **Icône dans la zone de notification** : Réglages, choix de l'écran, Démarrer avec Windows, Cacher en
+  plein écran, Quitter.
+- **Ctrl + Alt + D** : panneau de réglages — un curseur par valeur de `island.config.ts` (appliqué en direct),
+  boutons pour déclencher chaque animation (une fois ou en boucle), bouton **Exporter** (JSON).
+- **Minuteur** depuis un raccourci, un MacroPad ou un Stream Deck :
 
 ```bash
 dynamic-island.exe --minuteur 5m
 ```
 
-Durées acceptées : `90s`, `5m`, `1h30m`, `2m30s`, `300` (secondes). Autres : `--minuteur-pause`,
-`--minuteur-reprendre`, `--minuteur-annuler`.
+  (`90s`, `1h30m`, `2m30s`, `300` ; aussi `--minuteur-pause`, `--minuteur-reprendre`, `--minuteur-annuler`).
+- Toutes les échelles Windows sont prises en charge (100 %, 125 %, 150 %, 200 %…), écran par écran.
 
-## Démarrage automatique avec Windows
+## Développer
 
-Option (désactivée par défaut). Quand elle est activée, Windows lance l'île à l'ouverture de
-session (clé de registre `Run` de l'utilisateur, sans droits administrateur).
+```bash
+npm run tauri dev
+```
+
+Journal : dans le terminal (backend) ; console de la page avec `$env:ILE_DEVTOOLS=1` avant la commande.
+
+**Essayer l'île sans Windows** (navigateur, données factices) :
+
+```bash
+npm run dev
+```
+
+Puis ouvrir `http://localhost:1420/?demo` et, dans la console : `__ile.jouer("musique")`,
+`__ile.jouer("etendre")`, `__ile.jouer("minuteur")`, `__ile.jouer("charge")`…
+
+| Dossier | Contenu |
+|---|---|
+| `src/island.config.ts` | **Seul** fichier de valeurs visuelles (toutes mesurées, sources en commentaire) |
+| `src/rendu/` | Rendu : forme squircle, chorégraphie, contenus, icônes originales |
+| `src/state/islandMachine.ts` | Machine à états (repos, compact, split, étendu, alerte) |
+| `src/panneau/` | Panneau de réglages |
+| `src-tauri/src/` | Backend Rust : fenêtre, média, système, minuteur, démarrage, icône de notification |
+| `tools/` | Mesure (vidéos, captures), enregistrement de notre île, validation de fidélité |
+| `docs/` | `mesures.md`, `fidelite.md`, `limites.md`, `instructions.md` |
 
 ## Tests
 
@@ -92,51 +94,27 @@ cd src-tauri && cargo test
 tools\.venv\Scripts\python -m pytest tools/tests
 ```
 
-Le test Python génère des **vidéos synthétiques** (fausse île animée par un ressort connu) et
-vérifie que l'outil retrouve les paramètres à **moins de 2 %** près.
-
-## Outils de mesure
+## Refaire les mesures et la validation
 
 ```bash
-python tools/analyze_screenshot.py tools/input/C1_repos.png
+python tools/mesurer_reference.py
 ```
 
 ```bash
-python tools/analyze_video.py tools/input/V2_lancement_musique.mov
+npx vite --port 1420
 ```
 
 ```bash
-python tools/analyze_video.py --compare tools/input/V3_etendre_fermer.mov notre_V3.mp4 --echelle-b 1.5
-```
-
-Résultats dans `tools/output/<nom>/` : CSV image par image, JSON (ressort au format Framer Motion
-**et** Apple, délais du contenu), graphiques PNG.
-
-## 📹 Vidéos et captures à fournir (enregistrées sur Mac)
-
-Simulateur Xcode, **iPhone 15 Pro ou plus récent** (préciser le modèle exact). Mode sombre et
-mode clair si possible. Mettre les fichiers dans `tools/input/` (ignoré par git).
-
-```bash
-xcrun simctl io booted recordVideo --codec=h264 V1_repos.mov
+node tools/enregistrer_ile.cjs
 ```
 
 ```bash
-xcrun simctl io booted screenshot C1_repos.png
+python tools/valider_fidelite.py
 ```
 
-| Fichier | Contenu |
-|---|---|
-| `C1_repos.png` | Île au repos (capture) |
-| `C2_compact_musique.png` | Musique en cours, île compacte |
-| `C3_etendu_musique.png` | Musique, île étendue (appui long) |
-| `C4_split.png` | Deux activités (ex. : minuteur + musique) |
-| `V1_repos.mov` | Île au repos, 3 secondes |
-| `V2_lancement_musique.mov` | Repos → compact quand la musique démarre |
-| `V3_etendre_fermer.mov` | Appui long → étendu → clic à l'extérieur → compact (3 fois) |
-| `V4_split.mov` | Minuteur lancé pendant la musique → apparition de la bulle, puis disparition |
-| `V5_appui_court.mov` | Clics courts sur l'île (effet de compression), 3 fois |
-| `V6_changement_piste.mov` | Changement de chanson en mode compact |
-| `V7_fin_activite.mov` | Arrêt de la musique / fin du minuteur → retour au repos |
+Vidéos de référence à placer dans `tools/input/` (ignoré par git).
 
-Conseil : utiliser un **fond d'écran clair** derrière l'île (la détection cherche une forme noire).
+## Police et images
+
+Police **Inter** (licence OFL). Aucune icône ni aucun asset Apple : les icônes sont des formes simples
+dessinées pour ce projet (`src/rendu/icones.tsx`).

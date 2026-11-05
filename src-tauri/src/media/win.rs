@@ -316,3 +316,105 @@ pub fn agir(action: Action) -> Result<(), String> {
         Err(e) => Err(e.to_string()),
     }
 }
+
+// ---------------------------------------------------------------------------
+// Ouvrir l'application source (clic court sur l'île)
+// ---------------------------------------------------------------------------
+
+/// Met au premier plan l'application qui joue. AppUserModelID d'app packagée (« …!App ») :
+/// activation par Windows ; sinon (ex. « Spotify.exe », « chrome ») : recherche de sa fenêtre.
+pub fn ouvrir_source() -> Result<(), String> {
+    let id = partage()
+        .dernier
+        .lock()
+        .unwrap()
+        .source_active
+        .clone()
+        .ok_or("aucune source média")?;
+    journal!("media", "ouvrir la source « {id} »");
+    if id.contains('!') {
+        return activer_packagee(&id);
+    }
+    activer_fenetre_processus(&id)
+}
+
+fn activer_packagee(aumid: &str) -> Result<(), String> {
+    use windows::core::HSTRING;
+    use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_LOCAL_SERVER};
+    use windows::Win32::UI::Shell::{ApplicationActivationManager, IApplicationActivationManager, AO_NONE};
+    unsafe {
+        let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        let m: IApplicationActivationManager =
+            CoCreateInstance(&ApplicationActivationManager, None, CLSCTX_LOCAL_SERVER).map_err(|e| e.to_string())?;
+        m.ActivateApplication(&HSTRING::from(aumid), &HSTRING::new(), AO_NONE)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+}
+
+fn activer_fenetre_processus(id: &str) -> Result<(), String> {
+    use windows::core::BOOL;
+    use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM};
+    use windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    use windows::Win32::UI::Input::KeyboardAndMouse::{keybd_event, KEYEVENTF_KEYUP, VK_MENU};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        EnumWindows, GetWindow, GetWindowTextLengthW, GetWindowThreadProcessId, IsIconic, IsWindowVisible,
+        SetForegroundWindow, ShowWindow, GW_OWNER, SW_RESTORE,
+    };
+
+    let cherche = id.trim_end_matches(".exe").to_lowercase();
+    struct Recherche {
+        nom: String,
+        trouvee: Option<HWND>,
+    }
+    unsafe extern "system" fn rappel(hwnd: HWND, donnees: LPARAM) -> BOOL {
+        let r = &mut *(donnees.0 as *mut Recherche);
+        let visible = IsWindowVisible(hwnd).as_bool() && GetWindowTextLengthW(hwnd) > 0;
+        let sans_proprietaire = GetWindow(hwnd, GW_OWNER).map(|h| h.is_invalid()).unwrap_or(true);
+        if !visible || !sans_proprietaire {
+            return true.into();
+        }
+        let mut pid = 0u32;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        if let Ok(p) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
+            let mut tampon = [0u16; 512];
+            let mut n = tampon.len() as u32;
+            if QueryFullProcessImageNameW(p, PROCESS_NAME_WIN32, windows::core::PWSTR(tampon.as_mut_ptr()), &mut n)
+                .is_ok()
+            {
+                let chemin = String::from_utf16_lossy(&tampon[..n as usize]).to_lowercase();
+                let exe = chemin
+                    .rsplit('\\')
+                    .next()
+                    .unwrap_or("")
+                    .trim_end_matches(".exe")
+                    .to_string();
+                if exe == r.nom || (r.nom.contains(&exe) && exe.len() > 2) {
+                    r.trouvee = Some(hwnd);
+                }
+            }
+            let _ = CloseHandle(p);
+        }
+        (r.trouvee.is_none()).into()
+    }
+    let mut r = Recherche {
+        nom: cherche,
+        trouvee: None,
+    };
+    unsafe {
+        let _ = EnumWindows(Some(rappel), LPARAM(&mut r as *mut Recherche as isize));
+        let hwnd = r.trouvee.ok_or_else(|| format!("fenêtre de « {id} » introuvable"))?;
+        if IsIconic(hwnd).as_bool() {
+            let _ = ShowWindow(hwnd, SW_RESTORE);
+        }
+        // Windows n'autorise SetForegroundWindow qu'après une entrée clavier : Alt simulé.
+        keybd_event(VK_MENU.0 as u8, 0, Default::default(), 0);
+        keybd_event(VK_MENU.0 as u8, 0, KEYEVENTF_KEYUP, 0);
+        if !SetForegroundWindow(hwnd).as_bool() {
+            return Err("Windows a refusé de mettre la fenêtre au premier plan".into());
+        }
+    }
+    Ok(())
+}

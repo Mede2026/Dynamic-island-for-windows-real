@@ -1,4 +1,4 @@
-/* Phase 1 : la page doit être 100 % transparente (aucune valeur visuelle ici). */
+/* La page est transparente : seule l'île (dessinée en SVG) est visible. */
 html,
 body,
 #root {
@@ -8,4 +8,50 @@ body,
   height: 100%;
   overflow: hidden;
   background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Mode démo (navigateur) : fond clair comme les vidéos de référence. */
+body.demo {
+  background: #efefef;
+}
+
+/* Boutons de l'île : pas de style système. */
+.bouton-ile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 120ms ease-out, opacity 120ms;
+}
+.bouton-ile:active {
+  transform: scale(0.88);
+  opacity: 0.7;
+}
+
+/* Onde sonore : chaque barre monte/descend à son rythme (GPU, sans JavaScript). */
+@keyframes onde {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(var(--h, 4));
+  }
+}
+.onde-barre {
+  animation: onde ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onde-barre {
+    animation: none;
+  }
 }

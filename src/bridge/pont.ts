@@ -4,13 +4,16 @@
  *  - les traduit en événements de la machine à états ;
  *  - exécute les effets de la machine qui concernent le backend.
  *
- * Phase 1 : rien n'est dessiné, donc rien n'est touchable (zones = []) :
- * tous les clics traversent la fenêtre.
+ * Les zones touchables sont envoyées par le rendu (src/rendu/Ile.tsx) : ailleurs,
+ * les clics traversent la fenêtre.
  */
 
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import type { IslandMachine } from "../state/islandMachine";
 import { backend, dansTauri, ecouter } from "./backend";
+import { majDonnees } from "./donnees";
+import { definirSurcharges } from "../config/store";
+import { jouer, SCENARIOS, type NomScenario } from "../demo/scenarios";
 import { Traducteur } from "./traducteur";
 import { NOMS_EVENEMENTS, type InfoFenetre } from "./types";
 
@@ -48,10 +51,40 @@ export function demarrerPont(machine: IslandMachine): () => void {
   }
 
   // 2. Traduction vers la machine à états.
-  arrets.push(ecouter("media", (m) => envoyer(traducteur.media(m))));
-  arrets.push(ecouter("minuteur", (m) => envoyer(traducteur.minuteurEtat(m))));
-  arrets.push(ecouter("batterie", (b) => envoyer(traducteur.batterieEtat(b))));
-  arrets.push(ecouter("volume", (v) => envoyer(traducteur.volume(v))));
+  arrets.push(
+    ecouter("media", (m) => {
+      majDonnees({ media: m });
+      envoyer(traducteur.media(m));
+    }),
+  );
+  arrets.push(ecouter("media-pochette", (p) => majDonnees({ pochette: p })));
+  arrets.push(
+    ecouter("minuteur", (m) => {
+      majDonnees({ minuteur: m });
+      envoyer(traducteur.minuteurEtat(m));
+    }),
+  );
+  arrets.push(
+    ecouter("batterie", (b) => {
+      majDonnees({ batterie: b });
+      envoyer(traducteur.batterieEtat(b));
+    }),
+  );
+  arrets.push(
+    ecouter("volume", (v) => {
+      majDonnees({ volume: v });
+      envoyer(traducteur.volume(v));
+    }),
+  );
+  arrets.push(ecouter("presse-papiers", (p) => envoyer(traducteur.pressePapiers(p))));
+  arrets.push(ecouter("confidentialite", (c) => majDonnees({ confidentialite: c })));
+  // Panneau de réglages (Ctrl+Alt+D).
+  arrets.push(ecouter("config-direct", (s) => definirSurcharges(s)));
+  arrets.push(
+    ecouter("declencher", (nom) => {
+      if (nom in SCENARIOS) jouer(machine, nom as NomScenario);
+    }),
+  );
   arrets.push(ecouter("ne-pas-deranger", (n) => envoyer(traducteur.nePasDerangerEtat(n))));
   arrets.push(ecouter("notification", (n) => envoyer(traducteur.notification(n))));
   arrets.push(ecouter("survol", (s) => envoyer(traducteur.survol(s))));
@@ -59,6 +92,7 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(
     ecouter("ecran", (info) => {
       ecranCourant.info = info;
+      majDonnees({ fenetre: info });
     }),
   );
 
@@ -85,8 +119,7 @@ export function demarrerPont(machine: IslandMachine): () => void {
     }
   });
 
-  // 4. État initial.
-  void backend.zonesTouchables([]); // phase 1 : rien de visible → rien de touchable
+  // 4. État initial (les zones touchables sont envoyées par le rendu, src/rendu/Ile.tsx).
   void Promise.all([
     backend.infoFenetre(),
     backend.media(),
@@ -97,6 +130,8 @@ export function demarrerPont(machine: IslandMachine): () => void {
     backend.minuteur(),
   ]).then(([fenetre, media, batterie, volume, npd, notifs, minuteur]) => {
     ecranCourant.info = fenetre;
+    majDonnees({ fenetre, media, batterie, volume, minuteur });
+    void backend.pochette().then((p) => p && majDonnees({ pochette: p }));
     log("init", {
       fenetre,
       tauxRafraichissementHz: fenetre?.ecran.frequenceHz ?? "inconnu",

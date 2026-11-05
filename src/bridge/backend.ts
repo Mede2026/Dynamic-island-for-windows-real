@@ -3,7 +3,7 @@
  * Hors de Tauri (ex. `npm run dev` dans un navigateur), tout est désactivé proprement.
  */
 
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke as invokeTauri, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   EtatBatterie,
@@ -21,6 +21,12 @@ import type {
 } from "./types";
 
 export const dansTauri = (): boolean => isTauri();
+
+/** Hors de Tauri (démo dans un navigateur), les commandes ne font rien. */
+function invoke<T>(commande: string, args?: Record<string, unknown>): Promise<T> {
+  if (!dansTauri()) return Promise.resolve(undefined as T);
+  return invokeTauri<T>(commande, args);
+}
 
 export function ecouter<N extends NomEvenement>(
   nom: N,
@@ -47,6 +53,8 @@ export const backend = {
   precedent: () => invoke<void>("media_precedent"),
   allerA: (positionMs: number) => invoke<void>("media_aller_a", { positionMs }),
   choisirSource: (appId: string | null) => invoke<void>("media_choisir_source", { appId }),
+  /** Met au premier plan l'application qui joue (Spotify, navigateur…). */
+  ouvrirSource: () => invoke<void>("media_ouvrir_source"),
 
   // Système
   batterie: () => invoke<EtatBatterie>("systeme_batterie"),

@@ -120,6 +120,12 @@ export interface EvenementsBackend {
   "ne-pas-deranger": EtatNePasDeranger;
   minuteur: EtatMinuteur;
   notification: Notification;
+  "presse-papiers": { type: "texte" | "image" | "fichiers" | "autre"; apercu: string };
+  confidentialite: { camera: boolean; micro: boolean };
+  /** Panneau de réglages → île : valeurs modifiées en direct. */
+  "config-direct": Record<string, unknown>;
+  /** Panneau de réglages → île : jouer un scénario de démonstration. */
+  declencher: string;
 }
 
 export type NomEvenement = keyof EvenementsBackend;
@@ -137,4 +143,6 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "ne-pas-deranger",
   "minuteur",
   "notification",
+  "presse-papiers",
+  "confidentialite",
 ];

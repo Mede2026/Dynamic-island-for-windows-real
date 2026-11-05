@@ -66,11 +66,13 @@ def reponse_ressort(t: np.ndarray, omega0: float, zeta: float, x0: float, x1: fl
     return x1 + e
 
 
-def modele_avec_depart(t: np.ndarray, t0: float, omega0: float, zeta: float, x0: float, x1: float) -> np.ndarray:
-    """Valeur constante x0 avant t0, puis ressort (vitesse initiale nulle)."""
+def modele_avec_depart(
+    t: np.ndarray, t0: float, omega0: float, zeta: float, x0: float, x1: float, v0: float = 0.0
+) -> np.ndarray:
+    """Valeur constante x0 avant t0, puis ressort (vitesse initiale v0, nulle par défaut)."""
     t = np.asarray(t, dtype=float)
     dt = np.clip(t - t0, 0.0, None)
-    return np.where(t < t0, x0, reponse_ressort(dt, omega0, zeta, x0, x1))
+    return np.where(t < t0, x0, reponse_ressort(dt, omega0, zeta, x0, x1, v0))
 
 
 # ---------------------------------------------------------------------------
@@ -96,12 +98,16 @@ class ResultatRessort:
     incertitude_omega0: float
     incertitude_zeta: float
     n_points: int
+    v0: float = 0.0
+    """Vitesse initiale (unités/s) — non nulle si la transition démarre en plein mouvement."""
 
     def en_dict(self) -> dict:
         return asdict(self)
 
 
-def ajuster_ressort(t: np.ndarray, x: np.ndarray, t0_estime: float | None = None) -> ResultatRessort:
+def ajuster_ressort(
+    t: np.ndarray, x: np.ndarray, t0_estime: float | None = None, vitesse_initiale: bool = False
+) -> ResultatRessort:
     """
     Ajuste (t0, ω₀, ζ, x0, x1) sur les mesures x(t) (t en secondes).
     Essaie plusieurs points de départ et garde le meilleur (le problème a des minima locaux).
@@ -136,6 +142,10 @@ def ajuster_ressort(t: np.ndarray, x: np.ndarray, t0_estime: float | None = None
                 [t[0] - 0.1, 0.5, 0.02, x0g - amplitude, x1g - amplitude],
                 [t[-1], 400.0, 4.0, x0g + amplitude, x1g + amplitude],
             )
+            if vitesse_initiale:
+                vmax = 40 * amplitude
+                p0.append(0.0)
+                bornes = (bornes[0] + [-vmax], bornes[1] + [vmax])
             try:
                 p, cov = curve_fit(modele_avec_depart, t, x, p0=p0, bounds=bornes, maxfev=20000)
             except (RuntimeError, ValueError):
@@ -149,8 +159,9 @@ def ajuster_ressort(t: np.ndarray, x: np.ndarray, t0_estime: float | None = None
         raise RuntimeError("l'ajustement du ressort n'a pas convergé")
 
     sse, p, cov = meilleur
-    t0, omega0, zeta, x0, x1 = (float(v) for v in p)
-    incert = np.sqrt(np.clip(np.diag(cov), 0, None)) if np.all(np.isfinite(cov)) else np.full(5, np.nan)
+    t0, omega0, zeta, x0, x1 = (float(v) for v in p[:5])
+    v0 = float(p[5]) if len(p) > 5 else 0.0
+    incert = np.sqrt(np.clip(np.diag(cov), 0, None)) if np.all(np.isfinite(cov)) else np.full(len(p), np.nan)
     rmse = math.sqrt(sse / len(t))
     framer = framer_depuis_omega(omega0, zeta)
     apple = apple_depuis_omega(omega0, zeta)
@@ -167,4 +178,5 @@ def ajuster_ressort(t: np.ndarray, x: np.ndarray, t0_estime: float | None = None
         incertitude_omega0=float(incert[1]),
         incertitude_zeta=float(incert[2]),
         n_points=len(t),
+        v0=v0,
     )

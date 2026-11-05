@@ -42,7 +42,7 @@ def _courbe(ax, t_ms, v, fit, couleur, nom):
     ax.plot(t_ms, v, "o", ms=4, color=couleur, alpha=0.75, label=f"{nom} mesurée", markeredgewidth=0)
     if fit:
         tt = np.linspace(t_ms.min(), t_ms.max(), 600)
-        y = modele_avec_depart(tt / 1000, fit["t0_s"], fit["omega0"], fit["zeta"], fit["x0"], fit["x1"])
+        y = modele_avec_depart(tt / 1000, fit["t0_s"], fit["omega0"], fit["zeta"], fit["x0"], fit["x1"], fit.get("v0", 0.0))
         ax.plot(tt, y, "-", lw=2, color=couleur, label=f"{nom} ressort ajusté")
 
 

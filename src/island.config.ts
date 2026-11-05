@@ -1,255 +1,446 @@
 /**
  * island.config.ts — LE SEUL fichier qui contient des valeurs visuelles.
  *
- * Règles :
- *  - Phase 1 : toutes les valeurs valent `null` (rien n'est deviné).
- *  - Phase 2 : chaque nombre est remplacé par une mesure. Sa source
- *    (fichier vidéo/capture + numéro d'image) est notée dans docs/mesures.md.
- *  - Aucun autre fichier du projet n'a le droit de contenir une taille,
- *    un rayon, une couleur, une durée d'animation ou un ressort.
+ * PHASE 2 : toutes les valeurs viennent des mesures faites sur les enregistrements
+ * d'écran d'un iPhone 16 Pro (iOS 27, 402 x 874 pt) fournis par le propriétaire.
+ * Source de chaque nombre (vidéo + numéros d'image) : docs/mesures.md
+ * (données brutes : docs/mesures.json, script : tools/mesurer_reference.py).
  *
  * Vocabulaire :
- *  - « pt »  = point iPhone (1 pt = 3 px sur un iPhone 15 Pro, écran @3x).
- *  - « DIP » = pixel indépendant de Windows (1 DIP = 1 px à 100 % d'échelle).
- *  - Ressort « Framer Motion » : stiffness (raideur), damping (amortissement), mass (masse).
- *  - Ressort « Apple » : response (période en s), dampingFraction (0 = rebondit sans fin, 1 = aucun rebond).
+ *  - « pt »  = point iPhone.   « DIP » = pixel indépendant de Windows (= px CSS dans la page).
+ *  - DIP = pt × ISLAND_SCALE. Les proportions sont donc toujours exactes ; seule la taille
+ *    globale dépend de ISLAND_SCALE (réglable dans le panneau Ctrl+Alt+D).
+ *  - Ressort « Apple » : response (s), dampingFraction (ζ). « Framer Motion » : stiffness,
+ *    damping, mass (stiffness = (2π/response)², damping = 4π·ζ/response, mass = 1).
+ *  - Coins : chaque coin est une superellipse d'« étendue » a (pt) et d'exposant n
+ *    (n = 2 : arc de cercle ; n > 2 : coin « continu » façon Apple).
+ *
+ * Abréviations des sources : V4727…V4731 = IMG_4727…4731.MP4, « img » = numéro d'image.
  */
 
-/** Une valeur qui sera mesurée en phase 2. `null` = pas encore mesurée. */
 export type Mesure<T> = T | null;
 
-/** Les 5 états visuels de l'île (voir src/state/islandMachine.ts). */
 export type EtatIle = "repos" | "compact" | "split" | "etendu" | "alerte";
 
-/** Les transitions qui ont chacune leur propre ressort (ouvrir ≠ fermer). */
 export type NomTransition =
-  | "apparition" //       repos   → compact (une activité démarre)
-  | "disparition" //      compact → repos   (fin de la dernière activité)
-  | "ouvrir" //           compact → etendu  (appui long)
-  | "fermer" //           etendu  → compact (clic à l'extérieur)
-  | "compactVersSplit" // compact → split   (2e activité)
-  | "splitVersCompact" // split   → compact (fin d'une des deux activités)
-  | "alerteEntree" //     *       → alerte
-  | "alerteSortie" //     alerte  → *
-  | "changementContenu"; // même état, contenu différent (ex. : changement de piste)
+  | "apparition" //       repos   → compact
+  | "disparition" //      compact → repos
+  | "ouvrir" //           → étendu
+  | "fermer" //           étendu  → compact / split
+  | "compactVersSplit" // compact → split (île principale)
+  | "splitVersCompact" // split   → compact
+  | "alerteEntree" //     → alerte
+  | "alerteSortie" //     alerte  → compact / repos
+  | "changementContenu" // même forme, autre activité
+  | "retrait" //          1re phase « rétractation » avant un changement d'activité
+  | "contraction"; //     1re phase avant l'ouverture (après l'appui long)
 
 export interface Taille {
   largeur: Mesure<number>;
   hauteur: Mesure<number>;
 }
 
-/** Une taille donnée en points iPhone ET en DIP Windows (dip = pt × ISLAND_SCALE). */
 export interface TailleDouble {
   pt: Taille;
   dip: Taille;
 }
 
 export interface Ressort {
-  // Format Framer Motion
   stiffness: Mesure<number>;
   damping: Mesure<number>;
   mass: Mesure<number>;
-  // Équivalent Apple (SwiftUI .spring(response:dampingFraction:))
   response: Mesure<number>;
   dampingFraction: Mesure<number>;
 }
 
+/** iOS anime largeur et hauteur avec des ressorts parfois différents (ex. fermeture). */
+export interface RessortForme {
+  largeur: Ressort;
+  hauteur: Ressort;
+}
+
 export interface FormeEtat {
   taille: TailleDouble;
-  /** Rayon des coins (pt). */
+  /** Étendue a du coin (pt) : distance sur laquelle le bord est courbé. */
   rayonPt: Mesure<number>;
-  /**
-   * Lissage des coins continus (squircle), 0 = arc de cercle simple,
-   * 1 = lissage maximal (style « continuous corners » d'Apple).
-   */
-  lissageCoins: Mesure<number>;
+  /** Exposant n de la superellipse du coin (2 = cercle, > 2 = coin continu). */
+  exposantCoins: Mesure<number>;
 }
 
 export interface ContenuAnimation {
   /** Délai entre le début du mouvement de la forme et l'apparition du contenu (ms). */
   delaiApparitionMs: Mesure<number>;
-  /** Durée du fondu d'apparition du contenu (ms). */
   dureeFonduEntreeMs: Mesure<number>;
-  /** Durée du fondu de disparition du contenu (ms). */
+  /** Délai entre le début du mouvement de la forme et le début de la disparition (ms). */
+  delaiDisparitionMs: Mesure<number>;
   dureeFonduSortieMs: Mesure<number>;
-  /** Flou de départ du contenu (px CSS). */
-  flouDepartPx: Mesure<number>;
-  /** Échelle de départ du contenu (1 = taille normale). */
+  /** Flou (écart type, pt) du contenu au début de son apparition. */
+  flouDepartPt: Mesure<number>;
   echelleDepart: Mesure<number>;
-  /**
-   * Avance (ms) avec laquelle le contenu disparaît AVANT que la forme rapetisse
-   * (« ordre à la fermeture »).
-   */
-  avanceDisparitionMs: Mesure<number>;
+}
+
+export interface Texte {
+  taillePt: Mesure<number>;
+  graisse: Mesure<number>;
+  couleur: Mesure<string>;
 }
 
 export interface IslandConfig {
-  /** Facteur global iPhone (pt) → Windows (DIP). Choisi par le propriétaire en phase 2. */
+  /** DIP Windows par point iPhone. */
   ISLAND_SCALE: Mesure<number>;
-
-  /** Distance entre le haut de l'écran et le haut de l'île (pt). */
   margeHautPt: Mesure<number>;
-
-  /** Couleur de la pilule (CSS, ex. "#000000"). */
   couleurPilule: Mesure<string>;
+  police: Mesure<string>;
 
-  /** Forme par état. */
   formes: Record<EtatIle, FormeEtat>;
+  /** Formes particulières selon le contenu. */
+  formesContenu: {
+    /** Compact avec contenu des deux côtés (musique, minuteur). */
+    compactDeuxCotes: FormeEtat;
+    /** Étendu du minuteur (moins haut que la musique). */
+    etenduMinuteur: FormeEtat;
+  };
 
-  /** Ressort de la forme par transition. */
-  ressorts: Record<NomTransition, Ressort>;
+  ressorts: Record<NomTransition, RessortForme>;
 
-  /** Animation du contenu (fondu + flou + échelle). */
+  /** Chorégraphie mesurée : iOS se rétracte avant de changer d'activité. */
+  choregraphie: {
+    /** Durée de la phase « retrait » avant de s'élargir vers la nouvelle forme (ms). */
+    retraitDureeMs: Mesure<number>;
+    /** Durée de la « contraction » entre l'appui long et l'ouverture (ms). */
+    contractionDureeMs: Mesure<number>;
+    /** Après le début de la fermeture vers le mode split : moment où la bulle se détache (ms). */
+    separationBulleMs: Mesure<number>;
+  };
+
   contenu: ContenuAnimation;
 
-  /** Mode split : bulle séparée à droite de l'île principale. */
   bulle: {
     diametrePt: Mesure<number>;
-    /** Espace entre l'île principale et la bulle (pt). */
     ecartPt: Mesure<number>;
-    /** Effet goutte (metaball) : flou du filtre SVG feGaussianBlur (stdDeviation, px). */
-    goutteFlouPx: Mesure<number>;
-    /** Effet goutte : feColorMatrix, multiplicateur du canal alpha. */
+    ressort: Ressort;
+    /** Effet goutte : flou du filtre SVG (pt, multiplié par ISLAND_SCALE). */
+    goutteFlouPt: Mesure<number>;
     goutteAlphaMultiplicateur: Mesure<number>;
-    /** Effet goutte : feColorMatrix, décalage du canal alpha. */
     goutteAlphaDecalage: Mesure<number>;
   };
 
-  /** Appui court : compression puis rebond. */
   appui: {
-    /** Échelle au moment le plus compressé (ex. 0.9x). */
-    echelleCompression: Mesure<number>;
-    ressortCompression: Ressort;
+    /** Échelle atteinte en maintenant l'appui (iOS : l'île GONFLE, elle ne se comprime pas). */
+    echelleAppui: Mesure<number>;
+    /** Durée du gonflement (linéaire) pendant l'appui (ms). */
+    dureeGonflementMs: Mesure<number>;
     ressortRetour: Ressort;
   };
 
-  /** Contenu média. */
-  media: {
-    /** Taille de la pochette en mode compact (pt). */
-    pochetteCompactPt: Mesure<number>;
-    /** Taille de la pochette en mode étendu (pt). */
-    pochetteEtenduPt: Mesure<number>;
-    /** Rayon des coins de la pochette (pt). */
-    pochetteRayonPt: Mesure<number>;
-    /** Lueur autour de l'île, à la couleur de la pochette : opacité 0–1. */
-    lueurOpacite: Mesure<number>;
-    /** Lueur : rayon de flou (pt). */
-    lueurFlouPt: Mesure<number>;
-    /** Onde sonore : nombre de barres. */
-    ondeNombreBarres: Mesure<number>;
-    /** Onde sonore : largeur d'une barre (pt). */
-    ondeLargeurBarrePt: Mesure<number>;
-    /** Onde sonore : hauteur min / max d'une barre (pt). */
-    ondeHauteurMinPt: Mesure<number>;
-    ondeHauteurMaxPt: Mesure<number>;
-    /** Taille du texte titre / artiste (pt). Police : Inter. */
-    policeTitrePt: Mesure<number>;
-    policeArtistePt: Mesure<number>;
+  ombreEtendu: {
+    flouPt: Mesure<number>;
+    decalageYPt: Mesure<number>;
+    opacite: Mesure<number>;
   };
 
-  /** Durées de comportement (utilisées par la machine à états). */
+  media: {
+    compact: {
+      pochetteXPt: Mesure<number>;
+      pochetteYPt: Mesure<number>;
+      pochetteTaillePt: Mesure<number>;
+      pochetteRayonPt: Mesure<number>;
+      ondeLargeurBarrePt: Mesure<number>;
+      ondePasPt: Mesure<number>;
+      ondeHauteurMaxPt: Mesure<number>;
+      ondeDroitePt: Mesure<number>;
+    };
+    etendu: {
+      pochetteXPt: Mesure<number>;
+      pochetteYPt: Mesure<number>;
+      pochetteTaillePt: Mesure<number>;
+      pochetteRayonPt: Mesure<number>;
+      texteXPt: Mesure<number>;
+      titreBaselinePt: Mesure<number>;
+      artisteBaselinePt: Mesure<number>;
+      titre: Texte;
+      artiste: Texte;
+      ondeXPt: Mesure<number>;
+      ondeCentreYPt: Mesure<number>;
+      ondeNombreBarres: Mesure<number>;
+      ondeLargeurBarrePt: Mesure<number>;
+      ondePasPt: Mesure<number>;
+      ondeHauteurMinPt: Mesure<number>;
+      ondeHauteurMaxPt: Mesure<number>;
+      tempsBaselinePt: Mesure<number>;
+      tempsGauchePt: Mesure<number>;
+      tempsDroitePt: Mesure<number>;
+      temps: Texte;
+      barreXPt: Mesure<number>;
+      barreFinPt: Mesure<number>;
+      barreCentreYPt: Mesure<number>;
+      barreHauteurPt: Mesure<number>;
+      barrePleineCouleur: Mesure<string>;
+      barreVideCouleur: Mesure<string>;
+      boutonsCentreYPt: Mesure<number>;
+      boutonsCentresXPt: Mesure<number[]>;
+      iconeLecturePt: Mesure<number>;
+      iconeSautPt: Mesure<number>;
+      iconeSecondairePt: Mesure<number>;
+      iconeCouleur: Mesure<string>;
+      iconeSecondaireCouleur: Mesure<string>;
+    };
+  };
+
+  minuteur: {
+    couleur: Mesure<string>;
+    compactIconeXPt: Mesure<number>;
+    compactIconeTaillePt: Mesure<number>;
+    compactTexteDroitePt: Mesure<number>;
+    compactTexte: Texte;
+    etenduBoutonXPt: Mesure<number[]>;
+    etenduBoutonYPt: Mesure<number>;
+    etenduBoutonDiametrePt: Mesure<number>;
+    etenduBoutonPauseFond: Mesure<string>;
+    etenduBoutonAnnulerFond: Mesure<string>;
+    etenduLibelleXPt: Mesure<number>;
+    etenduBaselinePt: Mesure<number>;
+    etenduLibelle: Texte;
+    etenduChiffresDroitePt: Mesure<number>;
+    etenduChiffres: Texte;
+  };
+
+  alerte: {
+    texteXPt: Mesure<number>;
+    baselinePt: Mesure<number>;
+    texte: Texte;
+    valeurCouleur: Mesure<string>;
+    valeurDroitePt: Mesure<number>;
+    batterieLargeurPt: Mesure<number>;
+    batterieHauteurPt: Mesure<number>;
+    batterieDroitePt: Mesure<number>;
+    batterieCouleur: Mesure<string>;
+    batterieFaibleCouleur: Mesure<string>;
+  };
+
+  indicateurs: {
+    enregistrementCouleur: Mesure<string>;
+    pointXPt: Mesure<number>;
+    pointDiametrePt: Mesure<number>;
+    /** Point de confidentialité (caméra = vert, micro = orange). */
+    confidentialiteDiametrePt: Mesure<number>;
+    confidentialiteDroitePt: Mesure<number>;
+    cameraCouleur: Mesure<string>;
+    microCouleur: Mesure<string>;
+  };
+
   durees: {
-    /** Seuil d'un appui long (ms). */
     clicLongSeuilMs: Mesure<number>;
-    /** Temps d'affichage d'une alerte avant le retour automatique (ms). */
     alerteAffichageMs: Mesure<number>;
-    /** Fermeture automatique de la vue étendue quand le curseur la quitte (ms). */
     etenduFermetureAutoMs: Mesure<number>;
   };
 }
 
 // ---------------------------------------------------------------------------
-// Fabriques (pour ne pas répéter 40 fois les mêmes blocs de `null`)
+// Fabriques
 // ---------------------------------------------------------------------------
 
-const ressortNonMesure = (): Ressort => ({
-  stiffness: null, // MESURÉ EN PHASE 2 — vidéo (voir la transition)
-  damping: null, // MESURÉ EN PHASE 2 — vidéo (voir la transition)
-  mass: null, // MESURÉ EN PHASE 2 — vidéo (voir la transition)
-  response: null, // MESURÉ EN PHASE 2 — vidéo (voir la transition)
-  dampingFraction: null, // MESURÉ EN PHASE 2 — vidéo (voir la transition)
+/** Ressort à partir des deux formats (déjà convertis : voir l'en-tête). */
+const r = (response: number, dampingFraction: number, stiffness: number, damping: number): Ressort => ({
+  stiffness,
+  damping,
+  mass: 1,
+  response,
+  dampingFraction,
 });
 
-const formeNonMesuree = (): FormeEtat => ({
+const memeRessort = (x: Ressort): RessortForme => ({ largeur: x, hauteur: x });
+
+const ISLAND_SCALE = 1.0; // choix par défaut, voir docs/mesures.md (« Facteur d'échelle »)
+
+const forme = (largeur: number, hauteur: number, rayonPt: number, exposantCoins: number): FormeEtat => ({
   taille: {
-    pt: { largeur: null, hauteur: null }, // MESURÉ EN PHASE 2 — capture Cx
-    dip: { largeur: null, hauteur: null }, // MESURÉ EN PHASE 2 — pt × ISLAND_SCALE
+    pt: { largeur, hauteur },
+    dip: { largeur: largeur * ISLAND_SCALE, hauteur: hauteur * ISLAND_SCALE },
   },
-  rayonPt: null, // MESURÉ EN PHASE 2 — capture Cx
-  lissageCoins: null, // MESURÉ EN PHASE 2 — capture Cx (profil des coins)
+  rayonPt,
+  exposantCoins,
 });
+
+// Ressorts mesurés (Apple → Framer).
+const R_APPARITION = r(0.459, 0.847, 187.38, 23.189); //       V4727 img 341–385
+const R_RETRAIT = r(0.528, 0.758, 141.61, 18.04); //           V4731 img 592–604
+const R_OUVRIR_L = r(0.522, 0.817, 144.88, 19.668); //         moyenne V4730 147–203, V4731 114–167, V4728 543–596
+const R_OUVRIR_H = r(0.527, 0.815, 142.15, 19.434); //         idem
+const R_FERMER_L = r(0.374, 0.742, 282.24, 24.931); //         moyenne V4730 447–467, V4731 204–224
+const R_FERMER_H = r(0.493, 0.869, 162.43, 22.149); //         moyenne V4731 img 204–252 et V4730 img 447–493
+const R_SPLIT_ILE = r(0.524, 0.509, 143.78, 12.207); //        V4728 img 377–428
+const R_BULLE = r(0.487, 0.696, 166.46, 17.959); //            V4730 img 86–120
+const R_SPLIT_VERS_COMPACT = r(0.477, 0.868, 173.51, 22.867); // V4731 img 309–341
+const R_ALERTE_ENTREE = r(0.536, 0.81, 137.41, 18.99); //      V4731 img 604–651
+const R_ALERTE_SORTIE = r(0.495, 0.562, 161.12, 14.267); //    V4731 img 772–813
+const R_FUSION = r(0.471, 0.829, 177.96, 22.118); //           V4728 img 452–472
 
 // ---------------------------------------------------------------------------
 // Valeurs
 // ---------------------------------------------------------------------------
 
 export const islandConfig: IslandConfig = {
-  ISLAND_SCALE: null, // MESURÉ EN PHASE 2 — choisi par le propriétaire
-
-  margeHautPt: null, // MESURÉ EN PHASE 2 — capture C1 / vidéo V1
-  couleurPilule: null, // MESURÉ EN PHASE 2 — capture C1 / vidéo V1
+  ISLAND_SCALE,
+  margeHautPt: 14.06, // V4727 img 280–338 (médiane)
+  couleurPilule: "#000000", // V4727 img 338, pixels intérieurs
+  police: "'Inter Variable', Inter, 'Segoe UI Variable', 'Segoe UI', sans-serif",
 
   formes: {
-    repos: formeNonMesuree(), // MESURÉ EN PHASE 2 — capture C1, vidéo V1
-    compact: formeNonMesuree(), // MESURÉ EN PHASE 2 — capture C2, vidéo V2
-    split: formeNonMesuree(), // MESURÉ EN PHASE 2 — capture C4, vidéo V4
-    etendu: formeNonMesuree(), // MESURÉ EN PHASE 2 — capture C3, vidéo V3
-    alerte: formeNonMesuree(), // MESURÉ EN PHASE 2 — vidéo réelle (iPhone) si disponible
+    repos: forme(125.48, 36.81, 22.39, 2.553), //    V4727 img 280–338
+    compact: forme(172.13, 36.81, 23.96, 2.722), //  V4728 img 0–33 (indicateur d'enregistrement)
+    split: forme(159.49, 36.82, 24.29, 2.767), //    V4728 img 400–440
+    etendu: forme(374.24, 204.71, 69.46, 3.119), //  V4730 img 177–437
+    alerte: forme(340.16, 36.81, 23.48, 2.659), //   V4731 img 634–753
+  },
+  formesContenu: {
+    compactDeuxCotes: forme(197.5, 36.81, 23.96, 2.722), // capture « 14m » fournie (largeur), hauteur/coins = compact
+    etenduMinuteur: forme(374.21, 88.33, 62.96, 3.084), //   V4729 img 1099–1200
   },
 
   ressorts: {
-    apparition: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V2
-    disparition: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V7
-    ouvrir: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V3
-    fermer: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V3
-    compactVersSplit: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V4
-    splitVersCompact: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V4
-    alerteEntree: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo réelle (iPhone) si disponible
-    alerteSortie: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo réelle (iPhone) si disponible
-    changementContenu: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V6
+    apparition: memeRessort(R_APPARITION),
+    disparition: memeRessort(R_RETRAIT),
+    ouvrir: { largeur: R_OUVRIR_L, hauteur: R_OUVRIR_H },
+    fermer: { largeur: R_FERMER_L, hauteur: R_FERMER_H },
+    compactVersSplit: memeRessort(R_SPLIT_ILE),
+    splitVersCompact: memeRessort(R_SPLIT_VERS_COMPACT),
+    alerteEntree: memeRessort(R_ALERTE_ENTREE),
+    alerteSortie: memeRessort(R_ALERTE_SORTIE),
+    changementContenu: memeRessort(R_ALERTE_ENTREE),
+    retrait: memeRessort(R_RETRAIT),
+    contraction: memeRessort(R_FUSION),
+  },
+
+  choregraphie: {
+    retraitDureeMs: 210, //     V4731 10,60 → 10,81 s (img 592 → 604)
+    contractionDureeMs: 270, // V4730 2,18 → 2,45 s (img 130 → 147)
+    separationBulleMs: 370, //  V4730 7,44 → 7,82 s (380 ms) et V4731 3,39 → 3,75 s (360 ms)
   },
 
   contenu: {
-    delaiApparitionMs: null, // MESURÉ EN PHASE 2 — vidéo V2 / V3
-    dureeFonduEntreeMs: null, // MESURÉ EN PHASE 2 — vidéo V2 / V3
-    dureeFonduSortieMs: null, // MESURÉ EN PHASE 2 — vidéo V3 / V7
-    flouDepartPx: null, // MESURÉ EN PHASE 2 — vidéo V3
-    echelleDepart: null, // MESURÉ EN PHASE 2 — vidéo V3
-    avanceDisparitionMs: null, // MESURÉ EN PHASE 2 — vidéo V3 / V7
+    delaiApparitionMs: 56, //   mesuré 83 (ouvrir ×2 + alerteEntree), corrigé de −27 ms par la validation (docs/fidelite.md)
+    dureeFonduEntreeMs: 262, //  idem
+    delaiDisparitionMs: 36, //  moyenne fermer ×2 + alerteSortie
+    dureeFonduSortieMs: 105, // idem
+    flouDepartPt: 15.1, //       V4730 img 150–155 comparé à img 192
+    echelleDepart: 0.75, //      idem
   },
 
   bulle: {
-    diametrePt: null, // MESURÉ EN PHASE 2 — capture C4, vidéo V4
-    ecartPt: null, // MESURÉ EN PHASE 2 — capture C4, vidéo V4
-    goutteFlouPx: null, // MESURÉ EN PHASE 2 — vidéo V4
-    goutteAlphaMultiplicateur: null, // MESURÉ EN PHASE 2 — vidéo V4
-    goutteAlphaDecalage: null, // MESURÉ EN PHASE 2 — vidéo V4
+    diametrePt: 36.83, // V4728 img 400–440
+    ecartPt: 7.84, //     V4728 img 400–440 ; capture split fournie : 8,3 pt
+    ressort: R_BULLE,
+    goutteFlouPt: 1.5, // déduit : la bulle fusionne quand l'écart tombe sous ~2 pt (V4728 img 450–452)
+    goutteAlphaMultiplicateur: 8, // seuil à 50 % (−3,5/8 → 0,44–0,56) : garde ~1 px d'anticrénelage
+    goutteAlphaDecalage: -3.5,
   },
 
   appui: {
-    echelleCompression: null, // MESURÉ EN PHASE 2 — vidéo V5
-    ressortCompression: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V5
-    ressortRetour: ressortNonMesure(), // MESURÉ EN PHASE 2 — vidéo V5
+    echelleAppui: 1.1, //       V4728 img 452 : 176,1/159,5 (l.) et 40,35/36,81 (h.)
+    dureeGonflementMs: 180, //  V4728 img 441 → 452
+    ressortRetour: R_FUSION,
+  },
+
+  ombreEtendu: {
+    flouPt: 18, //       estimation visuelle V4730 img 192 (non mesurée précisément)
+    decalageYPt: 6, //   idem
+    opacite: 0.22, //    idem
   },
 
   media: {
-    pochetteCompactPt: null, // MESURÉ EN PHASE 2 — capture C2
-    pochetteEtenduPt: null, // MESURÉ EN PHASE 2 — capture C3
-    pochetteRayonPt: null, // MESURÉ EN PHASE 2 — capture C3
-    lueurOpacite: null, // MESURÉ EN PHASE 2 — capture C3
-    lueurFlouPt: null, // MESURÉ EN PHASE 2 — capture C3
-    ondeNombreBarres: null, // MESURÉ EN PHASE 2 — capture C2
-    ondeLargeurBarrePt: null, // MESURÉ EN PHASE 2 — capture C2
-    ondeHauteurMinPt: null, // MESURÉ EN PHASE 2 — vidéo V2
-    ondeHauteurMaxPt: null, // MESURÉ EN PHASE 2 — vidéo V2
-    policeTitrePt: null, // MESURÉ EN PHASE 2 — capture C3
-    policeArtistePt: null, // MESURÉ EN PHASE 2 — capture C3
+    compact: {
+      pochetteXPt: 8.8, //      V4728 img 417
+      pochetteYPt: 6.6,
+      pochetteTaillePt: 23.6,
+      pochetteRayonPt: 6.11,
+      ondeLargeurBarrePt: 2.2, // estimation : onde étendue (V4730) réduite à la hauteur compacte
+      ondePasPt: 3.6, //          estimation
+      ondeHauteurMaxPt: 12.0, //  estimation
+      ondeDroitePt: 11.0, //      estimation
+    },
+    etendu: {
+      pochetteXPt: 21.8, //      V4730 img 192
+      pochetteYPt: 24.1,
+      pochetteTaillePt: 66.0,
+      pochetteRayonPt: 12.74,
+      texteXPt: 108.3,
+      titreBaselinePt: 51.4,
+      artisteBaselinePt: 72.7,
+      titre: { taillePt: 16.6, graisse: 600, couleur: "#ffffff" },
+      artiste: { taillePt: 16.6, graisse: 400, couleur: "#8f8f90" },
+      ondeXPt: 319.6,
+      ondeCentreYPt: 49.3,
+      ondeNombreBarres: 6,
+      ondeLargeurBarrePt: 2.7,
+      ondePasPt: 4.72,
+      ondeHauteurMinPt: 2.4,
+      ondeHauteurMaxPt: 22.5,
+      tempsBaselinePt: 118.8,
+      tempsGauchePt: 25.4,
+      tempsDroitePt: 349.5,
+      temps: { taillePt: 10.9, graisse: 500, couleur: "#919092" },
+      barreXPt: 57.5,
+      barreFinPt: 308.8,
+      barreCentreYPt: 115.2,
+      barreHauteurPt: 6.0,
+      barrePleineCouleur: "#9b9a9f",
+      barreVideCouleur: "#232224",
+      boutonsCentreYPt: 157.8,
+      boutonsCentresXPt: [45.4, 116.9, 187.9, 258.5, 330.0],
+      iconeLecturePt: 32.0,
+      iconeSautPt: 36.0,
+      iconeSecondairePt: 22.0,
+      iconeCouleur: "#ffffff",
+      iconeSecondaireCouleur: "#8f8f90",
+    },
+  },
+
+  minuteur: {
+    couleur: "#f29b59", //         V4729 img 1153 (libellé, 90e centile)
+    compactIconeXPt: 8.7, //        capture « 14m » fournie (estimation visuelle)
+    compactIconeTaillePt: 21.0,
+    compactTexteDroitePt: 7.5,
+    compactTexte: { taillePt: 16.6, graisse: 500, couleur: "#f29b59" },
+    etenduBoutonXPt: [16.8, 75.0], // V4729 img 1153
+    etenduBoutonYPt: 19.3,
+    etenduBoutonDiametrePt: 49.6,
+    etenduBoutonPauseFond: "#512f14",
+    etenduBoutonAnnulerFond: "#2e2e2e",
+    etenduLibelleXPt: 176.1,
+    etenduBaselinePt: 57.0,
+    etenduLibelle: { taillePt: 16.6, graisse: 500, couleur: "#f29b59" },
+    etenduChiffresDroitePt: 357.4,
+    etenduChiffres: { taillePt: 35.0, graisse: 300, couleur: "#f29b59" },
+  },
+
+  alerte: {
+    texteXPt: 13.1, //            V4731 img 706
+    baselinePt: 23.5,
+    texte: { taillePt: 15.0, graisse: 500, couleur: "#ffffff" },
+    valeurCouleur: "#8ff8c2",
+    valeurDroitePt: 71.0,
+    batterieLargeurPt: 33.3,
+    batterieHauteurPt: 17.6,
+    batterieDroitePt: 14.06,
+    batterieCouleur: "#5cfd8b",
+    batterieFaibleCouleur: "#d33930", // même rouge que l'indicateur mesuré
+  },
+
+  indicateurs: {
+    enregistrementCouleur: "#d33930", // V4728 img 18
+    pointXPt: 11.2,
+    pointDiametrePt: 14.5,
+    confidentialiteDiametrePt: 6.0, //  estimation (non présent dans les vidéos)
+    confidentialiteDroitePt: 15.4, //   estimation : centré sur la même position que le point d'enregistrement, à droite
+    cameraCouleur: "#5cfd8b", //        vert : couleur verte mesurée (V4731)
+    microCouleur: "#f29b59", //         orange : couleur orange mesurée (V4729)
   },
 
   durees: {
-    clicLongSeuilMs: null, // MESURÉ EN PHASE 2 — vidéo V3
-    alerteAffichageMs: null, // MESURÉ EN PHASE 2 — vidéo réelle (iPhone) si disponible
-    etenduFermetureAutoMs: null, // MESURÉ EN PHASE 2 — vidéo V3
+    clicLongSeuilMs: 180, //        V4728 img 441 → 452 (gonflement → ouverture)
+    alerteAffichageMs: 3000, //     V4731 10,60 → 13,60 s (img 592 → 772)
+    etenduFermetureAutoMs: 3000, // pas d'équivalent iOS (pas de survol) : même durée que l'alerte
   },
 };
 
@@ -257,21 +448,16 @@ export const islandConfig: IslandConfig = {
 // Outils de vérification
 // ---------------------------------------------------------------------------
 
-/**
- * Liste les chemins des valeurs encore `null` (ex. "formes.repos.rayonPt").
- * En phase 2, le test de complétude exige une liste vide.
- */
 export function valeursNonMesurees(obj: unknown = islandConfig, prefixe = ""): string[] {
   if (obj === null) return [prefixe];
-  if (typeof obj !== "object") return [];
+  if (typeof obj !== "object" || Array.isArray(obj)) return [];
   return Object.entries(obj as Record<string, unknown>).flatMap(([cle, val]) =>
     valeursNonMesurees(val, prefixe ? `${prefixe}.${cle}` : cle),
   );
 }
 
-/** Liste les chemins de toutes les feuilles (valeurs finales) de la configuration. */
 export function toutesLesValeurs(obj: unknown = islandConfig, prefixe = ""): string[] {
-  if (obj === null || typeof obj !== "object") return [prefixe];
+  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) return [prefixe];
   return Object.entries(obj as Record<string, unknown>).flatMap(([cle, val]) =>
     toutesLesValeurs(val, prefixe ? `${prefixe}.${cle}` : cle),
   );

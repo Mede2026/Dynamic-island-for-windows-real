@@ -1,0 +1,1124 @@
+{
+  "appareil": "iPhone 16 Pro (402 x 874 pt), iOS 27",
+  "etats": {
+    "repos": {
+      "largeur_pt": 125.48136076367045,
+      "hauteur_pt": 36.81177584087407,
+      "marge_haut_pt": 14.061276319291856,
+      "rayon_cercle_pt": 18.641906158671905,
+      "bulle_diametre_pt": NaN,
+      "bulle_hauteur_pt": NaN,
+      "bulle_ecart_pt": NaN,
+      "centre_x_pt": 201.12820693778704,
+      "images": [
+        280,
+        338
+      ],
+      "n": 59,
+      "coin": {
+        "rayon_cercle_pt": 18.641906158671905,
+        "superellipse_etendue_pt": 22.391590095342753,
+        "superellipse_n": 2.5534505544913153,
+        "rmse_cercle_px": 0.4326894825852246,
+        "rmse_superellipse_px": 0.2593434746151598,
+        "lissage_estime": 0.18448351816377176,
+        "capsule_parfaite": false
+      },
+      "couleur_pilule": "#000000",
+      "video": "IMG_4727",
+      "fenetre_s": [
+        4.75,
+        5.8
+      ],
+      "description": "île vide (aucune activité)"
+    },
+    "compact": {
+      "largeur_pt": 172.1306350866714,
+      "hauteur_pt": 36.811180806380726,
+      "marge_haut_pt": 14.061722546926251,
+      "rayon_cercle_pt": 18.99940050804461,
+      "bulle_diametre_pt": NaN,
+      "bulle_hauteur_pt": NaN,
+      "bulle_ecart_pt": NaN,
+      "centre_x_pt": 197.80009405673985,
+      "images": [
+        0,
+        33
+      ],
+      "n": 34,
+      "coin": {
+        "rayon_cercle_pt": 18.990251564528275,
+        "superellipse_etendue_pt": 23.963515968444337,
+        "superellipse_n": 2.722203853521238,
+        "rmse_cercle_px": 0.5509455527573788,
+        "rmse_superellipse_px": 0.30713837481691975,
+        "lissage_estime": 0.2407346178404127,
+        "capsule_parfaite": false
+      },
+      "couleur_pilule": "#000000",
+      "video": "IMG_4728",
+      "fenetre_s": [
+        0.0,
+        0.55
+      ],
+      "description": "compact : indicateur d'enregistrement seul"
+    },
+    "split": {
+      "largeur_pt": 159.4890939492777,
+      "hauteur_pt": 36.817924530638585,
+      "marge_haut_pt": 14.062565560694093,
+      "rayon_cercle_pt": 19.014565770204882,
+      "bulle_diametre_pt": 36.83402362645391,
+      "bulle_hauteur_pt": 36.78251944769311,
+      "bulle_ecart_pt": 7.839369925389841,
+      "centre_x_pt": 184.12429088318203,
+      "images": [
+        400,
+        440
+      ],
+      "n": 41,
+      "coin": {
+        "rayon_cercle_pt": 19.012318465419074,
+        "superellipse_etendue_pt": 24.291925489380617,
+        "superellipse_n": 2.7670716050764215,
+        "rmse_cercle_px": 0.5732174136480839,
+        "rmse_superellipse_px": 0.3084276091537518,
+        "lissage_estime": 0.25569053502547384,
+        "capsule_parfaite": false
+      },
+      "couleur_pilule": "#000000",
+      "video": "IMG_4728",
+      "fenetre_s": [
+        6.7,
+        7.4
+      ],
+      "description": "split : musique (île) + enregistrement (bulle)"
+    },
+    "etendu": {
+      "largeur_pt": 374.2449143248868,
+      "hauteur_pt": 204.7141263951858,
+      "marge_haut_pt": 14.090871037046114,
+      "rayon_cercle_pt": 50.8404099047101,
+      "bulle_diametre_pt": NaN,
+      "bulle_hauteur_pt": NaN,
+      "bulle_ecart_pt": NaN,
+      "centre_x_pt": 201.14755254050334,
+      "images": [
+        177,
+        437
+      ],
+      "n": 261,
+      "coin": {
+        "rayon_cercle_pt": 50.832429484495485,
+        "superellipse_etendue_pt": 69.46302410103802,
+        "superellipse_n": 3.1193479785681273,
+        "rmse_cercle_px": 2.145011789787339,
+        "rmse_superellipse_px": 0.4935135073462097,
+        "lissage_estime": 0.3731159928560424,
+        "capsule_parfaite": false
+      },
+      "couleur_pilule": "#000000",
+      "video": "IMG_4730",
+      "fenetre_s": [
+        2.95,
+        7.3
+      ],
+      "description": "étendu : lecteur de musique"
+    },
+    "alerte": {
+      "largeur_pt": 340.1595381878945,
+      "hauteur_pt": 36.81455266850966,
+      "marge_haut_pt": 14.061301136513551,
+      "rayon_cercle_pt": 18.93082314255084,
+      "bulle_diametre_pt": NaN,
+      "bulle_hauteur_pt": NaN,
+      "bulle_ecart_pt": NaN,
+      "centre_x_pt": 201.14883279764513,
+      "images": [
+        634,
+        753
+      ],
+      "n": 120,
+      "coin": {
+        "rayon_cercle_pt": 18.915401410888425,
+        "superellipse_etendue_pt": 23.47780944941455,
+        "superellipse_n": 2.6590884027882944,
+        "rmse_cercle_px": 0.49553903684491446,
+        "rmse_superellipse_px": 0.2971312172449193,
+        "lissage_estime": 0.2196961342627648,
+        "capsule_parfaite": false
+      },
+      "couleur_pilule": "#000000",
+      "video": "IMG_4731",
+      "fenetre_s": [
+        11.3,
+        13.3
+      ],
+      "description": "alerte : « En charge 98 % »"
+    },
+    "etenduMinuteur": {
+      "largeur_pt": 374.210946817714,
+      "hauteur_pt": 88.3312434527609,
+      "marge_haut_pt": 14.058896133082884,
+      "rayon_cercle_pt": 46.34223084678519,
+      "bulle_diametre_pt": NaN,
+      "bulle_hauteur_pt": NaN,
+      "bulle_ecart_pt": NaN,
+      "centre_x_pt": 201.148882307561,
+      "images": [
+        1099,
+        1200
+      ],
+      "n": 102,
+      "coin": {
+        "rayon_cercle_pt": 46.34223158702016,
+        "superellipse_etendue_pt": 62.96221601336914,
+        "superellipse_n": 3.0843857348071393,
+        "rmse_cercle_px": 2.498745209539563,
+        "rmse_superellipse_px": 0.8374680371652463,
+        "lissage_estime": 0.3614619116023798,
+        "capsule_parfaite": false
+      },
+      "couleur_pilule": "#000000",
+      "video": "IMG_4729",
+      "fenetre_s": [
+        18.6,
+        20.3
+      ],
+      "description": "étendu : minuteur"
+    },
+    "appui": {
+      "largeur_pt": 176.0927837275597,
+      "hauteur_pt": 40.35421886576547,
+      "marge_haut_pt": 12.295682793193393,
+      "rayon_cercle_pt": 20.353430631723896,
+      "bulle_diametre_pt": 38.26517325532006,
+      "bulle_hauteur_pt": 36.80443684094482,
+      "bulle_ecart_pt": -2.5007279806108476,
+      "centre_x_pt": 184.73559866863562,
+      "images": [
+        452,
+        452
+      ],
+      "n": 1,
+      "coin": {
+        "rayon_cercle_pt": 20.353430631723896,
+        "superellipse_etendue_pt": 24.222389760383354,
+        "superellipse_n": 2.530665611033478,
+        "rmse_cercle_px": 0.4530474092868564,
+        "rmse_superellipse_px": 0.21050197067478285,
+        "lissage_estime": 0.17688853701115934,
+        "capsule_parfaite": false
+      },
+      "couleur_pilule": "#000000",
+      "video": "IMG_4728",
+      "fenetre_s": [
+        7.58,
+        7.6
+      ],
+      "description": "appui long : île gonflée juste avant l'ouverture"
+    }
+  },
+  "transitions": {
+    "apparition": {
+      "video": "IMG_4727",
+      "fenetre_s": [
+        5.84,
+        6.6
+      ],
+      "images": [
+        341,
+        385
+      ],
+      "n": 45,
+      "largeur": {
+        "t0_s": 5.848298623860831,
+        "omega0": 13.684365247742692,
+        "zeta": 0.8465340262609448,
+        "x0": 126.19884585796395,
+        "x1": 172.31875569953564,
+        "stiffness": 187.2618522336279,
+        "damping": 23.168561619993945,
+        "mass": 1.0,
+        "response": 0.4591506579536841,
+        "dampingFraction": 0.8465340262609448,
+        "rmse": 0.6427687944670869,
+        "erreur_relative": 0.013936904835137083,
+        "incertitude_omega0": 0.6736552495183371,
+        "incertitude_zeta": 0.028254850738740896,
+        "n_points": 45,
+        "v0": 1.2188752810672692
+      },
+      "description": "repos → compact (126 → 172 pt)"
+    },
+    "disparition": {
+      "video": "IMG_4727",
+      "fenetre_s": [
+        18.05,
+        18.7
+      ],
+      "images": [
+        762,
+        800
+      ],
+      "n": 39,
+      "largeur": {
+        "t0_s": 18.14084472806923,
+        "omega0": 10.654775137009342,
+        "zeta": 0.33311431554382936,
+        "x0": 165.57168055557742,
+        "x1": 173.5605233914881,
+        "stiffness": 113.52423322023243,
+        "damping": 7.098516254076555,
+        "mass": 1.0,
+        "response": 0.5897060450722187,
+        "dampingFraction": 0.33311431554382936,
+        "rmse": 11.598966984329923,
+        "erreur_relative": 1.4518957529357528,
+        "incertitude_omega0": 1.3159312048509577,
+        "incertitude_zeta": 0.3085833426053496,
+        "n_points": 39,
+        "v0": -473.25476689510987
+      },
+      "description": "compact → repos"
+    },
+    "ouvrir": {
+      "video": "IMG_4730",
+      "fenetre_s": [
+        2.44,
+        3.4
+      ],
+      "images": [
+        147,
+        203
+      ],
+      "n": 57,
+      "largeur": {
+        "t0_s": 2.4592407385355632,
+        "omega0": 12.083849091047238,
+        "zeta": 0.8177521188850346,
+        "x0": 136.6436747796483,
+        "x1": 374.27160935211845,
+        "stiffness": 146.01940885520315,
+        "damping": 19.76318639698176,
+        "mass": 1.0,
+        "response": 0.5199655556634445,
+        "dampingFraction": 0.8177521188850346,
+        "rmse": 1.2086379966917609,
+        "erreur_relative": 0.00508626226485657,
+        "incertitude_omega0": 0.2283511329300553,
+        "incertitude_zeta": 0.008292319878216802,
+        "n_points": 57,
+        "v0": 491.10381993241464
+      },
+      "hauteur": {
+        "t0_s": 2.452002979706558,
+        "omega0": 11.98618390037477,
+        "zeta": 0.8161803061186266,
+        "x0": 37.68029159194009,
+        "x1": 204.6511570151134,
+        "stiffness": 143.66860449360334,
+        "damping": 19.565774490004067,
+        "mass": 1.0,
+        "response": 0.5242023115449722,
+        "dampingFraction": 0.8161803061186266,
+        "rmse": 0.767683962622113,
+        "erreur_relative": 0.004597712065973211,
+        "incertitude_omega0": 0.21422098075851065,
+        "incertitude_zeta": 0.0075435530492931075,
+        "n_points": 57,
+        "v0": 268.19588476724726
+      },
+      "rayon": {
+        "t0_s": 2.4618317177920015,
+        "omega0": 11.194155721664666,
+        "zeta": 0.7924301475406981,
+        "x0": 19.47461203281677,
+        "x1": 50.85782866320466,
+        "stiffness": 125.30912232087778,
+        "damping": 17.741172940224562,
+        "mass": 1.0,
+        "response": 0.5612915760158126,
+        "dampingFraction": 0.7924301475406981,
+        "rmse": 0.1506940257315518,
+        "erreur_relative": 0.004801739334317856,
+        "incertitude_omega0": 0.20973476547074812,
+        "incertitude_zeta": 0.006611272299145011,
+        "n_points": 57,
+        "v0": 111.67549024811834
+      },
+      "description": "contraction → étendu (musique)"
+    },
+    "ouvrir_b": {
+      "video": "IMG_4731",
+      "fenetre_s": [
+        1.89,
+        2.8
+      ],
+      "images": [
+        114,
+        167
+      ],
+      "n": 54,
+      "largeur": {
+        "t0_s": 1.9206813409512484,
+        "omega0": 12.30617190960032,
+        "zeta": 0.8279634810620894,
+        "x0": 138.56588855774802,
+        "x1": 374.4307977073714,
+        "stiffness": 151.441867068636,
+        "damping": 20.37812186564236,
+        "mass": 1.0,
+        "response": 0.5105718783497517,
+        "dampingFraction": 0.8279634810620894,
+        "rmse": 0.5808789756376611,
+        "erreur_relative": 0.002462761322707713,
+        "incertitude_omega0": 0.13345155405481274,
+        "incertitude_zeta": 0.004497806526450436,
+        "n_points": 54,
+        "v0": 560.0293174143947
+      },
+      "hauteur": {
+        "t0_s": 1.9106684672341314,
+        "omega0": 12.170548264486339,
+        "zeta": 0.8255698860177996,
+        "x0": 37.901151666364164,
+        "x1": 204.7651890823487,
+        "stiffness": 148.12224505819142,
+        "damping": 20.09527628697223,
+        "mass": 1.0,
+        "response": 0.5162614839229488,
+        "dampingFraction": 0.8255698860177996,
+        "rmse": 0.403026378800318,
+        "erreur_relative": 0.0024152980177244024,
+        "incertitude_omega0": 0.10595205452313358,
+        "incertitude_zeta": 0.004202291155098765,
+        "n_points": 54,
+        "v0": 265.0564929839219
+      },
+      "rayon": {
+        "t0_s": 1.9222510898717053,
+        "omega0": 11.672178768279919,
+        "zeta": 0.8020477409158707,
+        "x0": 19.69432228267477,
+        "x1": 50.87633993795524,
+        "stiffness": 136.23975719868452,
+        "damping": 18.7232892253302,
+        "mass": 1.0,
+        "response": 0.5383044101633061,
+        "dampingFraction": 0.8020477409158707,
+        "rmse": 0.11203736701414241,
+        "erreur_relative": 0.0035930121088610704,
+        "incertitude_omega0": 0.18072796189325305,
+        "incertitude_zeta": 0.005603680547133402,
+        "n_points": 54,
+        "v0": 100.13061999880827
+      },
+      "description": "contraction → étendu (musique), 2e essai"
+    },
+    "ouvrir_c": {
+      "video": "IMG_4728",
+      "fenetre_s": [
+        9.09,
+        10.0
+      ],
+      "images": [
+        543,
+        596
+      ],
+      "n": 54,
+      "largeur": {
+        "t0_s": 9.097106477993416,
+        "omega0": 11.722273859425027,
+        "zeta": 0.8041931283966108,
+        "x0": 134.0457098435901,
+        "x1": 374.0741828781094,
+        "stiffness": 137.4117044353593,
+        "damping": 18.85394417386565,
+        "mass": 1.0,
+        "response": 0.5360039683877318,
+        "dampingFraction": 0.8041931283966108,
+        "rmse": 1.6318056024495435,
+        "erreur_relative": 0.006798383466010168,
+        "incertitude_omega0": 0.2620925418477846,
+        "incertitude_zeta": 0.010545311260805292,
+        "n_points": 54,
+        "v0": 387.8473311100964
+      },
+      "hauteur": {
+        "t0_s": 9.100030347189168,
+        "omega0": 11.602393588726985,
+        "zeta": 0.8021508027714424,
+        "x0": 38.15740131472991,
+        "x1": 204.50333036455564,
+        "stiffness": 134.61553698773304,
+        "damping": 18.613738662535173,
+        "mass": 1.0,
+        "response": 0.541542161893594,
+        "dampingFraction": 0.8021508027714424,
+        "rmse": 1.1520649883368252,
+        "erreur_relative": 0.006925717959660717,
+        "incertitude_omega0": 0.27439398576195395,
+        "incertitude_zeta": 0.01058365328829107,
+        "n_points": 54,
+        "v0": 390.4195902862851
+      },
+      "rayon": {
+        "t0_s": 9.097052588036973,
+        "omega0": 11.363656069361214,
+        "zeta": 0.7810929009084828,
+        "x0": 19.068913810586597,
+        "x1": 50.83537211344236,
+        "stiffness": 129.13267926272997,
+        "damping": 17.75214216828728,
+        "mass": 1.0,
+        "response": 0.5529193482122681,
+        "dampingFraction": 0.7810929009084828,
+        "rmse": 0.23332515797679906,
+        "erreur_relative": 0.007345016424315185,
+        "incertitude_omega0": 0.2686513289000139,
+        "incertitude_zeta": 0.010217182230062556,
+        "n_points": 54,
+        "v0": 66.03173218589474
+      },
+      "description": "contraction → étendu (musique), 3e essai"
+    },
+    "fermer": {
+      "video": "IMG_4730",
+      "fenetre_s": [
+        7.44,
+        7.81
+      ],
+      "images": [
+        447,
+        467
+      ],
+      "n": 21,
+      "largeur": {
+        "t0_s": 7.438229022753426,
+        "omega0": 16.09002993174432,
+        "zeta": 0.7423101541952871,
+        "x0": 368.920704332942,
+        "x1": 212.41034702489566,
+        "stiffness": 258.88906320442806,
+        "damping": 23.88758519927982,
+        "mass": 1.0,
+        "response": 0.39050177866875024,
+        "dampingFraction": 0.7423101541952871,
+        "rmse": 1.7922841564872254,
+        "erreur_relative": 0.01145153705680718,
+        "incertitude_omega0": 1.1714257275490387,
+        "incertitude_zeta": 0.0538494126203653,
+        "n_points": 21,
+        "v0": 21.028837317258095
+      },
+      "hauteur": {
+        "t0_s": 7.457967386415692,
+        "omega0": 5.1608700579148605,
+        "zeta": 0.31220436219745745,
+        "x0": 198.5740139027015,
+        "x1": 137.26822414022246,
+        "stiffness": 26.634579754682136,
+        "damping": 3.222492289630529,
+        "mass": 1.0,
+        "response": 1.2174662870155992,
+        "dampingFraction": 0.31220436219745745,
+        "rmse": 0.990928786781932,
+        "erreur_relative": 0.016163706407195,
+        "incertitude_omega0": 2.8037810856685015,
+        "incertitude_zeta": 0.27453480626917326,
+        "n_points": 21,
+        "v0": -884.8148227328138
+      },
+      "rayon": {
+        "t0_s": 7.439753130345993,
+        "omega0": 8.574120833700919,
+        "zeta": 0.5383779358984954,
+        "x0": 51.80952811220129,
+        "x1": 25.40885435844928,
+        "stiffness": 73.51554807090413,
+        "damping": 9.232234953184374,
+        "mass": 1.0,
+        "response": 0.7328081128135353,
+        "dampingFraction": 0.5383779358984954,
+        "rmse": 0.22152718930029414,
+        "erreur_relative": 0.008390967267220259,
+        "incertitude_omega0": 1.4397866901580052,
+        "incertitude_zeta": 0.13961809561112523,
+        "n_points": 21,
+        "v0": -122.89750966360734
+      },
+      "description": "étendu → compact fusionné"
+    },
+    "fermer_b": {
+      "video": "IMG_4731",
+      "fenetre_s": [
+        3.39,
+        3.74
+      ],
+      "images": [
+        204,
+        224
+      ],
+      "n": 21,
+      "largeur": {
+        "t0_s": 3.3969193642895212,
+        "omega0": 17.58850689299602,
+        "zeta": 0.7418368897946044,
+        "x0": 363.17284627109524,
+        "x1": 212.095211504483,
+        "stiffness": 309.3555747249685,
+        "damping": 26.095606499262253,
+        "mass": 1.0,
+        "response": 0.35723244419807093,
+        "dampingFraction": 0.7418368897946044,
+        "rmse": 2.0841882987350946,
+        "erreur_relative": 0.013795478741474807,
+        "incertitude_omega0": 1.2807839409207062,
+        "incertitude_zeta": 0.053666037981772136,
+        "n_points": 21,
+        "v0": -216.34537189302125
+      },
+      "hauteur": {
+        "t0_s": 3.3812218135186627,
+        "omega0": 13.742061259855783,
+        "zeta": 0.9709935186785168,
+        "x0": 201.52288289524182,
+        "x1": 34.02228132850632,
+        "stiffness": 188.8442476696291,
+        "damping": 26.686904833206196,
+        "mass": 1.0,
+        "response": 0.45722291498833895,
+        "dampingFraction": 0.9709935186785168,
+        "rmse": 0.655413357079481,
+        "erreur_relative": 0.003912901511690103,
+        "incertitude_omega0": 0.778720754032893,
+        "incertitude_zeta": 0.06082715277764764,
+        "n_points": 21,
+        "v0": -18.16547092409774
+      },
+      "rayon": {
+        "t0_s": 3.3957086675499752,
+        "omega0": 13.853101641266951,
+        "zeta": 0.9369580208598253,
+        "x0": 50.06074245466802,
+        "x1": 20.142224145588457,
+        "stiffness": 191.9084250832731,
+        "damping": 25.95954939314296,
+        "mass": 1.0,
+        "response": 0.45355801681716024,
+        "dampingFraction": 0.9369580208598253,
+        "rmse": 0.15090109783445335,
+        "erreur_relative": 0.005043735664832654,
+        "incertitude_omega0": 0.8579724736235215,
+        "incertitude_zeta": 0.0664827987938997,
+        "n_points": 21,
+        "v0": -72.60011362392899
+      },
+      "description": "étendu → compact fusionné, 2e essai"
+    },
+    "fermer_hauteur": {
+      "video": "IMG_4731",
+      "fenetre_s": [
+        3.39,
+        4.2
+      ],
+      "images": [
+        204,
+        252
+      ],
+      "n": 49,
+      "largeur": {
+        "t0_s": 3.423782238880664,
+        "omega0": 6.8017879525461415,
+        "zeta": 1.3295746968193378,
+        "x0": 357.15597892156336,
+        "x1": 151.51613386491042,
+        "stiffness": 46.26431935140183,
+        "damping": 18.086970309671923,
+        "mass": 1.0,
+        "response": 0.9237549525235604,
+        "dampingFraction": 1.3295746968193378,
+        "rmse": 10.97266084387034,
+        "erreur_relative": 0.05335863213108051,
+        "incertitude_omega0": 5.95078488183756,
+        "incertitude_zeta": 0.2671726687415071,
+        "n_points": 49,
+        "v0": -1955.6297113667922
+      },
+      "hauteur": {
+        "t0_s": 3.3952993339122908,
+        "omega0": 13.354460825881954,
+        "zeta": 0.8873772147872296,
+        "x0": 198.3246180852628,
+        "x1": 39.57536727460213,
+        "stiffness": 178.34162395001573,
+        "damping": 23.70088850531259,
+        "mass": 1.0,
+        "response": 0.4704933721474025,
+        "dampingFraction": 0.8873772147872296,
+        "rmse": 1.2165718428155625,
+        "erreur_relative": 0.007663480845440719,
+        "incertitude_omega0": 0.49991105226470467,
+        "incertitude_zeta": 0.019335132820948134,
+        "n_points": 49,
+        "v0": -385.98324533928127
+      },
+      "rayon": {
+        "t0_s": 3.3858698013699295,
+        "omega0": 14.396652279783833,
+        "zeta": 0.9418190907596563,
+        "x0": 50.23714252237518,
+        "x1": 20.393075151118108,
+        "stiffness": 207.26359686500504,
+        "damping": 27.118083920257885,
+        "mass": 1.0,
+        "response": 0.4364337753716956,
+        "dampingFraction": 0.9418190907596563,
+        "rmse": 0.49870024029675325,
+        "erreur_relative": 0.016710196840563806,
+        "incertitude_omega0": 1.3002538549843121,
+        "incertitude_zeta": 0.05330707974727864,
+        "n_points": 49,
+        "v0": -5.476527268050718
+      },
+      "description": "étendu → compact : hauteur seule (fenêtre longue)"
+    },
+    "fermer_hauteur_b": {
+      "video": "IMG_4730",
+      "fenetre_s": [
+        7.44,
+        8.25
+      ],
+      "images": [
+        447,
+        493
+      ],
+      "n": 47,
+      "largeur": {
+        "t0_s": 7.474960134315511,
+        "omega0": 8.511288987632216,
+        "zeta": 1.2533159947736945,
+        "x0": 360.41470898394886,
+        "x1": 155.5440135334,
+        "stiffness": 72.44204023098943,
+        "damping": 21.334669248681326,
+        "mass": 1.0,
+        "response": 0.7382178323764713,
+        "dampingFraction": 1.2533159947736945,
+        "rmse": 9.467761195623975,
+        "erreur_relative": 0.04621335020512623,
+        "incertitude_omega0": 6.239826727514507,
+        "incertitude_zeta": 0.17590335411957714,
+        "n_points": 47,
+        "v0": -1890.538299832873
+      },
+      "hauteur": {
+        "t0_s": 7.441427264875744,
+        "omega0": 12.174823583075892,
+        "zeta": 0.849599203809423,
+        "x0": 202.2608266138936,
+        "x1": 40.012097035036085,
+        "stiffness": 148.2263292790209,
+        "damping": 20.68744084540293,
+        "mass": 1.0,
+        "response": 0.516080193220523,
+        "dampingFraction": 0.849599203809423,
+        "rmse": 1.5435924242316525,
+        "erreur_relative": 0.009513741206099382,
+        "incertitude_omega0": 0.5558194188148162,
+        "incertitude_zeta": 0.021584967990403034,
+        "n_points": 47,
+        "v0": -326.5658945042762
+      },
+      "rayon": {
+        "t0_s": 7.44531261834515,
+        "omega0": 12.7359752174554,
+        "zeta": 0.8802692690711428,
+        "x0": 50.365256190476885,
+        "x1": 20.537274452294838,
+        "stiffness": 162.20506473963812,
+        "damping": 22.422175191155308,
+        "mass": 1.0,
+        "response": 0.49334151487418987,
+        "dampingFraction": 0.8802692690711428,
+        "rmse": 0.553568221167796,
+        "erreur_relative": 0.01855868848341111,
+        "incertitude_omega0": 1.221947485546444,
+        "incertitude_zeta": 0.048251473833400615,
+        "n_points": 47,
+        "v0": -59.41433417699638
+      },
+      "description": "étendu → compact : hauteur seule, 2e essai"
+    },
+    "retrait": {
+      "video": "IMG_4731",
+      "fenetre_s": [
+        10.6,
+        10.81
+      ],
+      "images": [
+        592,
+        604
+      ],
+      "n": 13,
+      "largeur": {
+        "t0_s": 10.599489877862144,
+        "omega0": 11.908150564331168,
+        "zeta": 0.7575702167272926,
+        "x0": 172.32854948969754,
+        "x1": 128.26463653520491,
+        "stiffness": 141.80404986278072,
+        "damping": 18.042520407683188,
+        "mass": 1.0,
+        "response": 0.5276373751940788,
+        "dampingFraction": 0.7575702167272926,
+        "rmse": 0.032330001451179785,
+        "erreur_relative": 0.0007337070015676744,
+        "incertitude_omega0": 0.22648906545530448,
+        "incertitude_zeta": 0.05799982405433162,
+        "n_points": 13,
+        "v0": -78.41667141339308
+      },
+      "description": "compact → rétraction avant changement d'activité"
+    },
+    "alerteEntree": {
+      "video": "IMG_4731",
+      "fenetre_s": [
+        10.8,
+        11.6
+      ],
+      "images": [
+        604,
+        651
+      ],
+      "n": 48,
+      "largeur": {
+        "t0_s": 10.80005597232242,
+        "omega0": 11.713732026933894,
+        "zeta": 0.8101573201565093,
+        "x0": 135.2129437517318,
+        "x1": 339.92268658023045,
+        "stiffness": 137.21151799881682,
+        "damping": 18.979931495944477,
+        "mass": 1.0,
+        "response": 0.5363948306767121,
+        "dampingFraction": 0.8101573201565093,
+        "rmse": 0.3131435758400256,
+        "erreur_relative": 0.001529695516751103,
+        "incertitude_omega0": 0.05177119963860535,
+        "incertitude_zeta": 0.0026057099620101424,
+        "n_points": 48,
+        "v0": 46.82265511247935
+      },
+      "rayon": {
+        "t0_s": 10.890759497544444,
+        "omega0": 10.370752233546705,
+        "zeta": 0.05230916991059615,
+        "x0": 19.058498298059128,
+        "x1": 18.863721448802895,
+        "stiffness": 107.55250188961398,
+        "damping": 1.0849708813705783,
+        "mass": 1.0,
+        "response": 0.605856274037201,
+        "dampingFraction": 0.05230916991059615,
+        "rmse": 0.2690515359088679,
+        "erreur_relative": 1.3813322113806537,
+        "incertitude_omega0": 1.0612858034390962,
+        "incertitude_zeta": 0.19573911006259795,
+        "n_points": 48,
+        "v0": -2.6504001510637916
+      },
+      "description": "rétraction → alerte « En charge »"
+    },
+    "alerteSortie": {
+      "video": "IMG_4731",
+      "fenetre_s": [
+        13.6,
+        14.3
+      ],
+      "images": [
+        772,
+        813
+      ],
+      "n": 42,
+      "largeur": {
+        "t0_s": 13.600498733825802,
+        "omega0": 12.698350704675326,
+        "zeta": 0.5615927436545591,
+        "x0": 340.0075766618567,
+        "x1": 171.08465343867613,
+        "stiffness": 161.24811061892834,
+        "damping": 14.26260322425284,
+        "mass": 1.0,
+        "response": 0.4948032585732744,
+        "dampingFraction": 0.5615927436545591,
+        "rmse": 1.892333047225209,
+        "erreur_relative": 0.011202346082568454,
+        "incertitude_omega0": 0.1937885636745753,
+        "incertitude_zeta": 0.007361761791408451,
+        "n_points": 42,
+        "v0": 17.008287069623055
+      },
+      "description": "alerte → compact"
+    },
+    "compactVersSplit": {
+      "video": "IMG_4728",
+      "fenetre_s": [
+        6.3,
+        6.9
+      ],
+      "images": [
+        376,
+        410
+      ],
+      "n": 35,
+      "largeur": {
+        "t0_s": 6.309998965780927,
+        "omega0": 149.78773157929984,
+        "zeta": 0.39618304392877735,
+        "x0": 188.6440719205824,
+        "x1": 159.38818885808752,
+        "stiffness": 22436.36453167238,
+        "damping": 118.68671888054732,
+        "mass": 1.0,
+        "response": 0.04194726257572821,
+        "dampingFraction": 0.39618304392877735,
+        "rmse": 1.6198804878997874,
+        "erreur_relative": 0.05536939303590609,
+        "incertitude_omega0": 41.391081222377885,
+        "incertitude_zeta": 0.18039047541620842,
+        "n_points": 35,
+        "v0": -210.22096402799113
+      },
+      "hauteur": {
+        "t0_s": 6.287117994444226,
+        "omega0": 1.2746981872068561,
+        "zeta": 2.6011656982574616,
+        "x0": 39.31417332481703,
+        "x1": 38.818058465496286,
+        "stiffness": 1.6248554684684453,
+        "damping": 6.631402400386885,
+        "mass": 1.0,
+        "response": 4.929155285728793,
+        "dampingFraction": 2.6011656982574616,
+        "rmse": 0.032799904289140695,
+        "erreur_relative": 0.06611352930256693,
+        "incertitude_omega0": 32.4243338825538,
+        "incertitude_zeta": 61.93135619845653,
+        "n_points": 35,
+        "v0": -17.83024726205705
+      },
+      "description": "séparation de la bulle (île principale)"
+    },
+    "splitVersCompact": {
+      "video": "IMG_4731",
+      "fenetre_s": [
+        5.14,
+        5.7
+      ],
+      "images": [
+        309,
+        341
+      ],
+      "n": 33,
+      "largeur": {
+        "t0_s": 5.14928092871298,
+        "omega0": 13.181914169739889,
+        "zeta": 0.8677289392137524,
+        "x0": 129.95358232106574,
+        "x1": 172.55661975438443,
+        "stiffness": 173.76286117838927,
+        "damping": 22.87665679863025,
+        "mass": 1.0,
+        "response": 0.47665196619191524,
+        "dampingFraction": 0.8677289392137524,
+        "rmse": 0.24724974021296756,
+        "erreur_relative": 0.005803570710186034,
+        "incertitude_omega0": 0.32568717600081626,
+        "incertitude_zeta": 0.019212796578991546,
+        "n_points": 33,
+        "v0": 3.7098741943175444
+      },
+      "description": "fusion puis retour compact"
+    },
+    "appuiGonfle": {
+      "video": "IMG_4728",
+      "fenetre_s": [
+        7.42,
+        7.62
+      ],
+      "images": [
+        443,
+        454
+      ],
+      "n": 12,
+      "largeur": {
+        "t0_s": 7.577528236234015,
+        "omega0": 91.05850341520937,
+        "zeta": 0.023411892920478832,
+        "x0": 167.29361472818104,
+        "x1": 194.53825222440926,
+        "stiffness": 8291.651044217697,
+        "damping": 4.263703862911876,
+        "mass": 1.0,
+        "response": 0.06900163160522704,
+        "dampingFraction": 0.023411892920478832,
+        "rmse": 4.533599254245918,
+        "erreur_relative": 0.16640336120726712,
+        "incertitude_omega0": 11.834577235748263,
+        "incertitude_zeta": 0.26857348537726033,
+        "n_points": 12,
+        "v0": 411.2463380576296
+      },
+      "hauteur": {
+        "t0_s": 7.45196936127048,
+        "omega0": 21.00763575673422,
+        "zeta": 1.3687684449035575,
+        "x0": 37.29643555703595,
+        "x1": 42.45796209554929,
+        "stiffness": 441.32076008761817,
+        "damping": 57.509177851690936,
+        "mass": 1.0,
+        "response": 0.2990905487860739,
+        "dampingFraction": 1.3687684449035575,
+        "rmse": 0.10018647281766774,
+        "erreur_relative": 0.019410240763098763,
+        "incertitude_omega0": 9.054744825311513,
+        "incertitude_zeta": 1.2834215988715982,
+        "n_points": 12,
+        "v0": -0.0005899099683042055
+      },
+      "rayon": {
+        "t0_s": 7.458952464401031,
+        "omega0": 0.5000000001209086,
+        "zeta": 2.5392603128161007,
+        "x0": 18.900383283263707,
+        "x1": 22.30613131798833,
+        "stiffness": 0.2500000001209086,
+        "damping": 2.5392603134301375,
+        "mass": 1.0,
+        "response": 12.566370611320407,
+        "dampingFraction": 2.5392603128161007,
+        "rmse": 0.07070594705415756,
+        "erreur_relative": 0.02076076865735447,
+        "incertitude_omega0": 213432.6558829135,
+        "incertitude_zeta": 998199.0038569217,
+        "n_points": 12,
+        "v0": 14.642336672866623
+      },
+      "description": "appui long : l'île gonfle"
+    },
+    "fusionBulle": {
+      "video": "IMG_4728",
+      "fenetre_s": [
+        7.58,
+        7.92
+      ],
+      "images": [
+        452,
+        472
+      ],
+      "n": 21,
+      "largeur": {
+        "t0_s": 7.584990614042934,
+        "omega0": 13.350586769516717,
+        "zeta": 0.8289419055834508,
+        "x0": 182.98847868795735,
+        "x1": 127.79545453482235,
+        "stiffness": 178.2381670903948,
+        "damping": 22.13372167476079,
+        "mass": 1.0,
+        "response": 0.47062989931842775,
+        "dampingFraction": 0.8289419055834508,
+        "rmse": 3.134801235939936,
+        "erreur_relative": 0.05679705513585048,
+        "incertitude_omega0": 0.7121864520969946,
+        "incertitude_zeta": 0.18815994197141878,
+        "n_points": 21,
+        "v0": 1500.0877810075676
+      },
+      "hauteur": {
+        "t0_s": 7.606754175018139,
+        "omega0": 12.859887669356077,
+        "zeta": 0.8168958707312374,
+        "x0": 40.561591640898826,
+        "x1": 36.94898465374429,
+        "stiffness": 165.37671086845646,
+        "damping": 21.01037827032907,
+        "mass": 1.0,
+        "response": 0.4885878841812776,
+        "dampingFraction": 0.8168958707312374,
+        "rmse": 0.11096673997710502,
+        "erreur_relative": 0.030716526976688325,
+        "incertitude_omega0": 0.6023656304043766,
+        "incertitude_zeta": 0.18956331392996503,
+        "n_points": 21,
+        "v0": 66.66898732537494
+      },
+      "rayon": {
+        "t0_s": 7.608442543408728,
+        "omega0": 14.8805978570134,
+        "zeta": 0.6347856682927526,
+        "x0": 20.479473005977038,
+        "x1": 19.507426214196244,
+        "stiffness": 221.4321925821518,
+        "damping": 18.891980510519907,
+        "mass": 1.0,
+        "response": 0.422240112094572,
+        "dampingFraction": 0.6347856682927526,
+        "rmse": 0.08507050154343464,
+        "erreur_relative": 0.08751687908725574,
+        "incertitude_omega0": 0.7063085860353722,
+        "incertitude_zeta": 0.1594477703806377,
+        "n_points": 21,
+        "v0": 44.75418481883179
+      },
+      "description": "après gonflement : contraction avant ouverture"
+    }
+  },
+  "contenu": {
+    "ouvrir": {
+      "t0_ms": 2452.002979706558,
+      "t3_ms": 81.33035362677538,
+      "t50_ms": 197.99702029344235,
+      "t90_ms": 314.66368696010886
+    },
+    "ouvrir_b": {
+      "t0_ms": 1910.6684672341314,
+      "t3_ms": 105.9981994325351,
+      "t50_ms": 189.3315327658686,
+      "t90_ms": 305.99819943253556
+    },
+    "fermer": {
+      "t0_ms": 7438.229022753426,
+      "t3_ms": 46.77097724657415,
+      "t50_ms": 88.43764391324112,
+      "t90_ms": 121.77097724657506
+    },
+    "fermer_b": {
+      "t0_ms": 3381.2218135186627,
+      "t3_ms": 35.44485314800431,
+      "t50_ms": 102.11151981467083,
+      "t90_ms": 135.4448531480043
+    },
+    "alerteEntree": {
+      "t0_ms": 10800.05597232242,
+      "t3_ms": 84.9440276775822,
+      "t50_ms": 201.61069434424644,
+      "t90_ms": 334.9440276775822
+    },
+    "alerteSortie": {
+      "t0_ms": 13600.498733825802,
+      "t3_ms": 34.50126617420028,
+      "t50_ms": 84.50126617419846,
+      "t90_ms": 134.50126617420028
+    }
+  },
+  "flou_contenu": {
+    "flou_sigma_px_video": 12.0,
+    "flou_sigma_pt": 7.265060240963855,
+    "echelle": 0.75,
+    "opacite": 0.43728524446487427
+  }
+}

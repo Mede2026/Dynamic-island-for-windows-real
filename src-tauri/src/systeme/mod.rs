@@ -1,4 +1,4 @@
-//! Système : batterie, volume, « Ne pas déranger », notifications.
+//! Système : batterie, volume, « Ne pas déranger », notifications, presse-papiers, caméra/micro.
 //!
 //! Chaque sous-module :
 //!  - garde son dernier état dans une variable partagée (lue par les commandes) ;
@@ -6,8 +6,10 @@
 //!  - a une version Windows (`#[cfg(windows)]`) et un repli vide pour les autres systèmes.
 
 pub mod batterie;
+pub mod confidentialite;
 pub mod ne_pas_deranger;
 pub mod notifications;
+pub mod presse_papiers;
 pub mod volume;
 
 use tauri::AppHandle;
@@ -17,6 +19,8 @@ pub fn demarrer(app: &AppHandle) {
     volume::demarrer(app.clone());
     ne_pas_deranger::demarrer(app.clone());
     notifications::demarrer(app.clone());
+    presse_papiers::demarrer(app.clone());
+    confidentialite::demarrer(app.clone());
 }
 
 #[tauri::command]

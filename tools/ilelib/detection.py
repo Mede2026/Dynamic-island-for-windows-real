@@ -230,6 +230,14 @@ def mesurer_forme(gris: np.ndarray, masque: np.ndarray, seuil: float, avec_rayon
         r, _ = ajuster_cercle(d, retrait, (bas_ - haut) / 2)
         rayon = None if math.isnan(r) else r
 
+    # Bas robuste : si la forme a un bas plat (rayon nettement < demi-hauteur), des objets
+    # sombres SOUS l'île (icônes foncées) peuvent prolonger certaines colonnes. Le vrai bas
+    # est alors la médiane des colonnes centrales (le haut de l'île, lui, n'est jamais touché).
+    if rayon is not None and rayon < 0.35 * (bas_ - haut) and len(bas) >= 10:
+        n = len(bas)
+        centre = np.asarray(bas[int(n * 0.2): int(n * 0.8)])
+        bas_ = float(np.median(centre))
+
     return Forme(x=gauche, y=haut, largeur=droite - gauche, hauteur=bas_ - haut, rayon=rayon, boite=(x, y, w, h))
 
 

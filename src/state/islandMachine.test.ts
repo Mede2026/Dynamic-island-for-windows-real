@@ -96,9 +96,9 @@ describe("activités et priorités", () => {
 
     m.envoyer({ type: "ACTIVITE_DEBUT", activite: minuteur });
     expect(m.etat.mode).toBe("split");
-    // minuteur > musique : le minuteur prend l'île principale, la musique va dans la bulle.
-    expect(m.etat.principaleId).toBe("minuteur");
-    expect(m.etat.bulleId).toBe("musique");
+    // musique > minuteur (mesuré sur iPhone) : la musique garde l'île, le minuteur va dans la bulle.
+    expect(m.etat.principaleId).toBe("musique");
+    expect(m.etat.bulleId).toBe("minuteur");
     expect(m.etat.transition?.ressort).toBe("compactVersSplit");
 
     m.envoyer({ type: "ACTIVITE_FIN", id: "minuteur" });
@@ -117,8 +117,8 @@ describe("activités et priorités", () => {
     const { m } = creer();
     m.envoyer({ type: "ACTIVITE_DEBUT", activite: minuteur });
     m.envoyer({ type: "ACTIVITE_DEBUT", activite: musique });
-    expect(m.etat.principaleId).toBe("minuteur");
-    expect(m.etat.bulleId).toBe("musique");
+    expect(m.etat.principaleId).toBe("musique");
+    expect(m.etat.bulleId).toBe("minuteur");
   });
 
   it("à priorité égale, la plus récente gagne", () => {
@@ -170,7 +170,7 @@ describe("clics", () => {
     m.envoyer({ type: "ACTIVITE_DEBUT", activite: minuteur });
     effets.length = 0;
     m.envoyer({ type: "CLIC", cible: "bulle" });
-    expect(effets).toEqual([{ type: "activer", activiteId: "musique" }]);
+    expect(effets).toEqual([{ type: "activer", activiteId: "minuteur" }]);
   });
 
   it("clic au repos : rien", () => {
@@ -201,10 +201,10 @@ describe("clics", () => {
     m.envoyer({ type: "ACTIVITE_DEBUT", activite: minuteur });
     m.envoyer({ type: "CLIC_LONG", cible: "bulle" });
     expect(m.etat.mode).toBe("etendu");
-    expect(m.etat.principaleId).toBe("musique");
+    expect(m.etat.principaleId).toBe("minuteur");
     m.envoyer({ type: "CLIC_EXTERIEUR" });
     expect(m.etat.mode).toBe("split");
-    expect(m.etat.principaleId).toBe("minuteur");
+    expect(m.etat.principaleId).toBe("musique");
   });
 
   it("clic extérieur hors de l'état étendu : rien", () => {

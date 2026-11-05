@@ -6,6 +6,7 @@
 //!  - `systeme`  : batterie, volume, ne pas déranger, notifications
 //!  - `minuteur` : minuteur interne
 //!  - `demarrage`: démarrage automatique avec Windows
+//!  - `plateau`  : icône de notification, panneau de réglages (Ctrl+Alt+D)
 
 pub mod demarrage;
 pub mod evenements;
@@ -13,6 +14,7 @@ pub mod fenetre;
 pub mod journal;
 pub mod media;
 pub mod minuteur;
+pub mod plateau;
 pub mod systeme;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -25,6 +27,13 @@ pub fn run() {
             minuteur::executer_arguments(app, &args);
         }))
         .plugin(demarrage::plugin())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_shortcut(plateau::RACCOURCI_PANNEAU)
+                .expect("raccourci invalide")
+                .with_handler(plateau::gestion_raccourci)
+                .build(),
+        )
         .manage(fenetre::EtatFenetre::default())
         .manage(minuteur::EtatMinuteurApp::default())
         .invoke_handler(tauri::generate_handler![
@@ -42,6 +51,7 @@ pub fn run() {
             media::media_precedent,
             media::media_aller_a,
             media::media_choisir_source,
+            media::media_ouvrir_source,
             systeme::systeme_batterie,
             systeme::systeme_volume,
             systeme::systeme_ne_pas_deranger,
@@ -74,6 +84,9 @@ pub fn run() {
                 if let Some(f) = tauri::Manager::get_webview_window(app, fenetre::LABEL) {
                     f.open_devtools();
                 }
+            }
+            if let Err(e) = plateau::installer(handle) {
+                journal!("plateau", "icône de notification impossible : {e}");
             }
             media::demarrer(handle);
             systeme::demarrer(handle);
