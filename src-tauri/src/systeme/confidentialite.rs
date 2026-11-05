@@ -18,6 +18,12 @@ pub struct Confidentialite {
     pub micro: bool,
 }
 
+static DERNIER: std::sync::Mutex<Option<Confidentialite>> = std::sync::Mutex::new(None);
+
+pub fn dernier() -> Option<Confidentialite> {
+    *DERNIER.lock().unwrap()
+}
+
 /// Règle d'utilisation (fonction pure, testée).
 pub fn en_cours(debut: u64, fin: u64) -> bool {
     debut > 0 && fin == 0
@@ -124,6 +130,7 @@ mod win {
                     if dernier != Some(etat) {
                         journal!("confidentialite", "caméra={} micro={}", etat.camera, etat.micro);
                         let _ = app.emit(evenements::CONFIDENTIALITE, etat);
+                        *DERNIER.lock().unwrap() = Some(etat);
                         dernier = Some(etat);
                     }
                     let evts: [HANDLE; 2] = [e1, e2];

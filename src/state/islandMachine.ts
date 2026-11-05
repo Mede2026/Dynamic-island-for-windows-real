@@ -111,7 +111,9 @@ export type Evenement =
   | { type: "APPUI_DEBUT" }
   | { type: "APPUI_FIN" }
   | { type: "MINUTERIE"; nom: NomMinuterie; jeton: number }
-  | { type: "TRANSITION_FIN"; id: number };
+  | { type: "TRANSITION_FIN"; id: number }
+  /** Tout effacer (fin d'un test du panneau) : activités, alerte, état étendu. */
+  | { type: "REINITIALISER" };
 
 export type Effet =
   | { type: "demarrerMinuterie"; nom: NomMinuterie; jeton: number; delaiMs: number | null }
@@ -344,6 +346,13 @@ export function reduire(etat: EtatMachine, ev: Evenement, durees: Durees): Resul
 
     case "TRANSITION_FIN": {
       if (e.transition?.id === ev.id) e = { ...e, transition: null };
+      break;
+    }
+
+    case "REINITIALISER": {
+      e = annuler(e, "alerte", effets);
+      e = annuler(e, "fermetureEtendu", effets);
+      e = stabiliser(etat, { ...e, activites: [], alerte: null, etendueId: null, survol: false, appuye: false }, effets);
       break;
     }
   }

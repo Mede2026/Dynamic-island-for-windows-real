@@ -4,11 +4,25 @@
 use std::sync::atomic::Ordering;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_global_shortcut::{Shortcut, ShortcutEvent, ShortcutState};
 
-use crate::{fenetre, journal};
+use crate::{fenetre, journal, parametres};
+
+/// Tailles proposées dans le menu (DIP par point iPhone).
+const TAILLES: [(&str, f64); 4] = [
+    ("Petite", 0.85),
+    ("Normale", 1.0),
+    ("Grande", 1.25),
+    ("Très grande", 1.5),
+];
+
+/// Arrêter les tests : l'île efface les activités factices et revient aux vraies données.
+pub fn reinitialiser(app: &AppHandle) {
+    journal!("plateau", "arrêt des tests : réinitialisation de l'île");
+    let _ = app.emit("reinitialiser", ());
+}
 
 pub const RACCOURCI_PANNEAU: &str = "ctrl+alt+d";
 const LABEL_PANNEAU: &str = "reglages";
@@ -26,14 +40,33 @@ pub fn ouvrir_panneau(app: &AppHandle) {
         .inner_size(480.0, 780.0)
         .resizable(true)
         .build();
-    if let Err(e) = r {
-        journal!("plateau", "panneau impossible à ouvrir : {e}");
+    match r {
+        Ok(f) => {
+            // Fermer le panneau arrête les tests : l'île revient à ce qui se passe vraiment.
+            let app2 = app.clone();
+            f.on_window_event(move |ev| {
+                if let tauri::WindowEvent::Destroyed = ev {
+                    reinitialiser(&app2);
+                }
+            });
+        }
+        Err(e) => journal!("plateau", "panneau impossible à ouvrir : {e}"),
+    }
+}
+
+/// Ctrl+Alt+D : ouvre le panneau, ou le ferme s'il est déjà ouvert.
+pub fn basculer_panneau(app: &AppHandle) {
+    match app.get_webview_window(LABEL_PANNEAU) {
+        Some(f) => {
+            let _ = f.close();
+        }
+        None => ouvrir_panneau(app),
     }
 }
 
 pub fn gestion_raccourci(app: &AppHandle, _raccourci: &Shortcut, evenement: ShortcutEvent) {
     if evenement.state() == ShortcutState::Pressed {
-        ouvrir_panneau(app);
+        basculer_panneau(app);
     }
 }
 
@@ -47,7 +80,36 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         app.autolaunch().is_enabled().unwrap_or(false),
         None::<&str>,
     )?;
-    let cacher = CheckMenuItem::with_id(app, "plein-ecran", "Cacher en plein écran", true, false, None::<&str>)?;
+    let prefs = parametres::lire(app);
+    let cacher = CheckMenuItem::with_id(
+        app,
+        "plein-ecran",
+        "Cacher en plein écran",
+        true,
+        prefs.cacher_en_plein_ecran,
+        None::<&str>,
+    )?;
+    let tailles = Submenu::with_id(app, "tailles", "Taille de l'île", true)?;
+    let mut cases_tailles = Vec::new();
+    for (nom, t) in TAILLES {
+        let c = CheckMenuItem::with_id(
+            app,
+            format!("taille:{t}"),
+            nom,
+            true,
+            (prefs.taille - t).abs() < 1e-3,
+            None::<&str>,
+        )?;
+        tailles.append(&c)?;
+        cases_tailles.push((t, c));
+    }
+    let arreter = MenuItem::with_id(
+        app,
+        "arreter-tests",
+        "Arrêter les tests (réinitialiser l'île)",
+        true,
+        None::<&str>,
+    )?;
     let ecrans = Submenu::with_id(app, "ecrans", "Écran", true)?;
     ecrans.append(&MenuItem::with_id(
         app,
@@ -77,6 +139,9 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         app,
         &[
             &reglages,
+            &arreter,
+            &PredefinedMenuItem::separator(app)?,
+            &tailles,
             &ecrans,
             &auto,
             &cacher,
@@ -93,6 +158,15 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(true)
         .on_menu_event(move |app, ev| match ev.id().as_ref() {
             "reglages" => ouvrir_panneau(app),
+            "arreter-tests" => reinitialiser(app),
+            id if id.starts_with("taille:") => {
+                if let Ok(t) = id.trim_start_matches("taille:").parse::<f64>() {
+                    parametres::modifier(app, |p| p.taille = t);
+                    for (v, c) in &cases_tailles {
+                        let _ = c.set_checked((v - t).abs() < 1e-3);
+                    }
+                }
+            }
             "quitter" => app.exit(0),
             "auto" => {
                 let gestion = app.autolaunch();

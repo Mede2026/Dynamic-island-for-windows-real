@@ -16,6 +16,7 @@ import type {
   InfoEcran,
   InfoFenetre,
   NomEvenement,
+  Parametres,
   Pochette,
   RectDip,
 } from "./types";
@@ -41,7 +42,12 @@ export const backend = {
   infoFenetre: () => invoke<InfoFenetre | null>("fenetre_info"),
   choisirEcran: (id: string | null) => invoke<InfoFenetre>("fenetre_choisir_ecran", { id }),
   definirCanevas: (taille: [number, number] | null) => invoke<InfoFenetre>("fenetre_definir_canevas", { taille }),
-  zonesTouchables: (zones: RectDip[]) => invoke<void>("fenetre_zones_touchables", { zones }),
+  /**
+   * `zones` : où l'île réagit (survol, clics) ; `region` : zone d'affichage — hors de celle-ci,
+   * la fenêtre n'existe pas pour Windows et les clics passent aux applications en dessous.
+   */
+  zonesTouchables: (zones: RectDip[], region?: RectDip) =>
+    invoke<void>("fenetre_zones_touchables", { zones, region: region ?? null }),
   ecouterClicExterieur: (actif: boolean) => invoke<void>("fenetre_ecouter_clic_exterieur", { actif }),
   cacherEnPleinEcran: (actif: boolean) => invoke<void>("fenetre_cacher_en_plein_ecran", { actif }),
 
@@ -61,6 +67,15 @@ export const backend = {
   volume: () => invoke<EtatVolume | null>("systeme_volume"),
   nePasDeranger: () => invoke<EtatNePasDeranger>("systeme_ne_pas_deranger"),
   notifications: () => invoke<EtatNotifications>("notifications_etat"),
+  confidentialite: () => invoke<{ camera: boolean; micro: boolean } | null>("systeme_confidentialite"),
+
+  // Préférences mémorisées
+  parametres: () => invoke<Parametres | null>("parametres_lire"),
+  definirTaille: (taille: number) => invoke<Parametres>("parametres_definir_taille", { taille }),
+  definirClicsClassiques: (actif: boolean) => invoke<Parametres>("parametres_definir_clics_classiques", { actif }),
+  /** Arrêter le test : prévient l'île (et toutes les fenêtres). */
+  reinitialiser: () => invoke<void>("ile_reinitialiser"),
+  quitter: () => invoke<void>("app_quitter"),
 
   // Minuteur
   minuteurDemarrer: (dureeMs: number) => invoke<EtatMinuteur>("minuteur_demarrer", { dureeMs }),

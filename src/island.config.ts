@@ -33,7 +33,10 @@ export type NomTransition =
   | "alerteSortie" //     alerte  → compact / repos
   | "changementContenu" // même forme, autre activité
   | "retrait" //          1re phase « rétractation » avant un changement d'activité
-  | "contraction"; //     1re phase avant l'ouverture (après l'appui long)
+  | "contraction" //      1re phase avant l'ouverture (après l'appui long)
+  | "bosse" //            compact → split : l'île se gonfle verticalement pendant le retrait
+  | "bosseRetour" //      … puis redescend
+  | "croissanceSplit"; // … puis s'élargit et laisse la bulle se détacher
 
 export interface Taille {
   largeur: Mesure<number>;
@@ -65,6 +68,8 @@ export interface FormeEtat {
   rayonPt: Mesure<number>;
   /** Exposant n de la superellipse du coin (2 = cercle, > 2 = coin continu). */
   exposantCoins: Mesure<number>;
+  /** Décalage horizontal du centre de l'île par rapport au centre de l'écran (pt, négatif = à gauche). */
+  decalageXPt: Mesure<number>;
 }
 
 export interface ContenuAnimation {
@@ -111,6 +116,18 @@ export interface IslandConfig {
     contractionDureeMs: Mesure<number>;
     /** Après le début de la fermeture vers le mode split : moment où la bulle se détache (ms). */
     separationBulleMs: Mesure<number>;
+    /** compact → split : la « bosse » verticale (hauteur visée, début, pic) puis l'élargissement. */
+    split: {
+      bosseHauteurPt: Mesure<number>;
+      bosseDebutMs: Mesure<number>;
+      bossePicMs: Mesure<number>;
+      croissanceDebutMs: Mesure<number>;
+    };
+    /** split → compact : la bulle rentre, puis l'île se rétracte, puis s'élargit. */
+    fusion: {
+      retraitDebutMs: Mesure<number>;
+      croissanceDebutMs: Mesure<number>;
+    };
   };
 
   contenu: ContenuAnimation;
@@ -253,13 +270,20 @@ const memeRessort = (x: Ressort): RessortForme => ({ largeur: x, hauteur: x });
 
 const ISLAND_SCALE = 1.0; // choix par défaut, voir docs/mesures.md (« Facteur d'échelle »)
 
-const forme = (largeur: number, hauteur: number, rayonPt: number, exposantCoins: number): FormeEtat => ({
+const forme = (
+  largeur: number,
+  hauteur: number,
+  rayonPt: number,
+  exposantCoins: number,
+  decalageXPt = 0,
+): FormeEtat => ({
   taille: {
     pt: { largeur, hauteur },
     dip: { largeur: largeur * ISLAND_SCALE, hauteur: hauteur * ISLAND_SCALE },
   },
   rayonPt,
   exposantCoins,
+  decalageXPt,
 });
 
 // Ressorts mesurés (Apple → Framer).
@@ -288,8 +312,8 @@ export const islandConfig: IslandConfig = {
 
   formes: {
     repos: forme(125.48, 36.81, 22.39, 2.553), //    V4727 img 280–338
-    compact: forme(172.13, 36.81, 23.96, 2.722), //  V4728 img 0–33 (indicateur d'enregistrement)
-    split: forme(159.49, 36.82, 24.29, 2.767), //    V4728 img 400–440
+    compact: forme(172.13, 36.81, 23.96, 2.722, -3.33), //  V4728 img 0–33 et V4731 (décalage : 140 images)
+    split: forme(159.49, 36.82, 24.29, 2.767, -17.01), //   V4728/4730/4731/4727 : île à −17,01 pt du centre
     etendu: forme(374.24, 204.71, 69.46, 3.119), //  V4730 img 177–437
     alerte: forme(340.16, 36.81, 23.48, 2.659), //   V4731 img 634–753
   },
@@ -310,12 +334,25 @@ export const islandConfig: IslandConfig = {
     changementContenu: memeRessort(R_ALERTE_ENTREE),
     retrait: memeRessort(R_RETRAIT),
     contraction: memeRessort(R_FUSION),
+    bosse: memeRessort(r(0.24, 0.531, 685.39, 27.803)), //           V4727 img 478–486 (montée de la bosse)
+    bosseRetour: memeRessort(r(0.232, 1.4, 733.47, 75.832)), //      V4727 img 486–503 (descente)
+    croissanceSplit: memeRessort(r(0.516, 0.501, 148.27, 12.201)), // V4729 img 299–310 (élargissement, erreur 0,1 %)
   },
 
   choregraphie: {
     retraitDureeMs: 210, //     V4731 10,60 → 10,81 s (img 592 → 604)
     contractionDureeMs: 270, // V4730 2,18 → 2,45 s (img 130 → 147)
     separationBulleMs: 370, //  V4730 7,44 → 7,82 s (380 ms) et V4731 3,39 → 3,75 s (360 ms)
+    split: {
+      bosseHauteurPt: 52.7, //    V4727 img 478–486 (cible ; pic mesuré 55 avec le dépassement, V4729 img 293 : 55)
+      bosseDebutMs: 85, //        V4727 img 474 → 478 (+85 ms), V4729 img 282 → 286 (+79 ms)
+      bossePicMs: 210, //         V4727 img 486 (+220 ms), V4729 img 293 (+200 ms)
+      croissanceDebutMs: 315, //  largeur minimale : V4727 img 492 (+320 ms), V4729 img 299 (+300 ms)
+    },
+    fusion: {
+      retraitDebutMs: 110, //     V4731 img 290 → 296 : la bulle rentre dans l'île
+      croissanceDebutMs: 330, //  V4731 img 290 → 309 : largeur minimale
+    },
   },
 
   contenu: {

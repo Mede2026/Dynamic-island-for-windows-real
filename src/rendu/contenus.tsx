@@ -55,6 +55,27 @@ function couleurPochette(d: Donnees, defaut: string): string {
   return c ? `rgb(${c[0]}, ${c[1]}, ${c[2]})` : defaut;
 }
 
+/**
+ * URL d'image de la pochette, créée UNE fois par pochette (et non un long « data: » base64
+ * décodé à chaque apparition du contenu, ce qui provoquait des saccades au début des animations).
+ */
+const urlsPochettes = new Map<string, string>();
+function urlPochette(id: string, pngBase64: string): string {
+  let url = urlsPochettes.get(id);
+  if (!url) {
+    const octets = Uint8Array.from(atob(pngBase64), (c) => c.charCodeAt(0));
+    url = URL.createObjectURL(new Blob([octets], { type: "image/png" }));
+    // On garde les 4 dernières pochettes (changement de piste aller-retour).
+    if (urlsPochettes.size >= 4) {
+      const [ancienne, u] = urlsPochettes.entries().next().value as [string, string];
+      URL.revokeObjectURL(u);
+      urlsPochettes.delete(ancienne);
+    }
+    urlsPochettes.set(id, url);
+  }
+  return url;
+}
+
 function Pochette({ d, taille, rayon, style }: { d: Donnees; taille: number; rayon: number; style?: CSSProperties }) {
   const p = d.pochette;
   return (
@@ -69,7 +90,9 @@ function Pochette({ d, taille, rayon, style }: { d: Donnees; taille: number; ray
         ...style,
       }}
     >
-      {p && <img src={`data:image/png;base64,${p.pngBase64}`} width={taille} height={taille} alt="" draggable={false} />}
+      {p && (
+        <img src={urlPochette(p.id, p.pngBase64)} width={taille} height={taille} alt="" draggable={false} decoding="async" />
+      )}
     </div>
   );
 }

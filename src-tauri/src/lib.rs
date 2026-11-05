@@ -8,14 +8,30 @@
 //!  - `demarrage`: démarrage automatique avec Windows
 //!  - `plateau`  : icône de notification, panneau de réglages (Ctrl+Alt+D)
 
+use tauri::Manager;
+
 pub mod demarrage;
 pub mod evenements;
 pub mod fenetre;
 pub mod journal;
 pub mod media;
 pub mod minuteur;
+pub mod parametres;
 pub mod plateau;
 pub mod systeme;
+
+/// Arrêter les tests du panneau : l'île efface les activités factices.
+#[tauri::command]
+fn ile_reinitialiser(app: tauri::AppHandle) {
+    plateau::reinitialiser(&app);
+}
+
+/// Quitter complètement l'application.
+#[tauri::command]
+fn app_quitter(app: tauri::AppHandle) {
+    journal!("app", "fermeture demandée");
+    app.exit(0);
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -61,6 +77,12 @@ pub fn run() {
             minuteur::minuteur_reprendre,
             minuteur::minuteur_annuler,
             minuteur::minuteur_etat,
+            systeme::systeme_confidentialite,
+            parametres::parametres_lire,
+            parametres::parametres_definir_taille,
+            parametres::parametres_definir_clics_classiques,
+            ile_reinitialiser,
+            app_quitter,
             demarrage::demarrage_auto_etat,
             demarrage::demarrage_auto_definir,
         ])
@@ -75,7 +97,15 @@ pub fn run() {
                     ""
                 }
             );
-            if let Err(e) = fenetre::initialiser(handle) {
+            // Préférences mémorisées (taille, écran, plein écran) AVANT de placer la fenêtre.
+            let prefs = parametres::charger(handle);
+            {
+                let etat = handle.state::<fenetre::EtatFenetre>();
+                *etat.ecran_choisi.lock().unwrap() = prefs.ecran.clone();
+                etat.cacher_en_plein_ecran
+                    .store(prefs.cacher_en_plein_ecran, std::sync::atomic::Ordering::Relaxed);
+            }
+            if let Err(e) = fenetre::initialiser(handle, prefs.clics_classiques) {
                 journal!("fenetre", "initialisation impossible : {e}");
             }
             // Mode développement : `ILE_DEVTOOLS=1` ouvre la console de la page (journal du front-end).

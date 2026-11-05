@@ -19,14 +19,23 @@ function cheminsNumeriques(obj: unknown, prefixe = ""): string[] {
   if (typeof obj === "number") return [prefixe];
   if (obj === null || typeof obj !== "object" || Array.isArray(obj)) return [];
   return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) =>
-    // Les tailles « dip » sont calculées (pt × ISLAND_SCALE) : pas de curseur.
-    k === "dip" ? [] : cheminsNumeriques(v, prefixe ? `${prefixe}.${k}` : k),
+    // Les tailles « dip » sont calculées (pt × ISLAND_SCALE) : pas de curseur ; la taille de
+    // l'île a son propre réglage (mémorisé) en haut du panneau.
+    k === "dip" || k === "ISLAND_SCALE" ? [] : cheminsNumeriques(v, prefixe ? `${prefixe}.${k}` : k),
   );
 }
 
 async function envoyer(nom: "config-direct" | "declencher", donnees: unknown) {
   if (dansTauri()) await emitTo("ile", nom, donnees);
 }
+
+/** Tailles proposées (DIP par point iPhone). 1,0 = taille mesurée par défaut. */
+const TAILLES: [string, number][] = [
+  ["Petite", 0.85],
+  ["Normale", 1.0],
+  ["Grande", 1.25],
+  ["Très grande", 1.5],
+];
 
 const BOUCLES: Record<string, NomScenario[]> = {
   "Ouvrir / fermer (V3)": ["musique", "etendre", "fermer"],
@@ -52,6 +61,8 @@ export function Panneau() {
   const [auto, setAuto] = useState(false);
   const [cacher, setCacher] = useState(false);
   const [message, setMessage] = useState("");
+  const [taille, setTaille] = useState(1);
+  const [clicsClassiques, setClicsClassiques] = useState(false);
   const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -59,7 +70,25 @@ export function Panneau() {
     document.documentElement.style.overflow = "auto";
     void backend.ecrans().then((e) => e && setEcrans(e));
     void backend.demarrageAuto().then((a) => setAuto(Boolean(a)));
+    void backend.parametres().then((p) => {
+      if (!p) return;
+      setTaille(p.taille);
+      setCacher(p.cacherEnPleinEcran);
+      setClicsClassiques(p.clicsClassiques);
+    });
   }, []);
+
+  const changerTaille = (t: number) => {
+    setTaille(t);
+    void backend.definirTaille(t);
+  };
+
+  const arreterTest = () => {
+    setBoucle(null);
+    setSurcharges({});
+    void backend.reinitialiser();
+    setMessage("Test arrêté : l'île affiche de nouveau ce qui se passe vraiment sur ton PC.");
+  };
 
   useEffect(() => {
     void envoyer("config-direct", surcharges);
@@ -85,8 +114,40 @@ export function Panneau() {
 
   return (
     <div style={style.page}>
+      <div style={{ ...style.section, display: "flex", gap: 8 }}>
+        <button
+          style={{ ...style.bouton, flex: 1, margin: 0, padding: "10px 12px", background: "#ff3b30", color: "#fff", fontWeight: 600 }}
+          onClick={arreterTest}
+        >
+          Arrêter le test (tout remettre comme avant)
+        </button>
+        <button style={{ ...style.bouton, margin: 0 }} onClick={() => void backend.quitter()} title="Fermer complètement l'île">
+          Quitter l'île
+        </button>
+      </div>
+      {message && <p style={{ color: "#52514e", margin: "0 0 12px", whiteSpace: "pre-wrap" }}>{message}</p>}
+
       <div style={style.section}>
-        <p style={style.titre}>Déclencher</p>
+        <p style={style.titre}>Taille de l'île</p>
+        <div style={{ marginBottom: 8 }}>
+          {TAILLES.map(([nom, t]) => (
+            <button
+              key={nom}
+              style={{ ...style.bouton, background: Math.abs(taille - t) < 0.001 ? "#0a84ff" : "#e8e8ed", color: Math.abs(taille - t) < 0.001 ? "#fff" : undefined }}
+              onClick={() => changerTaille(t)}
+            >
+              {nom}
+            </button>
+          ))}
+        </div>
+        <input type="range" min={0.6} max={2} step={0.05} value={taille} onChange={(e) => changerTaille(Number(e.target.value))} style={{ width: "100%" }} />
+        <p style={{ color: "#52514e", margin: "4px 0 0" }}>
+          {Math.round(taille * 100)} % de la taille mesurée — les proportions restent exactes. Mémorisé au redémarrage.
+        </p>
+      </div>
+
+      <div style={style.section}>
+        <p style={style.titre}>Tester (les tests s'arrêtent en fermant ce panneau)</p>
         {(Object.keys(SCENARIOS) as NomScenario[]).map((n) => (
           <button key={n} style={style.bouton} onClick={() => void envoyer("declencher", n)} title={SCENARIOS[n]}>
             {SCENARIOS[n]}
@@ -127,6 +188,17 @@ export function Panneau() {
           />{" "}
           Cacher quand une app est en plein écran
         </label>
+        <label style={{ display: "block", marginTop: 6 }}>
+          <input
+            type="checkbox"
+            checked={clicsClassiques}
+            onChange={(e) => {
+              setClicsClassiques(e.target.checked);
+              void backend.definirClicsClassiques(e.target.checked);
+            }}
+          />{" "}
+          Mode de compatibilité des clics (seulement si l'île bloque des clics ; au prochain démarrage)
+        </label>
       </div>
 
       <div style={style.section}>
@@ -149,7 +221,6 @@ export function Panneau() {
             Exporter
           </button>
         </div>
-        {message && <p style={{ color: "#52514e", whiteSpace: "pre-wrap" }}>{message}</p>}
         {visibles.map((c) => {
           const base = lire(islandConfig, c) as number;
           const valeur = surcharges[c] ?? base;

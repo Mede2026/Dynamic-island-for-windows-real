@@ -44,8 +44,14 @@
   d'arrière-plan : un appui sur Alt est simulé pour l'autoriser.
 
 ## Fenêtre
-- Clics traversants : un fil vérifie la position du curseur toutes les 16 ms (coût négligeable) et
-  rend la fenêtre cliquable uniquement au-dessus des zones touchables envoyées par le front-end.
+- Clics traversants (Windows) : la fenêtre est limitée à une **région** (`SetWindowRgn`) qui entoure
+  l'île ; hors de cette région, Windows considère qu'il n'y a pas de fenêtre et les clics passent aux
+  applications en dessous. La région est réservée pour toute la transition dès son début, puis réduite
+  à la fin (2 messages par transition). Avant, Tauri basculait `WS_EX_LAYERED` à chaque passage du
+  curseur, ce qui fait passer WebView2 par un rendu plus lent : c'était la cause probable des saccades.
+- Si un PC se comporte mal avec la région, le panneau propose le **mode de compatibilité des clics**
+  (ancien fonctionnement, au prochain démarrage).
+- Un fil vérifie la position du curseur toutes les 16 ms (coût négligeable) pour le survol.
 - Le clic **à l'extérieur** de l'île est détecté avec `GetAsyncKeyState` (seulement en mode étendu).
 - Ne pas voler le focus : `WS_EX_NOACTIVATE` + réponse `MA_NOACTIVATE` à `WM_MOUSEACTIVATE`.
   **À vérifier sur Windows** avec WebView2 : si un clic sur l'île active quand même la fenêtre, il faudra

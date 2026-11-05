@@ -12,7 +12,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import type { IslandMachine } from "../state/islandMachine";
 import { backend, dansTauri, ecouter } from "./backend";
 import { majDonnees } from "./donnees";
-import { definirSurcharges } from "../config/store";
+import { definirPreferences, definirSurcharges } from "../config/store";
 import { jouer, SCENARIOS, type NomScenario } from "../demo/scenarios";
 import { Traducteur } from "./traducteur";
 import { NOMS_EVENEMENTS, type InfoFenetre } from "./types";
@@ -32,7 +32,7 @@ export function demarrerPont(machine: IslandMachine): () => void {
     return () => machine.detruire();
   }
 
-  const traducteur = new Traducteur();
+  let traducteur = new Traducteur();
   const arrets: Promise<UnlistenFn>[] = [];
   const envoyer = (evs: ReturnType<Traducteur["media"]>) => evs.forEach((e) => machine.envoyer(e));
 
@@ -120,33 +120,55 @@ export function demarrerPont(machine: IslandMachine): () => void {
   });
 
   // 4. État initial (les zones touchables sont envoyées par le rendu, src/rendu/Ile.tsx).
-  void Promise.all([
-    backend.infoFenetre(),
-    backend.media(),
-    backend.batterie(),
-    backend.volume(),
-    backend.nePasDeranger(),
-    backend.notifications(),
-    backend.minuteur(),
-  ]).then(([fenetre, media, batterie, volume, npd, notifs, minuteur]) => {
-    ecranCourant.info = fenetre;
-    majDonnees({ fenetre, media, batterie, volume, minuteur });
-    void backend.pochette().then((p) => p && majDonnees({ pochette: p }));
-    log("init", {
-      fenetre,
-      tauxRafraichissementHz: fenetre?.ecran.frequenceHz ?? "inconnu",
-      media,
-      batterie,
-      volume,
-      nePasDeranger: npd,
-      notifications: notifs,
-      minuteur,
+  //    Aussi appelé après « Arrêter le test » : on revient aux VRAIES données.
+  const synchroniser = (journaliser: boolean) =>
+    Promise.all([
+      backend.infoFenetre(),
+      backend.media(),
+      backend.batterie(),
+      backend.volume(),
+      backend.nePasDeranger(),
+      backend.notifications(),
+      backend.minuteur(),
+      backend.confidentialite(),
+    ]).then(([fenetre, media, batterie, volume, npd, notifs, minuteur, confidentialite]) => {
+      ecranCourant.info = fenetre;
+      majDonnees({ fenetre, media, batterie, volume, minuteur, pochette: null, confidentialite: confidentialite ?? { camera: false, micro: false } });
+      void backend.pochette().then((p) => p && majDonnees({ pochette: p }));
+      if (journaliser) {
+        log("init", {
+          fenetre,
+          tauxRafraichissementHz: fenetre?.ecran.frequenceHz ?? "inconnu",
+          media,
+          batterie,
+          volume,
+          nePasDeranger: npd,
+          notifications: notifs,
+          minuteur,
+        });
+      }
+      envoyer(traducteur.batterieEtat(batterie));
+      envoyer(traducteur.nePasDerangerEtat(npd));
+      envoyer(traducteur.media(media));
+      envoyer(traducteur.minuteurEtat(minuteur));
     });
-    envoyer(traducteur.batterieEtat(batterie));
-    envoyer(traducteur.nePasDerangerEtat(npd));
-    envoyer(traducteur.media(media));
-    envoyer(traducteur.minuteurEtat(minuteur));
-  });
+  void synchroniser(true);
+
+  // Taille choisie par l'utilisateur (mémorisée par le backend).
+  void backend.parametres().then((p) => p && definirPreferences({ ISLAND_SCALE: p.taille }));
+  arrets.push(ecouter("parametres", (p) => definirPreferences({ ISLAND_SCALE: p.taille })));
+
+  // « Arrêter le test » (panneau, menu de l'icône, fermeture du panneau) : tout effacer,
+  // oublier les réglages temporaires, puis revenir à l'état réel de Windows.
+  arrets.push(
+    ecouter("reinitialiser", () => {
+      log("pont", "réinitialisation : retour aux vraies données");
+      definirSurcharges({});
+      machine.envoyer({ type: "REINITIALISER" });
+      traducteur = new Traducteur();
+      void synchroniser(false);
+    }),
+  );
 
   return () => {
     desabonner();

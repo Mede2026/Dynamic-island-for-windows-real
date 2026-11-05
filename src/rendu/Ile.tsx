@@ -19,7 +19,7 @@ import { useDonnees } from "../bridge/donnees";
 import type { IslandConfig, Ressort } from "../island.config";
 import type { Cible, EtatMachine, IslandMachine } from "../state/islandMachine";
 import { useConfig, v } from "../config/store";
-import { cleContenu, geometrieCible, planifier, type Geometrie, type Phase } from "./choregraphie";
+import { cleContenu, geometrieCible, geometriesDuPlan, planifier, type Geometrie, type Phase } from "./choregraphie";
 import {
   AlerteContenu,
   MinuteurCompact,
@@ -58,7 +58,75 @@ export function tailleCanevas(cfg: IslandConfig): [number, number] {
   return [Math.ceil(l), Math.ceil(h)];
 }
 
+/** Géométrie actuelle (lue sur les valeurs animées). */
+function geometrieActuelle(val: Valeurs): Geometrie {
+  return {
+    decalage: val.decalage.get(),
+    largeur: val.largeur.get(),
+    hauteur: val.hauteur.get(),
+    rayon: val.rayon.get(),
+    exposant: val.exposant.get(),
+    bulleEcart: val.bulleEcart.get(),
+    bulleVisible: val.bulleOpacite.get() > 0,
+  };
+}
+
+interface Rect {
+  x: number;
+  y: number;
+  largeur: number;
+  hauteur: number;
+}
+
+/** Marge (pt) pour le dépassement des ressorts au-delà de leur cible. */
+const MARGE_RESSORT_PT = 12;
+
+/**
+ * Zone d'AFFICHAGE (DIP) qui contient l'île pour toutes ces géométries, gonflement de l'appui,
+ * dépassement des ressorts et ombre compris. Hors de cette zone, la fenêtre n'existe pas pour
+ * Windows : les clics passent aux applications en dessous.
+ */
+export function zoneAffichage(geos: Geometrie[], cfg: IslandConfig, cx: number, canevas: [number, number]): Rect {
+  const S = v(cfg.ISLAND_SCALE);
+  const k = v(cfg.appui.echelleAppui);
+  const diam = v(cfg.bulle.diametrePt);
+  const y0 = v(cfg.margeHautPt);
+  const hGrande = v(cfg.formes.compact.taille.pt.hauteur) * 1.5;
+  const ombre = v(cfg.ombreEtendu.flouPt) * 1.25 + v(cfg.ombreEtendu.decalageYPt);
+  let g = Infinity, d = -Infinity, h = Infinity, b = -Infinity;
+  for (const geo of geos) {
+    const m = MARGE_RESSORT_PT + (geo.hauteur > hGrande ? ombre : 0);
+    const demi = (geo.largeur / 2) * k;
+    g = Math.min(g, geo.decalage - demi - m);
+    d = Math.max(d, geo.decalage + demi + m);
+    if (geo.bulleVisible || geo.bulleEcart > -diam) d = Math.max(d, geo.decalage + geo.largeur / 2 + geo.bulleEcart + diam + m);
+    h = Math.min(h, y0 - (geo.hauteur * (k - 1)) / 2 - MARGE_RESSORT_PT);
+    b = Math.max(b, y0 + (geo.hauteur * (1 + k)) / 2 + m);
+  }
+  const x = Math.max(0, cx + g * S);
+  const y = Math.max(0, h * S);
+  return {
+    x,
+    y,
+    largeur: Math.min(canevas[0], cx + d * S) - x,
+    hauteur: Math.min(canevas[1], b * S) - y,
+  };
+}
+
+/** Zones TOUCHABLES (DIP) : l'île et la bulle de la géométrie finale. */
+export function zonesTouchables(geo: Geometrie, cfg: IslandConfig, cx: number): Rect[] {
+  const S = v(cfg.ISLAND_SCALE);
+  const y0 = v(cfg.margeHautPt) * S;
+  const diam = v(cfg.bulle.diametrePt);
+  const zones = [{ x: cx + (geo.decalage - geo.largeur / 2) * S, y: y0, largeur: geo.largeur * S, hauteur: geo.hauteur * S }];
+  if (geo.bulleVisible) {
+    zones.push({ x: cx + (geo.decalage + geo.largeur / 2 + geo.bulleEcart) * S, y: y0, largeur: diam * S, hauteur: diam * S });
+  }
+  return zones;
+}
+
 interface Valeurs {
+  decalage: MotionValue<number>;
   largeur: MotionValue<number>;
   hauteur: MotionValue<number>;
   rayon: MotionValue<number>;
@@ -69,6 +137,7 @@ interface Valeurs {
 }
 
 function useValeurs(depart: Geometrie): Valeurs {
+  const decalage = useMotionValue(depart.decalage);
   const largeur = useMotionValue(depart.largeur);
   const hauteur = useMotionValue(depart.hauteur);
   const rayon = useMotionValue(depart.rayon);
@@ -78,8 +147,8 @@ function useValeurs(depart: Geometrie): Valeurs {
   const echelle = useMotionValue(1);
   // Objet STABLE (sinon les effets qui en dépendent se relanceraient à chaque rendu).
   return useMemo(
-    () => ({ largeur, hauteur, rayon, exposant, bulleEcart, bulleOpacite, echelle }),
-    [largeur, hauteur, rayon, exposant, bulleEcart, bulleOpacite, echelle],
+    () => ({ decalage, largeur, hauteur, rayon, exposant, bulleEcart, bulleOpacite, echelle }),
+    [decalage, largeur, hauteur, rayon, exposant, bulleEcart, bulleOpacite, echelle],
   );
 }
 
@@ -112,6 +181,7 @@ function jouerPlan(val: Valeurs, phases: Phase[], diametreBulle: number, fin: ()
       }
     }
     controles = [
+      animate(val.decalage, p.cible.decalage, rl),
       animate(val.largeur, p.cible.largeur, rl),
       animate(val.hauteur, p.cible.hauteur, rh),
       animate(val.rayon, p.cible.rayon, rh),
@@ -154,12 +224,25 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   const val = useValeurs(geometrieCible(machine.etat, cfg));
   const cibleRef = useRef<Geometrie>(geometrieCible(machine.etat, cfg));
   const annulerPlan = useRef<() => void>(() => undefined);
+  const canevasSvg = useRef<SVGSVGElement>(null);
   const [canevasL, canevasH] = tailleCanevas(cfg);
 
-  // Taille du canevas → backend (fenêtre redimensionnée et recentrée).
+  const cx = canevasL / 2;
+  const envoyerZones = useCallback(
+    (geos: Geometrie[], finale: Geometrie) => {
+      void backend.zonesTouchables(zonesTouchables(finale, cfg, cx), zoneAffichage(geos, cfg, cx, [canevasL, canevasH]));
+    },
+    [cfg, cx, canevasL, canevasH],
+  );
+
+  // Taille du canevas → backend (fenêtre redimensionnée et recentrée) : seulement si elle change.
   useEffect(() => {
     void backend.definirCanevas([canevasL, canevasH]);
   }, [canevasL, canevasH]);
+  // Zones (le backend les réapplique après chaque replacement de la fenêtre).
+  useEffect(() => {
+    envoyerZones([geometrieActuelle(val), cibleRef.current], cibleRef.current);
+  }, [envoyerZones, val]);
 
   // Transitions de la machine → plans d'animation.
   useEffect(() => {
@@ -171,16 +254,21 @@ export function Ile({ machine }: { machine: IslandMachine }) {
       for (const e of effets) {
         if (e.type !== "transition") continue;
         const plan = planifier(e.transition, avant, nouvel, cfg);
-        cibleRef.current = plan.phases[plan.phases.length - 1]!.cible;
+        const finale = plan.phases[plan.phases.length - 1]!.cible;
+        cibleRef.current = finale;
         setDebutContenuMs(plan.debutContenuMs);
         annulerPlan.current();
         const id = e.transition.id;
-        annulerPlan.current = jouerPlan(val, plan.phases, v(cfg.bulle.diametrePt), () =>
-          machine.envoyer({ type: "TRANSITION_FIN", id }),
-        );
+        // Zone d'affichage : réservée pour TOUTE la transition dès le début (2 messages par
+        // transition au lieu d'un toutes les 50 ms → aucun travail pendant l'animation).
+        envoyerZones([geometrieActuelle(val), ...geometriesDuPlan(plan)], finale);
+        annulerPlan.current = jouerPlan(val, plan.phases, v(cfg.bulle.diametrePt), () => {
+          envoyerZones([finale], finale);
+          machine.envoyer({ type: "TRANSITION_FIN", id });
+        });
       }
     });
-  }, [machine, cfg, val]);
+  }, [machine, cfg, val, envoyerZones]);
 
   // Si la configuration change (panneau de réglages), aller directement à la nouvelle cible.
   const cfgPrecedente = useRef(cfg);
@@ -189,6 +277,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
     cfgPrecedente.current = cfg;
     const g = geometrieCible(machine.etat, cfg);
     cibleRef.current = g;
+    val.decalage.set(g.decalage);
     val.largeur.set(g.largeur);
     val.hauteur.set(g.hauteur);
     val.rayon.set(g.rayon);
@@ -197,57 +286,36 @@ export function Ile({ machine }: { machine: IslandMachine }) {
     val.bulleOpacite.set(g.bulleVisible ? 1 : 0);
   }, [cfg, machine, val]);
 
-  // Géométrie en px CSS.
-  const cx = canevasL / 2;
+  // Géométrie en px CSS. Centre de l'île = centre du canevas + décalage mesuré.
   const y0 = v(cfg.margeHautPt) * S;
-  const cheminPrincipal = useTransform([val.largeur, val.hauteur, val.rayon, val.exposant], ([l, h, r, n]) =>
-    cheminIle(cx - ((l as number) * S) / 2, y0, (l as number) * S, (h as number) * S, (r as number) * S, n as number),
+  const centre = useTransform(val.decalage, (dx) => cx + dx * S);
+  const cheminPrincipal = useTransform([val.largeur, val.hauteur, val.rayon, val.exposant, centre], ([l, h, r, n, c]) =>
+    cheminIle((c as number) - ((l as number) * S) / 2, y0, (l as number) * S, (h as number) * S, (r as number) * S, n as number),
   );
   const diam = v(cfg.bulle.diametrePt);
-  const cheminBulle = useTransform([val.largeur, val.bulleEcart], ([l, e]) =>
-    cheminIle(cx + ((l as number) * S) / 2 + (e as number) * S, y0, diam * S, diam * S, (diam / 2) * S, 2),
+  const cheminBulle = useTransform([val.largeur, val.bulleEcart, centre], ([l, e, c]) =>
+    cheminIle((c as number) + ((l as number) * S) / 2 + (e as number) * S, y0, diam * S, diam * S, (diam / 2) * S, 2),
   );
   const origineY = useTransform(val.hauteur, (h) => y0 + (h * S) / 2);
-  const transformation = useTransform([val.echelle, origineY], ([e, oy]) => {
+  const transformation = useTransform([val.echelle, origineY, centre], ([e, oy, c]) => {
     const k = e as number;
     const o = oy as number;
-    return `translate(${cx * (1 - k)} ${o * (1 - k)}) scale(${k})`;
+    return `translate(${(c as number) * (1 - k)} ${o * (1 - k)}) scale(${k})`;
   });
   // Ombre : seulement quand l'île est grande (vue étendue).
   const hCompact = v(cfg.formes.compact.taille.pt.hauteur);
   const hEtendu = v(cfg.formes.etendu.taille.pt.hauteur);
   const ombreOpacite = useTransform(val.hauteur, [hCompact, hEtendu], [0, v(cfg.ombreEtendu.opacite)]);
+  // L'ombre (un flou SVG, coûteux) n'est dessinée que lorsqu'elle se voit.
+  const [ombre, setOmbre] = useState(ombreOpacite.get() > 0.003);
+  useEffect(() => ombreOpacite.on("change", (o) => setOmbre(o > 0.003)), [ombreOpacite]);
   const gouttePx = v(cfg.bulle.goutteFlouPt) * S;
   // L'effet goutte n'est actif que quand la bulle existe (sinon le filtre est inutile).
   const [goutte, setGoutte] = useState(val.bulleOpacite.get() > 0);
   useEffect(() => val.bulleOpacite.on("change", (o) => setGoutte(o > 0)), [val]);
 
-  // Zones touchables (DIP = px CSS), mises à jour au plus toutes les 50 ms.
-  useEffect(() => {
-    let attente: ReturnType<typeof setTimeout> | null = null;
-    const envoyer = () => {
-      attente = null;
-      const c = cibleRef.current;
-      const l = Math.max(val.largeur.get(), c.largeur) * S * val.echelle.get();
-      const h = Math.max(val.hauteur.get(), c.hauteur) * S * val.echelle.get();
-      const zones = [{ x: cx - l / 2, y: y0, largeur: l, hauteur: h }];
-      if (val.bulleOpacite.get() > 0) {
-        zones.push({ x: cx + l / 2 + Math.max(val.bulleEcart.get(), 0) * S, y: y0, largeur: diam * S, hauteur: diam * S });
-      }
-      void backend.zonesTouchables(zones);
-    };
-    const planifierEnvoi = () => {
-      if (attente === null) attente = setTimeout(envoyer, 50);
-    };
-    const desab = [val.largeur, val.hauteur, val.echelle, val.bulleOpacite].map((m) => m.on("change", planifierEnvoi));
-    envoyer();
-    return () => {
-      desab.forEach((f) => f());
-      if (attente) clearTimeout(attente);
-    };
-  }, [val, S, cx, y0, diam]);
-
-  // Clic à l'extérieur : écouté seulement en mode étendu (géré par le pont).
+  // Clic à l'extérieur de l'île : écouté par le backend en mode étendu (pont), et ici pour
+  // les clics qui tombent dans la zone d'affichage mais hors de l'île (ex. sur l'ombre).
 
   // --- Appui / appui long -----------------------------------------------------
   const appui = useRef<{ minuterie: ReturnType<typeof setTimeout> | null; long: boolean; cible: Cible }>({
@@ -257,6 +325,22 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   });
   const relacher = useCallback(() => {
     animate(val.echelle, 1, ressortFramer(cfg.appui.ressortRetour));
+  }, [val, cfg]);
+  /**
+   * Clic court : petit REBOND. Une impulsion (vitesse initiale) est donnée au ressort de retour
+   * mesuré : l'île gonfle jusqu'à l'échelle d'appui mesurée puis revient, avec le rebond
+   * naturel du ressort. Aucune durée inventée : tout découle de echelleAppui et ressortRetour.
+   */
+  const rebond = useCallback(() => {
+    const r = cfg.appui.ressortRetour;
+    const w0 = (2 * Math.PI) / v(r.response);
+    const z = Math.min(v(r.dampingFraction), 0.999);
+    const wd = w0 * Math.sqrt(1 - z * z);
+    // Pic d'un ressort amorti lancé depuis l'équilibre : x_max = (v0 / w0) · e^(−ζ·w0·t_pic), t_pic = atan(√(1−ζ²)/ζ) / wd
+    const tPic = Math.atan(Math.sqrt(1 - z * z) / z) / wd;
+    const facteur = Math.exp(-z * w0 * tPic) / w0;
+    const reste = Math.max(v(cfg.appui.echelleAppui) - val.echelle.get(), 0);
+    animate(val.echelle, 1, { ...ressortFramer(r), velocity: reste / facteur });
   }, [val, cfg]);
   const debutAppui = (cible: Cible) => {
     machine.envoyer({ type: "APPUI_DEBUT" });
@@ -280,8 +364,11 @@ export function Ile({ machine }: { machine: IslandMachine }) {
     a.minuterie = null;
     machine.envoyer({ type: "APPUI_FIN" });
     if (!a.long) {
-      relacher();
-      if (!annule) machine.envoyer({ type: "CLIC", cible: a.cible });
+      if (annule) relacher();
+      else {
+        rebond();
+        machine.envoyer({ type: "CLIC", cible: a.cible });
+      }
     }
     a.long = false;
   };
@@ -313,33 +400,46 @@ export function Ile({ machine }: { machine: IslandMachine }) {
 
   // Boîte de contenu = taille CIBLE, centrée sur l'île, ancrée en haut ; découpée par l'île.
   const cible = geometrieCible(etat, cfg);
-  const gaucheIle = useTransform(val.largeur, (l) => cx - (l * S) / 2);
+  const gaucheIle = useTransform([val.largeur, centre], ([l, c]) => (c as number) - ((l as number) * S) / 2);
   const largeurIle = useTransform(val.largeur, (l) => l * S);
   const hauteurIle = useTransform(val.hauteur, (h) => h * S);
   const rayonIle = useTransform(val.rayon, (r) => r * S);
-  const bulleGauche = useTransform([val.largeur, val.bulleEcart], ([l, e]) => cx + ((l as number) * S) / 2 + (e as number) * S);
+  const bulleGauche = useTransform(
+    [val.largeur, val.bulleEcart, centre],
+    ([l, e, c]) => (c as number) + ((l as number) * S) / 2 + (e as number) * S,
+  );
   const bulleContenu = etat.mode === "split" ? choisirBulle(ctx) : null;
 
-  const couche = (enfants: ReactNode) => <div style={{ position: "absolute", inset: 0 }}>{enfants}</div>;
+  // Couche du contenu : ne capte pas les clics (seule l'île, à l'intérieur, les capte).
+  const couche = (enfants: ReactNode) => <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{enfants}</div>;
 
   return (
-    <div style={{ position: "absolute", left: 0, top: 0, width: canevasL, height: canevasH, fontFamily: v(cfg.police) }}>
-      <svg width={canevasL} height={canevasH} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
+    <div
+      style={{ position: "absolute", left: 0, top: 0, width: canevasL, height: canevasH, fontFamily: v(cfg.police) }}
+      onPointerDown={(e) => {
+        const cible = e.target as Element;
+        // Le grand SVG du canevas ne contient que les formes : un clic qui y tombe est hors du contenu.
+        if (cible === e.currentTarget || (canevasSvg.current?.contains(cible) ?? false)) {
+          machine.envoyer({ type: "CLIC_EXTERIEUR" });
+        }
+      }}
+    >
+      <svg ref={canevasSvg} width={canevasL} height={canevasH} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
         <defs>
-          <filter id="goutte" x="0" y="0" width={canevasL} height={canevasH} filterUnits="userSpaceOnUse">
+          <filter id="goutte" x="-6%" y="-25%" width="112%" height="150%">
             <feGaussianBlur in="SourceGraphic" stdDeviation={gouttePx} />
             <feColorMatrix
               type="matrix"
               values={`1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${v(cfg.bulle.goutteAlphaMultiplicateur)} ${v(cfg.bulle.goutteAlphaDecalage)}`}
             />
           </filter>
-          <filter id="ombre" x="0" y="0" width={canevasL} height={canevasH} filterUnits="userSpaceOnUse">
+          <filter id="ombre" x="-20%" y="-30%" width="140%" height="190%">
             <feGaussianBlur in="SourceAlpha" stdDeviation={(v(cfg.ombreEtendu.flouPt) * S) / 2} />
             <feOffset dy={v(cfg.ombreEtendu.decalageYPt) * S} />
           </filter>
         </defs>
         <motion.g transform={transformation}>
-          <motion.path d={cheminPrincipal} fill="#000" filter="url(#ombre)" style={{ opacity: ombreOpacite }} />
+          {ombre && <motion.path d={cheminPrincipal} fill="#000" filter="url(#ombre)" style={{ opacity: ombreOpacite }} />}
           <g filter={goutte ? "url(#goutte)" : undefined}>
             <motion.path d={cheminPrincipal} fill={v(cfg.couleurPilule)} />
             <motion.path d={cheminBulle} fill={v(cfg.couleurPilule)} style={{ opacity: val.bulleOpacite }} />
@@ -361,6 +461,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
             originY: 0.5,
             cursor: "default",
             touchAction: "none",
+            pointerEvents: "auto",
           }}
           onPointerDown={(e) => {
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -385,6 +486,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
                 width: cible.largeur * S,
                 height: cible.hauteur * S,
                 transformOrigin: "50% 50%",
+                willChange: "opacity, filter, transform",
               }}
             >
               {contenu}

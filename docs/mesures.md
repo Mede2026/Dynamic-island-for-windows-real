@@ -16,7 +16,9 @@ Toutes les valeurs de `src/island.config.ts` et leur source.
 
 ## Facteur d'échelle `ISLAND_SCALE`
 
-**1,0 DIP par point** (valeur par défaut, réglable dans le panneau Ctrl+Alt+D).
+**1,0 DIP par point** (valeur par défaut). Le propriétaire peut la changer : panneau Ctrl+Alt+D
+(« Taille de l'île », 60 % à 200 %) ou menu de l'icône (Petite 0,85 / Normale 1 / Grande 1,25 /
+Très grande 1,5). Le choix est mémorisé dans `parametres.json`.
 
 Justification : à 100 % d'échelle Windows, 1 DIP ≈ 0,26 mm ; sur l'iPhone 16 Pro, 1 pt ≈ 0,17 mm. Un écran
 d'ordinateur est regardé à ~60 cm contre ~30 cm pour un téléphone : à taille **angulaire** égale, il faudrait
@@ -37,6 +39,7 @@ est gérée automatiquement (tout est en DIP).
 | `formesContenu.etenduMinuteur` | 374,21 × 88,33 | 62,96 / 3,084 | V4729 img 1099–1200 |
 | `formes.alerte` | 340,16 × 36,81 | 23,48 / 2,659 | V4731 img 634–753 (« En charge 98 % ») |
 | `margeHautPt` | 14,06 | — | V4727 img 280–338 |
+| `decalageXPt` (centre de l'île / centre de l'écran) | split **−17,01**, compact (enregistrement) **−3,33**, autres 0 | — | V4727, V4728, V4730, V4731 (écart entre vidéos < 0,1 pt) ; capture split fournie |
 | `couleurPilule` | `#000000` | — | V4727 img 338 |
 
 Coins : profil du coin haut-gauche mesuré ligne par ligne et colonne par colonne, ajusté par une
@@ -67,7 +70,11 @@ cercle laisse une erreur 1,7 fois plus grande). La vue étendue a des coins plus
 | Changement d'activité : **retrait** vers le repos puis élargissement | `retraitDureeMs` = 210 | V4731 10,60 → 10,81 s (img 592 → 604) |
 | Le 2e mouvement repart sans élan | v0 ≈ 0 | ajustements V4731 (v0 = 4 et 47 pt/s) |
 | Appui long : l'île **gonfle**, la bulle se refond, **contraction**, puis ouverture | `contractionDureeMs` = 270 | V4730 2,18 → 2,45 s |
-| Fermeture vers split : bloc unique, puis la bulle se détache | `separationBulleMs` = 370 | V4730 (380 ms), V4731 (360 ms) |
+| Fermeture vers split : bloc unique (île + bulle), puis la bulle se détache | `separationBulleMs` = 370 | V4730 (380 ms), V4731 (360 ms) |
+| compact → split : bosse verticale pendant le retrait | `split.bosseHauteurPt` = 52,7 (pic 55 avec le dépassement), début +85 ms, pic +210 ms | V4727 img 474–486, V4729 img 282–293 |
+| compact → split : élargissement, la bulle sort du bord droit | `split.croissanceDebutMs` = 315 ; ressort 0,516 s / 0,501 | V4727 img 492, V4729 img 299–310 |
+| Ressorts de la bosse | montée 0,240 s / 0,531 ; descente 0,232 s / 1,400 | V4727 img 478–486 et 486–503 |
+| split → compact : la bulle rentre, retrait, élargissement | `fusion.retraitDebutMs` = 110, `fusion.croissanceDebutMs` = 330 | V4731 img 290 → 296 → 309 |
 | Priorité : musique > minuteur | — | capture split fournie, V4728 |
 
 ## Contenu
@@ -90,6 +97,7 @@ cercle laisse une erreur 1,7 fois plus grande). La vue étendue a des coins plus
 | `bulle.goutte*` | flou 1,5 pt, alpha ×8 −3,5 | **déduit** : fusion quand l'écart < ~2 pt (V4728 img 450–452) ; seuil à 50 % |
 | `appui.echelleAppui` | 1,10 | V4728 img 452 (176,1/159,5 et 40,35/36,81) |
 | `appui.dureeGonflementMs`, `durees.clicLongSeuilMs` | 180 | V4728 img 441 → 452 |
+| Clic court : **rebond** | impulsion calculée pour atteindre `echelleAppui` avec `ressortRetour` (pic ×1,09 à ~60 ms) | **déduit** des valeurs d'appui mesurées (pas de vidéo de clic court) |
 | `indicateurs.enregistrementCouleur` | `#d33930` | V4728 img 18 |
 | `indicateurs.pointXPt` / `pointDiametrePt` | 11,2 / 14,5 | V4728 img 18 |
 | `durees.alerteAffichageMs` | 3000 | V4731 10,60 → 13,60 s |

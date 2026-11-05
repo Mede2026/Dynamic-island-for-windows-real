@@ -18,8 +18,9 @@ d'écran d'un iPhone 16 Pro (iOS 27) — voir [`docs/mesures.md`](docs/mesures.m
 | Chargeur branché / débranché, batterie faible (20 %, 10 %), volume, Ne pas déranger, notifications, **presse-papiers**, fin du minuteur | Alerte (forme mesurée sur « En charge 98 % ») puis retour automatique |
 | Caméra / micro utilisés | Point **vert** (caméra, avec ou sans micro) ou **orange** (micro seul), comme sur iPhone |
 
-Chorégraphie iOS reproduite : rétraction avant un changement d'activité, gonflement à l'appui long,
-la bulle qui se refond puis se détache, contenu qui apparaît flou puis net.
+Chorégraphie iOS reproduite : rétraction avant un changement d'activité, « bosse » verticale et bulle
+qui sort du bord droit en mode split (île décalée de 17 pt vers la gauche, comme sur iPhone), gonflement
+à l'appui long, rebond au clic, la bulle qui se refond puis se détache, contenu qui apparaît flou puis net.
 
 ## Installer (Windows 11)
 
@@ -42,8 +43,13 @@ L'installateur est dans `src-tauri/target/release/bundle/`.
 
 - **Icône dans la zone de notification** : Réglages, choix de l'écran, Démarrer avec Windows, Cacher en
   plein écran, Quitter.
-- **Ctrl + Alt + D** : panneau de réglages — un curseur par valeur de `island.config.ts` (appliqué en direct),
-  boutons pour déclencher chaque animation (une fois ou en boucle), bouton **Exporter** (JSON).
+- **Taille de l'île** : menu de l'icône (Petite, Normale, Grande, Très grande) ou curseur dans le panneau.
+  Mémorisée au redémarrage ; les proportions restent exactes.
+- **Ctrl + Alt + D** : ouvre / ferme le panneau de réglages — boutons pour tester chaque animation (une fois
+  ou en boucle), un curseur par valeur de `island.config.ts` (appliqué en direct), bouton **Exporter** (JSON).
+- **Arrêter le test** : gros bouton rouge du panneau, menu de l'icône, ou simplement **fermer le panneau** :
+  l'île efface les activités de test et revient à ce qui se passe vraiment sur le PC.
+- **Clic** sur l'île : petit rebond (et ouverture de l'app qui joue) ; **appui long** : vue étendue.
 - **Minuteur** depuis un raccourci, un MacroPad ou un Stream Deck :
 
 ```bash

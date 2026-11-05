@@ -8,6 +8,13 @@ import { islandConfig, type IslandConfig } from "../island.config";
 
 type Chemin = string; // ex. "formes.etendu.rayonPt"
 
+/** Préférences de l'utilisateur (mémorisées par le backend), ex. la taille de l'île. */
+export interface Preferences {
+  ISLAND_SCALE?: number;
+}
+
+let preferences: Preferences = {};
+/** Réglages de développement du panneau (temporaires). */
 let surcharges: Record<Chemin, unknown> = {};
 let courante: IslandConfig = calculer();
 const abonnes = new Set<() => void>();
@@ -29,6 +36,7 @@ export function lire(obj: unknown, chemin: string): unknown {
 
 function calculer(): IslandConfig {
   const c = cloner(islandConfig);
+  if (preferences.ISLAND_SCALE) c.ISLAND_SCALE = preferences.ISLAND_SCALE;
   for (const [chemin, v] of Object.entries(surcharges)) ecrire(c as unknown as Record<string, unknown>, chemin, v);
   // Les tailles en DIP suivent toujours pt × ISLAND_SCALE.
   const s = c.ISLAND_SCALE ?? 1;
@@ -49,6 +57,12 @@ export function surchargesActuelles(): Record<Chemin, unknown> {
 
 export function definirSurcharges(s: Record<Chemin, unknown>) {
   surcharges = { ...s };
+  courante = calculer();
+  abonnes.forEach((f) => f());
+}
+
+export function definirPreferences(p: Preferences) {
+  preferences = { ...p };
   courante = calculer();
   abonnes.forEach((f) => f());
 }

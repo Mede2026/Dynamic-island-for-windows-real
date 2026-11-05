@@ -45,11 +45,38 @@ def lire_enregistrement(nom: str):
     fichiers = sorted(dossier.glob("img*.png"))
     lignes = []
     for t, f in zip(temps, fichiers):
-        m = detecter(cv2.imread(str(f)))
+        img = cv2.imread(str(f))
+        m = detecter(img)
         if m.ile is None:
             continue
-        lignes.append((t, m.ile.largeur / ECHELLE_NOTRE, m.ile.hauteur / ECHELLE_NOTRE, m.contenu_luminance))
+        b = m.bulle
+        lignes.append((
+            t, m.ile.largeur / ECHELLE_NOTRE, m.ile.hauteur / ECHELLE_NOTRE, m.contenu_luminance,
+            (m.ile.x + m.ile.largeur / 2) / ECHELLE_NOTRE,
+            b.largeur / ECHELLE_NOTRE if b else np.nan,
+            (b.x + b.largeur / 2) / ECHELLE_NOTRE if b else np.nan,
+        ))
     return np.array(lignes)
+
+
+def points_cles_split(t_s, l, h, centre, bulle_l, bulle_c, reference_centre):
+    """Points clés de la chorégraphie compact → split (t en ms depuis le début du mouvement)."""
+    l0 = np.median(l[:3])
+    debut = int(np.nonzero(l < l0 - 1.0)[0][0])
+    t0 = t_s[debut - 1]
+    sep = np.nonzero(~np.isnan(bulle_l))[0]
+    isep = int(sep[sep > debut][0])
+    zone = slice(debut, isep)
+    ipic = debut + int(np.argmax(h[zone]))
+    imin = debut + int(np.argmin(l[zone]))
+    fin = slice(len(l) - 5, len(l))
+    return {
+        "pic_bosse_ms": (t_s[ipic] - t0) * 1000, "hauteur_bosse_pt": float(h[ipic]),
+        "largeur_min_ms": (t_s[imin] - t0) * 1000, "largeur_min_pt": float(l[imin]),
+        "separation_ms": (t_s[isep] - t0) * 1000,
+        "centre_ile_final_pt": float(np.median(centre[fin]) - reference_centre),
+        "centre_bulle_final_pt": float(np.median(bulle_c[fin]) - reference_centre),
+    }
 
 
 def ecrire_mov(nom: str) -> Path | None:
@@ -255,7 +282,37 @@ def main() -> int:
     ref_delais = delais(ref["lum"][0], ref["lum"][1], t0_ref, "apparition")
     periode = float(np.median(np.diff(ref["lum"][0]))) * 1000
 
-    rapport = {"transitions": resultats, "tailles": tailles,
+    # Chorégraphie compact → split : points clés (iPhone : moyenne V4727 et V4729).
+    from ilelib.analyse import Table
+    ex, ey = 664 / 402, 1440 / 874
+    iphone = []
+    for video, (a, b) in (("IMG_4727", (8.80, 9.80)), ("IMG_4729", (4.66, 5.65))):
+        tb = Table.lire_csv(RACINE / "output" / video / "mesures.csv")
+        T = tb["temps_ms"] / 1000
+        sel = (T >= a) & (T <= b)
+        iphone.append(points_cles_split(
+            T[sel], tb["largeur"][sel] / ex, tb["hauteur"][sel] / ey, (tb["x"][sel] + tb["largeur"][sel] / 2) / ex,
+            tb["bulle_largeur"][sel] / ex, (tb["bulle_x"][sel] + tb["bulle_largeur"][sel] / 2) / ex, 664 / 2 / ex))
+    iphone_moy = {k: float(np.mean([p[k] for p in iphone])) for k in iphone[0]}
+    s = rec["split"]
+    t = s[:, 0] / 1000
+    sel = (t >= 2.1) & (t <= 3.5)
+    centre_repos = float(np.median(rec["repos"][rec["repos"][:, 0] < 500, 4]))
+    notre_split = points_cles_split(t[sel], s[sel, 1], s[sel, 2], s[sel, 4], s[sel, 5], s[sel, 6], centre_repos)
+    periode = 1000 / 60
+    choregraphie = []
+    for k, v_iph in iphone_moy.items():
+        v_notre = notre_split[k]
+        if k.endswith("_ms"):
+            ok = abs(v_notre - v_iph) <= 2 * periode
+            ecart = f"{(v_notre - v_iph) / periode:+.1f} image(s)"
+        else:
+            ok = abs(v_notre - v_iph) <= 2.0 if "largeur" not in k else True
+            ecart = f"{v_notre - v_iph:+.2f} pt"
+        choregraphie.append({"point": k, "iphone": v_iph, "notre": v_notre, "ecart": ecart, "ok": bool(ok)})
+        print(f"{k:24s} iPhone {v_iph:8.2f}  notre {v_notre:8.2f}  ({ecart})")
+
+    rapport = {"transitions": resultats, "tailles": tailles, "choregraphie_split": choregraphie,
                "contenu_ouvrir": {"notre_ms": notre_delais, "iphone_ms": ref_delais, "periode_image_ms": periode},
                "videos_notre_ile": {k: (str(v.relative_to(RACINE.parent)) if v else None) for k, v in movs.items()}}
     (RACINE / "output" / "fidelite.json").write_text(json.dumps(rapport, indent=2, ensure_ascii=False, default=float))
@@ -280,6 +337,13 @@ def ecrire_rapport(r: dict) -> None:
         L.append(f"| {x['transition']} | {x['axe']} | {x['reference']} | **{x['ecart_rms_pourcent']:.2f} %** | "
                  f"{x['iphone']['response']:.3f} s / {x['iphone']['dampingFraction']:.3f} | "
                  f"{x['notre']['response']:.3f} s / {x['notre']['dampingFraction']:.3f} | {'✅' if x['ok'] else '⚠️'} |")
+    L += ["", "## Chorégraphie compact → split (points clés)", "",
+          "iPhone : moyenne de V4727 et V4729. Objectif : ±2 images pour les instants, ±2 pt pour les positions.",
+          "La largeur minimale dépend de la largeur de départ (compact de l'enregistrement d'écran sur iPhone, "
+          "compact musique chez nous) : indicative.", "",
+          "| Point | iPhone | Notre île | Écart | |", "|---|---|---|---|---|"]
+    for c in r.get("choregraphie_split", []):
+        L.append(f"| {c['point']} | {c['iphone']:.1f} | {c['notre']:.1f} | {c['ecart']} | {'✅' if c['ok'] else '⚠️'} |")
     L += ["", "## Tailles des états stables (pt)", "", "| État | Notre île (l × h) | iPhone (l × h) |", "|---|---|---|"]
     for t in r["tailles"]:
         ip = "—" if t["iphone_pt"] is None else f"{t['iphone_pt'][0]:.2f} × {t['iphone_pt'][1]:.2f}"

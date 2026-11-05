@@ -126,6 +126,19 @@ export interface EvenementsBackend {
   "config-direct": Record<string, unknown>;
   /** Panneau de réglages → île : jouer un scénario de démonstration. */
   declencher: string;
+  /** Arrêter le test : effacer les activités factices et revenir aux vraies données. */
+  reinitialiser: null;
+  /** Préférences mémorisées (taille de l'île…). */
+  parametres: Parametres;
+}
+
+export interface Parametres {
+  /** Taille de l'île : DIP par point iPhone (ISLAND_SCALE). */
+  taille: number;
+  ecran: string | null;
+  cacherEnPleinEcran: boolean;
+  /** Mode de compatibilité des clics traversants (prend effet au redémarrage). */
+  clicsClassiques: boolean;
 }
 
 export type NomEvenement = keyof EvenementsBackend;

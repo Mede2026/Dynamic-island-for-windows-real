@@ -106,6 +106,10 @@ pub struct EtatFenetre {
     pub cacher_en_plein_ecran: AtomicBool,
     pub ecouter_clic_exterieur: AtomicBool,
     pub plein_ecran: AtomicBool,
+    /// Windows : clics traversants par RÉGION de fenêtre (fluide) au lieu de WS_EX_LAYERED.
+    pub mode_region: AtomicBool,
+    /// Zone d'affichage demandée par le front-end (DIP, relative à la fenêtre).
+    region_dip: Mutex<Option<RectDip>>,
     derniere_info: Mutex<Option<InfoFenetre>>,
     signature_ecrans: Mutex<String>,
 }
@@ -139,6 +143,15 @@ pub fn curseur_dans_zones(curseur: (i32, i32), origine: (i32, i32), echelle: f64
     zones
         .iter()
         .any(|z| x >= z.x && x < z.x + z.largeur && y >= z.y && y < z.y + z.hauteur)
+}
+
+/// Zone d'affichage en pixels physiques (x, y, largeur, hauteur), arrondie vers l'extérieur.
+pub fn region_px(r: RectDip, echelle: f64) -> (i32, i32, i32, i32) {
+    let x0 = (r.x * echelle).floor() as i32;
+    let y0 = (r.y * echelle).floor() as i32;
+    let x1 = ((r.x + r.largeur) * echelle).ceil() as i32;
+    let y1 = ((r.y + r.hauteur) * echelle).ceil() as i32;
+    (x0, y0, (x1 - x0).max(0), (y1 - y0).max(0))
 }
 
 /// Une chaîne qui change dès qu'un écran est branché, débranché, déplacé ou change d'échelle.
@@ -256,6 +269,7 @@ pub fn placer(app: &AppHandle) -> Result<InfoFenetre, String> {
         y
     );
     *etat.derniere_info.lock().unwrap() = Some(info.clone());
+    appliquer_region(app);
     let _ = app.emit(evenements::ECRAN, &info);
     Ok(info)
 }
@@ -264,14 +278,43 @@ pub fn placer(app: &AppHandle) -> Result<InfoFenetre, String> {
 // Initialisation
 // ---------------------------------------------------------------------------
 
-pub fn initialiser(app: &AppHandle) -> Result<(), String> {
+/// Applique la zone d'affichage (mode région) avec l'échelle actuelle de l'écran.
+fn appliquer_region(app: &AppHandle) {
+    let etat = app.state::<EtatFenetre>();
+    if !etat.mode_region.load(Ordering::Relaxed) {
+        return;
+    }
+    let (Some(fen), Some((_, echelle))) = (fenetre(app), *etat.geometrie.lock().unwrap()) else {
+        return;
+    };
+    let region = etat.region_dip.lock().unwrap().map(|r| region_px(r, echelle));
+    // Aucune zone encore : fenêtre entièrement « absente » (rien de visible, tout traverse).
+    plateforme::definir_region(&fen, Some(region.unwrap_or((0, 0, 0, 0))));
+}
+
+/// `clics_classiques` : mode de compatibilité (WS_EX_LAYERED basculé au survol).
+pub fn initialiser(app: &AppHandle, clics_classiques: bool) -> Result<(), String> {
     let fen = fenetre(app).ok_or("fenêtre introuvable")?;
     plateforme::appliquer_styles(&fen);
+    let etat = app.state::<EtatFenetre>();
+    let region = plateforme::REGION_DISPONIBLE && !clics_classiques;
+    etat.mode_region.store(region, Ordering::Relaxed);
+    journal!(
+        "fenetre",
+        "clics traversants : {}",
+        if region {
+            "région de fenêtre (fluide)"
+        } else {
+            "classique (WS_EX_LAYERED)"
+        }
+    );
     placer(app)?;
     fen.show().map_err(|e| e.to_string())?;
-    // Au départ, rien n'est touchable : tous les clics traversent.
-    // (Après show() : sous Linux, la fenêtre doit exister à l'écran pour accepter ce réglage.)
-    fen.set_ignore_cursor_events(true).map_err(|e| e.to_string())?;
+    if !region {
+        // Au départ, rien n'est touchable : tous les clics traversent.
+        // (Après show() : sous Linux, la fenêtre doit exister à l'écran pour accepter ce réglage.)
+        fen.set_ignore_cursor_events(true).map_err(|e| e.to_string())?;
+    }
 
     // Garder la géométrie en cache à jour si Windows déplace / redimensionne la fenêtre.
     let app2 = app.clone();
@@ -311,8 +354,11 @@ fn lancer_fil_curseur(app: AppHandle) {
                 if let (Some((origine, echelle)), Some(curseur)) = (geo, plateforme::curseur_ecran(&app)) {
                     let dedans = curseur_dans_zones(curseur, origine, echelle, &zones);
                     if dedans != dedans_avant {
-                        if let Some(f) = fenetre(&app) {
-                            let _ = f.set_ignore_cursor_events(!dedans);
+                        // En mode région, Windows route déjà les clics : rien à basculer.
+                        if !etat.mode_region.load(Ordering::Relaxed) {
+                            if let Some(f) = fenetre(&app) {
+                                let _ = f.set_ignore_cursor_events(!dedans);
+                            }
                         }
                         let _ = app.emit(evenements::SURVOL, dedans);
                         dedans_avant = dedans;
@@ -393,7 +439,8 @@ pub fn fenetre_info(app: AppHandle) -> Option<InfoFenetre> {
 /// `id = null` → écran principal.
 #[tauri::command]
 pub fn fenetre_choisir_ecran(app: AppHandle, id: Option<String>) -> Result<InfoFenetre, String> {
-    *app.state::<EtatFenetre>().ecran_choisi.lock().unwrap() = id;
+    *app.state::<EtatFenetre>().ecran_choisi.lock().unwrap() = id.clone();
+    crate::parametres::modifier(&app, |p| p.ecran = id);
     placer(&app)
 }
 
@@ -404,12 +451,17 @@ pub fn fenetre_definir_canevas(app: AppHandle, taille: Option<(f64, f64)>) -> Re
     placer(&app)
 }
 
-/// Zones où l'île peut être touchée (DIP, relatives à la fenêtre). Liste vide = tout traverse.
+/// Zones où l'île peut être touchée (DIP, relatives à la fenêtre) et zone d'affichage `region`.
+/// Windows (mode région) : hors de `region`, la fenêtre n'existe pas → les clics passent dessous.
 #[tauri::command]
-pub fn fenetre_zones_touchables(app: AppHandle, zones: Vec<RectDip>) {
+pub fn fenetre_zones_touchables(app: AppHandle, zones: Vec<RectDip>, region: Option<RectDip>) {
     let etat = app.state::<EtatFenetre>();
     *etat.zones.lock().unwrap() = zones;
     etat.zones_changees.notify_all();
+    if region.is_some() {
+        *etat.region_dip.lock().unwrap() = region;
+        appliquer_region(&app);
+    }
 }
 
 /// Active la détection des clics hors de l'île (utile en mode étendu seulement).
@@ -425,6 +477,7 @@ pub fn fenetre_cacher_en_plein_ecran(app: AppHandle, actif: bool) {
     app.state::<EtatFenetre>()
         .cacher_en_plein_ecran
         .store(actif, Ordering::Relaxed);
+    crate::parametres::modifier(&app, |p| p.cacher_en_plein_ecran = actif);
     appliquer_visibilite(&app);
 }
 
@@ -495,6 +548,18 @@ mod tests {
         assert!(!curseur_dans_zones((1149, 30), origine, 1.5, &zones));
         assert!(!curseur_dans_zones((1200, 50), origine, 1.5, &zones));
         assert!(!curseur_dans_zones((1200, 30), origine, 1.5, &[]));
+    }
+
+    #[test]
+    fn region_arrondie_vers_l_exterieur() {
+        let r = RectDip {
+            x: 10.2,
+            y: 0.0,
+            largeur: 100.1,
+            hauteur: 40.0,
+        };
+        assert_eq!(region_px(r, 2.0), (20, 0, 201, 80));
+        assert_eq!(region_px(r, 1.25), (12, 0, 126, 50));
     }
 
     #[test]

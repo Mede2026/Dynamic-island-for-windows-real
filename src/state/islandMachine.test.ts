@@ -437,6 +437,20 @@ describe("transitions : numérotation, interruption, file d'événements", () =>
     expect(m.etat.mode).toBe("etendu");
   });
 
+  it("REINITIALISER efface activités, alerte et état étendu, et annule les minuteries", () => {
+    const { m, h } = creer();
+    m.envoyer({ type: "ACTIVITE_DEBUT", activite: musique });
+    m.envoyer({ type: "ACTIVITE_DEBUT", activite: minuteur });
+    m.envoyer({ type: "CLIC_LONG" });
+    m.envoyer({ type: "ALERTE", alerte: { type: "volume" } });
+    m.envoyer({ type: "REINITIALISER" });
+    expect(m.etat.mode).toBe("repos");
+    expect(m.etat.activites).toEqual([]);
+    expect(m.etat.etendueId).toBeNull();
+    expect(h.nbTaches()).toBe(0);
+    expect(m.etat.transition?.vers).toBe("repos");
+  });
+
   it("detruire() annule toutes les minuteries", () => {
     const { m, h } = creer();
     m.envoyer({ type: "ALERTE", alerte: { type: "volume" } });

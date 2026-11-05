@@ -39,6 +39,11 @@ pub fn systeme_ne_pas_deranger() -> ne_pas_deranger::EtatNePasDeranger {
 }
 
 #[tauri::command]
+pub fn systeme_confidentialite() -> Option<confidentialite::Confidentialite> {
+    confidentialite::dernier()
+}
+
+#[tauri::command]
 pub fn notifications_etat() -> notifications::EtatNotifications {
     notifications::dernier()
 }

@@ -8,8 +8,8 @@ use windows::Win32::Graphics::Dwm::{
     DwmSetWindowAttribute, DWMWA_BORDER_COLOR, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND,
 };
 use windows::Win32::Graphics::Gdi::{
-    EnumDisplaySettingsW, GetMonitorInfoW, MonitorFromWindow, DEVMODEW, ENUM_CURRENT_SETTINGS, MONITORINFO,
-    MONITOR_DEFAULTTONEAREST,
+    CreateRectRgn, EnumDisplaySettingsW, GetMonitorInfoW, MonitorFromWindow, SetWindowRgn, DEVMODEW,
+    ENUM_CURRENT_SETTINGS, MONITORINFO, MONITOR_DEFAULTTONEAREST,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
 use windows::Win32::UI::Shell::{
@@ -23,6 +23,27 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 
 use crate::journal;
+
+/// Clics traversants par région de fenêtre disponibles sous Windows.
+pub const REGION_DISPONIBLE: bool = true;
+
+/// Limite la fenêtre à un rectangle (px physiques, relatif à la fenêtre). Hors de ce rectangle,
+/// la fenêtre n'existe pas pour Windows : rien n'y est dessiné et les clics passent aux
+/// applications en dessous. Contrairement à WS_EX_LAYERED (basculé par set_ignore_cursor_events),
+/// cela ne change pas le mode de rendu de WebView2 → animations fluides.
+pub fn definir_region(fen: &WebviewWindow, r: Option<(i32, i32, i32, i32)>) {
+    let Ok(hwnd) = fen.hwnd() else { return };
+    unsafe {
+        let rgn = match r {
+            Some((x, y, l, h)) => CreateRectRgn(x, y, x + l, y + h),
+            None => CreateRectRgn(0, 0, 0, 0),
+        };
+        // La région appartient ensuite au système (ne pas la libérer).
+        if SetWindowRgn(hwnd, Some(rgn), true) == 0 {
+            journal!("fenetre", "SetWindowRgn a échoué");
+        }
+    }
+}
 
 /// Valeur spéciale de DWM : « aucune bordure » (Windows 11).
 const DWMWA_COLOR_NONE: u32 = 0xFFFF_FFFE;
