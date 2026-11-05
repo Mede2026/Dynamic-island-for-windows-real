@@ -3,7 +3,7 @@
  * Aucune icône ni aucun asset Apple n'est copié.
  */
 
-import type { CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 
 interface P {
   taille: number;
@@ -68,24 +68,60 @@ export function IconeFermer({ taille, couleur, style }: P) {
   );
 }
 
-/** Minuteur : anneau avec une aiguille. `progression` 0–1 = arc restant. */
-export function IconeMinuteur({ taille, couleur, style, progression = 1 }: P & { progression?: number }) {
+/**
+ * Minuteur (comme sur la capture iPhone fournie) : anneau ouvert en haut, aiguille qui part
+ * du haut vers le centre, pas de piste grise. L'anneau se vide EN CONTINU : l'animation est
+ * confiée au navigateur (Web Animations, aucun calcul par seconde) et ne repart que si le
+ * minuteur change (démarrage, pause, reprise).
+ */
+export function IconeMinuteur({
+  taille,
+  couleur,
+  style,
+  progression = 1,
+  finAMs = null,
+  dureeMs = 0,
+}: P & { progression?: number; finAMs?: number | null; dureeMs?: number }) {
   const r = 9;
   const c = 2 * Math.PI * r;
+  const OUVERTURE_DEG = 44; // ouverture autour de l'aiguille, en haut
+  const utile = c * (1 - OUVERTURE_DEG / 360);
+  const arc = useRef<SVGCircleElement>(null);
+  const trait = (p: number) => `${Math.max(utile * Math.min(Math.max(p, 0), 1), 0.001)} ${c}`;
+
+  useEffect(() => {
+    const el = arc.current;
+    if (!el) return;
+    if (finAMs === null || dureeMs <= 0) {
+      el.style.strokeDasharray = trait(progression);
+      return;
+    }
+    const restant = Math.max(finAMs - Date.now(), 0);
+    const depart = restant / dureeMs;
+    el.style.strokeDasharray = trait(depart);
+    if (restant <= 0 || typeof el.animate !== "function") return;
+    const anim = el.animate([{ strokeDasharray: trait(depart) }, { strokeDasharray: trait(0) }], {
+      duration: restant,
+      easing: "linear",
+      fill: "forwards",
+    });
+    return () => anim.cancel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finAMs, dureeMs, progression]);
+
   return (
     <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
-      <circle cx="12" cy="12" r={r} stroke={couleur} strokeOpacity="0.3" strokeWidth="2.6" />
       <circle
+        ref={arc}
         cx="12"
         cy="12"
         r={r}
         stroke={couleur}
-        strokeWidth="2.6"
+        strokeWidth="2.4"
         strokeLinecap="round"
-        strokeDasharray={`${c * progression} ${c}`}
-        transform="rotate(-90 12 12)"
+        transform={`rotate(${-90 + OUVERTURE_DEG / 2} 12 12)`}
       />
-      <path d="M12 12V7" stroke={couleur} strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M12 2.6V11.2" stroke={couleur} strokeWidth="2.4" strokeLinecap="round" />
     </svg>
   );
 }
@@ -157,6 +193,41 @@ export function IconeCloche({ taille, couleur, style }: P) {
     <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
       <path d="M12 3a6 6 0 0 0-6 6v4.2L4.3 16.4A1 1 0 0 0 5.2 18h13.6a1 1 0 0 0 .9-1.6L18 13.2V9a6 6 0 0 0-6-6z" fill={couleur} />
       <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0z" fill={couleur} />
+    </svg>
+  );
+}
+
+export function IconeSoleil({ taille, couleur, style }: P) {
+  const rayons = Array.from({ length: 8 }, (_, i) => {
+    const a = (i * Math.PI) / 4;
+    return `M${12 + Math.cos(a) * 7.6} ${12 + Math.sin(a) * 7.6}L${12 + Math.cos(a) * 10} ${12 + Math.sin(a) * 10}`;
+  }).join("");
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <circle cx="12" cy="12" r="4.6" fill={couleur} />
+      <path d={rayons} stroke={couleur} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Combiné de téléphone (appel en cours). */
+export function IconeTelephone({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path
+        d="M6.6 3.2c.6-.5 1.5-.4 2 .2l2.1 2.7c.4.6.4 1.4-.1 1.9l-1.3 1.3c.9 2 2.4 3.6 4.4 4.5l1.3-1.3c.5-.5 1.3-.6 1.9-.1l2.7 2.1c.6.5.7 1.4.2 2l-1.4 1.8c-.6.8-1.7 1.1-2.6.8C10.5 18 6 13.5 4.2 8.2c-.3-.9 0-2 .8-2.6z"
+        fill={couleur}
+      />
+    </svg>
+  );
+}
+
+export function IconeMicro({ taille, couleur, style, coupe }: P & { coupe?: boolean }) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <rect x="9" y="3" width="6" height="11" rx="3" fill={couleur} />
+      <path d="M6 11a6 6 0 0 0 12 0M12 17v3.5" stroke={couleur} strokeWidth="1.9" strokeLinecap="round" />
+      {coupe && <path d="M4.5 4.5l15 15" stroke={couleur} strokeWidth="2.2" strokeLinecap="round" />}
     </svg>
   );
 }

@@ -15,9 +15,9 @@ Objectif : écart RMS < 3 %.
 | ouvrir | hauteur | IMG_4730 2.44–3.40 s | **0.90 %** | 0.524 s / 0.816 | 0.528 s / 0.814 | ✅ |
 | fermer | hauteur | IMG_4731 3.39–4.20 s | **2.45 %** | 0.470 s / 0.887 | 0.495 s / 0.868 | ✅ |
 | apparition | largeur | IMG_4727 5.84–6.60 s | **1.79 %** | 0.459 s / 0.847 | 0.461 s / 0.845 | ✅ |
-| retrait | largeur | IMG_4731 10.60–10.81 s | **1.88 %** | 0.528 s / 0.758 | 0.519 s / 0.020 | ✅ |
-| alerteEntree | largeur | IMG_4731 10.80–11.60 s | **0.61 %** | 0.536 s / 0.810 | 0.536 s / 0.809 | ✅ |
-| alerteSortie | largeur | IMG_4731 13.60–14.30 s | **2.41 %** | 0.495 s / 0.562 | 0.514 s / 0.541 | ✅ |
+| retrait | largeur | IMG_4731 10.60–10.81 s | **1.88 %** | 0.528 s / 0.758 | 0.518 s / 0.020 | ✅ |
+| alerteEntree | largeur | IMG_4731 10.80–11.60 s | **0.62 %** | 0.536 s / 0.810 | 0.537 s / 0.809 | ✅ |
+| alerteSortie | largeur | IMG_4731 13.60–14.30 s | **2.48 %** | 0.495 s / 0.562 | 0.516 s / 0.539 | ✅ |
 | splitVersCompact | largeur | IMG_4731 5.14–5.70 s | **0.78 %** | 0.477 s / 0.868 | 0.478 s / 0.866 | ✅ |
 | disparition | largeur | IMG_4731 10.60–10.81 s | **1.89 %** | 0.528 s / 0.758 | 0.531 s / 0.757 | ✅ |
 
@@ -31,9 +31,9 @@ La largeur minimale dépend de la largeur de départ (compact de l'enregistremen
 | pic_bosse_ms | 220.8 | 200.0 | -1.2 image(s) | ✅ |
 | hauteur_bosse_pt | 54.9 | 54.8 | -0.12 pt | ✅ |
 | largeur_min_ms | 321.7 | 308.3 | -0.8 image(s) | ✅ |
-| largeur_min_pt | 131.6 | 122.1 | -9.54 pt | ✅ |
+| largeur_min_pt | 131.6 | 123.6 | -8.00 pt | ✅ |
 | separation_ms | 505.0 | 475.0 | -1.8 image(s) | ✅ |
-| centre_ile_final_pt | -16.5 | -17.2 | -0.65 pt | ✅ |
+| centre_ile_final_pt | -16.5 | -17.1 | -0.63 pt | ✅ |
 | centre_bulle_final_pt | 87.3 | 89.2 | +1.96 pt | ✅ |
 
 ## Tailles des états stables (pt)
@@ -42,7 +42,7 @@ La largeur minimale dépend de la largeur de départ (compact de l'enregistremen
 |---|---|---|
 | compact (2 côtés) | 197.02 × 36.75 | — |
 | étendu | 374.47 × 204.98 | 374.24 × 204.71 |
-| alerte | 339.73 × 36.75 | 340.16 × 36.81 |
+| alerte | 347.33 × 36.75 | 340.16 × 36.81 |
 | repos | 125.12 × 36.75 | 125.48 × 36.81 |
 
 ## Délais du contenu (ouverture)
@@ -52,7 +52,7 @@ Une image iPhone = 16.7 ms. Objectif : ±1 image.
 | Seuil | Notre île | iPhone | Écart (images) |
 |---|---|---|---|
 | 3 % | 64 ms | 62 ms | +0.15 |
-| 50 % | 193 ms | 178 ms | +0.95 |
+| 50 % | 193 ms | 178 ms | +0.91 |
 | 90 % | 281 ms | 293 ms | -0.76 |
 
 ## Graphiques

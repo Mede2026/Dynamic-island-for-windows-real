@@ -24,6 +24,38 @@ pub fn dernier() -> Option<Confidentialite> {
     *DERNIER.lock().unwrap()
 }
 
+pub const EVENEMENT_APPEL: &str = "appel";
+
+/// Appel en cours (Teams, Discord, Zoom…) détecté par l'utilisation du micro.
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub struct Appel {
+    pub actif: bool,
+    pub application: Option<String>,
+}
+
+/// Applications d'appel reconnues (fragment du nom dans le registre → nom affiché).
+const APPS_APPEL: [(&str, &str); 10] = [
+    ("teams", "Teams"),
+    ("discord", "Discord"),
+    ("zoom", "Zoom"),
+    ("skype", "Skype"),
+    ("slack", "Slack"),
+    ("whatsapp", "WhatsApp"),
+    ("webex", "Webex"),
+    ("signal", "Signal"),
+    ("telegram", "Telegram"),
+    ("facetime", "FaceTime"),
+];
+
+/// Nom de clé du registre (ex. « MSTeams_8wekyb3d8bbwe » ou « C:#…#Discord.exe ») → app d'appel.
+pub fn app_d_appel(cle: &str) -> Option<String> {
+    let c = cle.to_lowercase();
+    APPS_APPEL
+        .iter()
+        .find(|(f, _)| c.contains(f))
+        .map(|(_, n)| n.to_string())
+}
+
 /// Règle d'utilisation (fonction pure, testée).
 pub fn en_cours(debut: u64, fin: u64) -> bool {
     debut > 0 && fin == 0
@@ -86,21 +118,20 @@ mod win {
         noms
     }
 
-    /// Une app (à n'importe quelle profondeur ≤ 2) utilise-t-elle le périphérique ?
-    fn utilise(k: HKEY, profondeur: u32) -> bool {
+    /// Noms (clés du registre) des apps qui utilisent le périphérique en ce moment.
+    fn utilisateurs(k: HKEY, profondeur: u32, sortie: &mut Vec<String>) {
         for nom in sous_cles(k) {
             if let Some(sk) = ouvrir(k, &nom) {
-                let actif = en_cours(qword(sk, w!("LastUsedTimeStart")), qword(sk, w!("LastUsedTimeStop")))
-                    || (profondeur < 2 && utilise(sk, profondeur + 1));
+                if en_cours(qword(sk, w!("LastUsedTimeStart")), qword(sk, w!("LastUsedTimeStop"))) {
+                    sortie.push(nom.clone());
+                } else if profondeur < 2 {
+                    utilisateurs(sk, profondeur + 1, sortie);
+                }
                 unsafe {
                     let _ = RegCloseKey(sk);
                 }
-                if actif {
-                    return true;
-                }
             }
         }
-        false
     }
 
     pub fn demarrer(app: AppHandle) {
@@ -120,13 +151,30 @@ mod win {
                     return;
                 };
                 let mut dernier: Option<Confidentialite> = None;
+                let mut dernier_appel: Option<String> = None;
                 loop {
                     let _ = RegNotifyChangeKeyValue(cam, true, REG_NOTIFY_CHANGE_LAST_SET, Some(e1), true);
                     let _ = RegNotifyChangeKeyValue(mic, true, REG_NOTIFY_CHANGE_LAST_SET, Some(e2), true);
+                    let (mut apps_cam, mut apps_mic) = (Vec::new(), Vec::new());
+                    utilisateurs(cam, 0, &mut apps_cam);
+                    utilisateurs(mic, 0, &mut apps_mic);
                     let etat = Confidentialite {
-                        camera: utilise(cam, 0),
-                        micro: utilise(mic, 0),
+                        camera: !apps_cam.is_empty(),
+                        micro: !apps_mic.is_empty(),
                     };
+                    // Appel en cours : une app d'appel utilise le micro.
+                    let appel = apps_mic.iter().find_map(|n| app_d_appel(n));
+                    if appel != dernier_appel {
+                        journal!("appel", "{:?}", appel);
+                        let _ = app.emit(
+                            EVENEMENT_APPEL,
+                            Appel {
+                                actif: appel.is_some(),
+                                application: appel.clone(),
+                            },
+                        );
+                        dernier_appel = appel;
+                    }
                     if dernier != Some(etat) {
                         journal!("confidentialite", "caméra={} micro={}", etat.camera, etat.micro);
                         let _ = app.emit(evenements::CONFIDENTIALITE, etat);
@@ -152,6 +200,16 @@ pub fn demarrer(_app: AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn apps_d_appel() {
+        assert_eq!(app_d_appel("MSTeams_8wekyb3d8bbwe").as_deref(), Some("Teams"));
+        assert_eq!(
+            app_d_appel(r"C:#Users#mede#AppData#Local#Discord#app-1.0.9#Discord.exe").as_deref(),
+            Some("Discord")
+        );
+        assert_eq!(app_d_appel(r"C:#Program Files#Google#Chrome#chrome.exe"), None);
+    }
 
     #[test]
     fn regle() {

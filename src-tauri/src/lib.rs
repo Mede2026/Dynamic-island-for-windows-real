@@ -13,6 +13,7 @@ use tauri::Manager;
 pub mod demarrage;
 pub mod evenements;
 pub mod fenetre;
+pub mod horloge;
 pub mod journal;
 pub mod media;
 pub mod minuteur;
@@ -45,7 +46,7 @@ pub fn run() {
         .plugin(demarrage::plugin())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_shortcut(plateau::RACCOURCI_PANNEAU)
+                .with_shortcuts([plateau::RACCOURCI_PANNEAU, plateau::RACCOURCI_LANCEUR])
                 .expect("raccourci invalide")
                 .with_handler(plateau::gestion_raccourci)
                 .build(),
@@ -78,8 +79,11 @@ pub fn run() {
             minuteur::minuteur_annuler,
             minuteur::minuteur_etat,
             systeme::systeme_confidentialite,
+            systeme::niveau_audio::audio_niveau_actif,
+            systeme::micro::micro_muet,
             parametres::parametres_lire,
             parametres::parametres_definir_taille,
+            parametres::parametres_definir_affichage,
             parametres::parametres_definir_clics_classiques,
             ile_reinitialiser,
             app_quitter,
@@ -120,6 +124,7 @@ pub fn run() {
             }
             media::demarrer(handle);
             systeme::demarrer(handle);
+            horloge::demarrer(handle.clone());
             minuteur::executer_arguments(handle, &std::env::args().collect::<Vec<_>>());
             Ok(())
         })

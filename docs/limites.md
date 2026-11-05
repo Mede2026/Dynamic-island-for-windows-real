@@ -33,6 +33,28 @@
 - Seules les apps de l'utilisateur courant sont vues (pas les services système).
 - Règle iOS appliquée : **orange = micro seul**, **vert = caméra (avec ou sans micro)** — jamais les deux.
 
+## Minuteurs de l'app Horloge (expérimental)
+- Aucune API ne donne les minuteurs de l'Horloge. L'île lit ce que la **fenêtre Horloge affiche**
+  avec UI Automation (accessibilité) : une durée qui diminue d'une seconde par seconde = un minuteur.
+- La fenêtre Horloge doit être **ouverte** (elle peut être réduite ou cachée derrière). Si elle est
+  fermée, Windows n'affiche plus le minuteur nulle part : l'île ne peut pas le voir.
+- Les boutons pause/annuler ne sont pas affichés pour ces minuteurs (on ne peut pas piloter l'Horloge).
+- Le lanceur **Ctrl+Alt+M** démarre le minuteur de l'île, qui, lui, se contrôle entièrement.
+
+## Appel en cours
+- Détecté quand Teams, Discord, Zoom, Skype, Slack, WhatsApp, Webex, Signal ou Telegram utilisent le
+  micro (registre `CapabilityAccessManager`). Un appel dans un navigateur (Meet) n'est pas reconnu.
+- La durée part du moment où le micro a été pris. Le bouton coupe le **micro par défaut de Windows**
+  (toutes les applications). Raccrocher n'est pas possible (aucune API commune).
+
+## Luminosité
+- Événement WMI `WmiMonitorBrightnessEvent` : écran **intégré** d'un portable. La plupart des écrans
+  externes ne signalent pas leur luminosité à Windows.
+
+## Capture d'écran
+- Win+Maj+S copie l'image : l'île vérifie que c'est bien l'outil de capture qui l'a copiée et affiche
+  une miniature. Win+Impr. écran (enregistrement direct dans un fichier) n'est pas détecté.
+
 ## Presse-papiers
 - On lit le compteur `GetClipboardSequenceNumber` toutes les 400 ms (un nombre ; coût négligeable) et le
   contenu seulement s'il a changé. Les gestionnaires de mots de passe qui copient puis effacent
@@ -79,6 +101,12 @@
 ## Installateur
 - `npm run tauri build` doit être lancé **sous Windows** (il produit `.msi` et `.exe`). Le workflow GitHub
   `.github/workflows/windows.yml` le fait automatiquement sur une machine Windows de GitHub.
+
+## Police
+- iOS utilise **SF Pro**, dont la licence interdit l'usage hors des appareils Apple. L'île utilise
+  **Inter**, la police libre la plus proche : version « Display » aux grandes tailles (axe de taille
+  optique), sans variantes stylistiques (« a » à deux étages, chiffres fermés comme SF Pro) et avec un
+  espacement des lettres qui varie selon la taille, comme SF Pro (formule « Dynamic Metrics » d'Inter).
 
 ## Compilation hors Windows
 - Le code propre à Windows est derrière `#[cfg(windows)]`. Sous Linux/macOS, l'app compile et se

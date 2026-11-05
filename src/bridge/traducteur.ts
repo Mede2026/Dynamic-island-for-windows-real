@@ -6,13 +6,15 @@
  */
 
 import type { Evenement } from "../state/islandMachine";
-import type { EtatBatterie, EtatMedia, EtatMinuteur, EtatNePasDeranger, EtatVolume, Notification } from "./types";
+import type { Appel, EtatBatterie, EtatMedia, EtatMinuteur, EtatNePasDeranger, EtatVolume, Notification } from "./types";
+import type { PressePapiers } from "./donnees";
 
 /** Seuils d'alerte de batterie faible (%), comme sur iPhone. */
 export const SEUILS_BATTERIE_FAIBLE = [20, 10] as const;
 
 export const ID_MUSIQUE = "musique";
 export const ID_MINUTEUR = "minuteur";
+export const ID_APPEL = "appel";
 
 /** La musique est une activité tant qu'une source joue ou est en pause avec un titre. */
 function musiqueActive(m: EtatMedia): boolean {
@@ -25,6 +27,7 @@ export class Traducteur {
   private minuteur = false;
   private batterie: EtatBatterie | null = null;
   private nePasDeranger: boolean | null = null;
+  private appelActif = false;
 
   media(m: EtatMedia): Evenement[] {
     const actif = musiqueActive(m);
@@ -54,7 +57,11 @@ export class Traducteur {
   batterieEtat(b: EtatBatterie): Evenement[] {
     const avant = this.batterie;
     this.batterie = b;
-    if (!avant) return []; // première lecture : pas d'alerte
+    if (!avant) {
+      // Au démarrage : alerte si la batterie est déjà faible (et pas en charge).
+      const faible = !b.branche && b.pourcentage !== null && b.pourcentage <= SEUILS_BATTERIE_FAIBLE[0];
+      return faible ? [{ type: "ALERTE", alerte: { type: "batterie", donnees: b } }] : [];
+    }
     const evs: Evenement[] = [];
     if (b.branche !== avant.branche) {
       evs.push({ type: "ALERTE", alerte: { type: "chargeur", donnees: b } });
@@ -81,8 +88,22 @@ export class Traducteur {
     return [{ type: "ALERTE", alerte: { type: "notification", donnees: n } }];
   }
 
-  pressePapiers(p: { type: "texte" | "image" | "fichiers" | "autre"; apercu: string }): Evenement[] {
+  pressePapiers(p: PressePapiers): Evenement[] {
+    // Win+Maj+S : alerte « Capture d'écran » avec sa miniature.
+    if (p.type === "capture") return [{ type: "ALERTE", alerte: { type: "capture", donnees: p } }];
     return [{ type: "ALERTE", alerte: { type: "pressePapiers", donnees: p } }];
+  }
+
+  luminosite(niveau: number): Evenement[] {
+    return [{ type: "ALERTE", alerte: { type: "luminosite", donnees: niveau } }];
+  }
+
+  appel(a: Appel): Evenement[] {
+    const avant = this.appelActif;
+    this.appelActif = a.actif;
+    if (a.actif && !avant) return [{ type: "ACTIVITE_DEBUT", activite: { id: ID_APPEL, type: "appel", donnees: a } }];
+    if (!a.actif && avant) return [{ type: "ACTIVITE_FIN", id: ID_APPEL }];
+    return [];
   }
 
   survol(dedans: boolean): Evenement[] {

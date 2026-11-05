@@ -7,7 +7,10 @@
 
 pub mod batterie;
 pub mod confidentialite;
+pub mod luminosite;
+pub mod micro;
 pub mod ne_pas_deranger;
+pub mod niveau_audio;
 pub mod notifications;
 pub mod presse_papiers;
 pub mod volume;
@@ -21,6 +24,8 @@ pub fn demarrer(app: &AppHandle) {
     notifications::demarrer(app.clone());
     presse_papiers::demarrer(app.clone());
     confidentialite::demarrer(app.clone());
+    niveau_audio::demarrer(app.clone());
+    luminosite::demarrer(app.clone());
 }
 
 #[tauri::command]

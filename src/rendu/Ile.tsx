@@ -22,6 +22,9 @@ import { useConfig, v } from "../config/store";
 import { cleContenu, geometrieCible, geometriesDuPlan, planifier, type Geometrie, type Phase } from "./choregraphie";
 import {
   AlerteContenu,
+  AppelCompact,
+  AppelEtendu,
+  AppelMinimal,
   MinuteurCompact,
   MinuteurEtendu,
   MinuteurMinimal,
@@ -31,6 +34,7 @@ import {
   type Ctx,
 } from "./contenus";
 import { cheminIle } from "./squircle";
+import { definirTypographie } from "./contenus";
 
 /** Marge autour de l'île dans le canevas (pt) : place pour l'ombre et l'appui. */
 const MARGE_CANEVAS_PT = 40;
@@ -219,6 +223,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   const cfg = useConfig();
   const d = useDonnees();
   const S = v(cfg.ISLAND_SCALE);
+  definirTypographie(cfg);
   const [etat, setEtat] = useState<EtatMachine>(machine.etat);
   const [debutContenuMs, setDebutContenuMs] = useState(0);
   const val = useValeurs(geometrieCible(machine.etat, cfg));
@@ -545,11 +550,11 @@ function choisirContenu(ctx: Ctx): ReactNode {
     case "repos":
       return null;
     case "compact":
-      return type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
+      return type === "appel" ? <AppelCompact {...ctx} /> : type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
     case "split":
-      return type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
+      return type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
     case "etendu":
-      return type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
+      return type === "appel" ? <AppelEtendu {...ctx} /> : type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
     case "alerte":
       return e.alerte ? <AlerteContenu {...ctx} alerte={e.alerte} /> : null;
   }
@@ -561,12 +566,12 @@ function choisirBulle(ctx: Ctx): ReactNode {
   const type = typeDe(etat, etat.bulleId);
   const diam = v(cfg.bulle.diametrePt) * S;
   // Les contenus « minimal » sont placés comme dans l'île ; on les recentre dans la bulle.
-  const decalage = type === "minuteur"
+  const decalage = type === "minuteur" || type === "appel"
     ? diam / 2 - (v(cfg.minuteur.compactIconeXPt) + v(cfg.minuteur.compactIconeTaillePt) / 2) * S
     : diam / 2 - (v(cfg.media.compact.pochetteXPt) + v(cfg.media.compact.pochetteTaillePt) / 2) * S;
   return (
     <div style={{ position: "absolute", left: decalage, top: 0, width: diam, height: diam }}>
-      {type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
+      {type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
     </div>
   );
 }

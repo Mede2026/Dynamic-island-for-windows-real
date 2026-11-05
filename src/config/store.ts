@@ -11,6 +11,14 @@ type Chemin = string; // ex. "formes.etendu.rayonPt"
 /** Préférences de l'utilisateur (mémorisées par le backend), ex. la taille de l'île. */
 export interface Preferences {
   ISLAND_SCALE?: number;
+  /** Vitesse des animations : 1 = mesurée sur iPhone ; 1,5 = 50 % plus rapide. */
+  vitesse?: number;
+  /** Afficher l'onde sonore de la musique. */
+  onde?: boolean;
+  /** Durée d'affichage des alertes : 1 = mesurée sur iPhone. */
+  dureeAlertes?: number;
+  /** Types d'alertes à ne pas afficher (ex. "volume", "pressePapiers"). */
+  alertesMasquees?: string[];
 }
 
 let preferences: Preferences = {};
@@ -37,6 +45,9 @@ export function lire(obj: unknown, chemin: string): unknown {
 function calculer(): IslandConfig {
   const c = cloner(islandConfig);
   if (preferences.ISLAND_SCALE) c.ISLAND_SCALE = preferences.ISLAND_SCALE;
+  const k = preferences.vitesse && preferences.vitesse > 0 ? 1 / preferences.vitesse : 1;
+  if (k !== 1) accelerer(c, k);
+  if (preferences.dureeAlertes) c.durees.alerteAffichageMs = (c.durees.alerteAffichageMs ?? 0) * preferences.dureeAlertes;
   for (const [chemin, v] of Object.entries(surcharges)) ecrire(c as unknown as Record<string, unknown>, chemin, v);
   // Les tailles en DIP suivent toujours pt × ISLAND_SCALE.
   const s = c.ISLAND_SCALE ?? 1;
@@ -45,6 +56,32 @@ function calculer(): IslandConfig {
     f.taille.dip.hauteur = (f.taille.pt.hauteur ?? 0) * s;
   }
   return c;
+}
+
+/**
+ * Change la vitesse de TOUTES les animations d'un facteur k (durée × k) en gardant leur forme :
+ * response × k (stiffness ÷ k², damping ÷ k) et chaque durée d'animation (…Ms) × k.
+ */
+function accelerer(c: IslandConfig, k: number) {
+  const parcourir = (o: unknown, cle = "") => {
+    if (o === null || typeof o !== "object" || Array.isArray(o)) return;
+    const r = o as Record<string, unknown>;
+    if (typeof r.stiffness === "number" && typeof r.damping === "number" && typeof r.response === "number") {
+      r.stiffness /= k * k;
+      r.damping /= k;
+      r.response *= k;
+      return;
+    }
+    for (const [n, val] of Object.entries(r)) {
+      if (typeof val === "number" && n.endsWith("Ms") && cle !== "durees") r[n] = val * k;
+      else parcourir(val, n);
+    }
+  };
+  parcourir(c);
+}
+
+export function preferencesActuelles(): Preferences {
+  return preferences;
 }
 
 export function config(): IslandConfig {

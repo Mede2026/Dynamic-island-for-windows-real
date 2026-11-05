@@ -11,7 +11,10 @@ body,
   user-select: none;
   -webkit-user-select: none;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "cv11", "ss01";
+  /* Inter « Display » aux grandes tailles (axe opsz), comme SF Pro Display sur iPhone.
+     Aucune variante stylistique : le « a » à deux étages et les chiffres fermés de SF Pro. */
+  font-optical-sizing: auto;
+  font-feature-settings: "calt", "kern";
 }
 
 /* Mode démo (navigateur) : fond clair comme les vidéos de référence. */

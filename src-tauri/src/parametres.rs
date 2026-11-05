@@ -20,6 +20,8 @@ pub struct Parametres {
     pub cacher_en_plein_ecran: bool,
     /// Mode de compatibilité : clics traversants « classiques » (si la région pose problème).
     pub clics_classiques: bool,
+    /// Préférences d'affichage gérées par l'interface (vitesse, onde, alertes…), stockées telles quelles.
+    pub affichage: serde_json::Map<String, serde_json::Value>,
 }
 
 impl Default for Parametres {
@@ -29,6 +31,7 @@ impl Default for Parametres {
             ecran: None,
             cacher_en_plein_ecran: false,
             clics_classiques: false,
+            affichage: Default::default(),
         }
     }
 }
@@ -100,6 +103,15 @@ pub fn parametres_lire(app: AppHandle) -> Parametres {
 #[tauri::command]
 pub fn parametres_definir_taille(app: AppHandle, taille: f64) -> Parametres {
     modifier(&app, |p| p.taille = taille)
+}
+
+/// Préférences d'affichage (fusionnées avec les précédentes).
+#[tauri::command]
+pub fn parametres_definir_affichage(
+    app: AppHandle,
+    affichage: serde_json::Map<String, serde_json::Value>,
+) -> Parametres {
+    modifier(&app, |p| p.affichage.extend(affichage))
 }
 
 /// Prend effet au prochain démarrage.

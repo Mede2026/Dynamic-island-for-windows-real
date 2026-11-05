@@ -4,6 +4,7 @@
  * fidélité (enregistrement de notre île, tools/enregistrer_ile.mjs).
  */
 
+import { backend, dansTauri } from "../bridge/backend";
 import { majDonnees, donnees } from "../bridge/donnees";
 import type { EtatMedia, EtatMinuteur, Pochette } from "../bridge/types";
 import type { IslandMachine } from "../state/islandMachine";
@@ -51,14 +52,48 @@ function minuteurFactice(): EtatMinuteur {
   return { statut: "enCours", dureeMs: duree, restantMs: duree - 6_000, finAMs: Date.now() + duree - 6_000 };
 }
 
+/** Un minuteur lancé par un test (à annuler quand on arrête le test). */
+let minuteurDeTest = false;
+
+/** Arrêter le test : annule le minuteur lancé par le test, s'il y en a un. */
+export function nettoyerTests() {
+  if (minuteurDeTest && dansTauri()) void backend.minuteurAnnuler();
+  minuteurDeTest = false;
+}
+
+/** La musique affichée est-elle celle d'un test ? (ses boutons agissent alors sur elle) */
+export function estMusiqueDeTest(): boolean {
+  return donnees().media?.sourceActive === "Demo.exe";
+}
+
+/** Boutons de la musique de test : lecture/pause sans passer par Windows. */
+export function basculerMusiqueDeTest() {
+  const m = donnees().media;
+  if (!m) return;
+  const enLecture = m.statut === "lecture";
+  majDonnees({
+    media: {
+      ...m,
+      statut: enLecture ? "pause" : "lecture",
+      positionMs: enLecture ? Math.min(m.positionMs + (Date.now() - m.positionMajAMs), m.dureeMs) : m.positionMs,
+      positionMajAMs: Date.now(),
+    },
+  });
+}
+
 export const SCENARIOS = {
   musique: "Musique : repos → compact",
   etendre: "Appui long : → étendu",
   fermer: "Clic extérieur : étendu → compact",
-  minuteur: "Minuteur : → split",
+  minuteur: "Minuteur 15 min (vrai minuteur) : → split",
   finMinuteur: "Fin du minuteur : split → compact",
   finMusique: "Fin de la musique : → repos",
   charge: "Alerte « En charge »",
+  batterieFaible: "Alerte batterie faible (20 %)",
+  luminosite: "Alerte luminosité",
+  capture: "Capture d'écran (Win+Maj+S)",
+  appel: "Appel Teams en cours",
+  finAppel: "Fin de l'appel",
   volume: "Alerte volume",
   pressePapiers: "Alerte presse-papiers",
   camera: "Point vert (caméra)",
@@ -81,11 +116,20 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       machine.envoyer({ type: "CLIC_EXTERIEUR" });
       break;
     case "minuteur":
-      majDonnees({ minuteur: minuteurFactice() });
-      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "minuteur", type: "minuteur" } });
+      if (dansTauri()) {
+        // Le VRAI minuteur de l'app : pause, reprise et annulation fonctionnent.
+        minuteurDeTest = true;
+        void backend.minuteurDemarrer(15 * 60_000);
+      } else {
+        majDonnees({ minuteur: minuteurFactice() });
+        machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "minuteur", type: "minuteur" } });
+      }
       break;
     case "finMinuteur":
-      machine.envoyer({ type: "ACTIVITE_FIN", id: "minuteur" });
+      if (dansTauri()) {
+        minuteurDeTest = false;
+        void backend.minuteurAnnuler();
+      } else machine.envoyer({ type: "ACTIVITE_FIN", id: "minuteur" });
       break;
     case "finMusique":
       machine.envoyer({ type: "ACTIVITE_FIN", id: "musique" });
@@ -95,6 +139,28 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
         type: "ALERTE",
         alerte: { type: "chargeur", donnees: { presente: true, pourcentage: 98, branche: true, enCharge: true, economie: false } },
       });
+      break;
+    case "batterieFaible":
+      machine.envoyer({
+        type: "ALERTE",
+        alerte: { type: "batterie", donnees: { presente: true, pourcentage: 20, branche: false, enCharge: false, economie: false } },
+      });
+      break;
+    case "luminosite":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "luminosite", donnees: 62 } });
+      break;
+    case "capture": {
+      const p = pochetteFactice();
+      machine.envoyer({ type: "ALERTE", alerte: { type: "capture", donnees: { type: "capture", apercu: "", miniature: p?.pngBase64 ?? null } } });
+      break;
+    }
+    case "appel":
+      majDonnees({ appel: { application: "Teams", debutMs: Date.now() - 83_000, muet: false } });
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "appel", type: "appel" } });
+      break;
+    case "finAppel":
+      machine.envoyer({ type: "ACTIVITE_FIN", id: "appel" });
+      majDonnees({ appel: null });
       break;
     case "volume":
       machine.envoyer({ type: "ALERTE", alerte: { type: "volume", donnees: { niveau: 0.62, muet: false } } });

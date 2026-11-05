@@ -17,6 +17,10 @@ d'écran d'un iPhone 16 Pro (iOS 27) — voir [`docs/mesures.md`](docs/mesures.m
 | Musique + minuteur | Mode **split** : île + bulle (effet goutte) |
 | Chargeur branché / débranché, batterie faible (20 %, 10 %), volume, Ne pas déranger, notifications, **presse-papiers**, fin du minuteur | Alerte (forme mesurée sur « En charge 98 % ») puis retour automatique |
 | Caméra / micro utilisés | Point **vert** (caméra, avec ou sans micro) ou **orange** (micro seul), comme sur iPhone |
+| Appel Teams, Discord, Zoom… | Compact : téléphone vert + durée ; étendu : nom de l'app, durée, bouton pour **couper le micro** |
+| Capture d'écran (Win+Maj+S) | Alerte avec la **miniature** de la capture |
+| Luminosité (portable), volume | Alerte avec le pourcentage |
+| Minuteur lancé dans l'**Horloge** de Windows | Affiché par l'île (fenêtre Horloge ouverte ; expérimental) |
 
 Chorégraphie iOS reproduite : rétraction avant un changement d'activité, « bosse » verticale et bulle
 qui sort du bord droit en mode split (île décalée de 17 pt vers la gauche, comme sur iPhone), gonflement
@@ -50,6 +54,9 @@ L'installateur est dans `src-tauri/target/release/bundle/`.
 - **Arrêter le test** : gros bouton rouge du panneau, menu de l'icône, ou simplement **fermer le panneau** :
   l'île efface les activités de test et revient à ce qui se passe vraiment sur le PC.
 - **Clic** sur l'île : petit rebond (et ouverture de l'app qui joue) ; **appui long** : vue étendue.
+- **Ctrl + Alt + M** : lanceur rapide de minuteur (1, 3, 5… 60 min ou durée libre : « 7 », « 2:30 », « 1h15 »).
+- **Personnaliser** (panneau) : taille, vitesse des animations, durée des alertes, onde sonore, choix des
+  alertes affichées — mémorisé.
 - **Minuteur** depuis un raccourci, un MacroPad ou un Stream Deck :
 
 ```bash

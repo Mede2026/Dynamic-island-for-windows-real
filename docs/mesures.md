@@ -98,9 +98,31 @@ cercle laisse une erreur 1,7 fois plus grande). La vue étendue a des coins plus
 | `appui.echelleAppui` | 1,10 | V4728 img 452 (176,1/159,5 et 40,35/36,81) |
 | `appui.dureeGonflementMs`, `durees.clicLongSeuilMs` | 180 | V4728 img 441 → 452 |
 | Clic court : **rebond** | impulsion calculée pour atteindre `echelleAppui` avec `ressortRetour` (pic ×1,09 à ~60 ms) | **déduit** des valeurs d'appui mesurées (pas de vidéo de clic court) |
-| `indicateurs.enregistrementCouleur` | `#d33930` | V4728 img 18 |
+| `indicateurs.enregistrementCouleur` | `#d3382a` | V4728 img 18 |
 | `indicateurs.pointXPt` / `pointDiametrePt` | 11,2 / 14,5 | V4728 img 18 |
 | `durees.alerteAffichageMs` | 3000 | V4731 10,60 → 13,60 s |
+
+## Zone de la caméra et largeur des alertes
+
+Sur iPhone, rien n'est dessiné dans la zone centrale de la taille du repos (125,48 × 36,81 pt) : les
+capteurs sont là. Le contenu est rangé à gauche et à droite.
+
+| Valeur | Mesure | Source |
+|---|---|---|
+| `zoneCamera.largeurPt` / `hauteurPt` | 125,48 / 36,81 | = repos (V4727 img 280–338) |
+| `zoneCamera.margePt` (écart contenu ↔ caméra) | 18,9 | V4731 img 706 : « 98 % » commence à 251,7, caméra finit à 232,8 |
+| `alerte.valeurDroitePt` / `ecartValeurBatteriePt` | 55,16 / 7,8 | V4731 img 706 (corrigé : l'ancienne mesure ignorait le signe %) |
+
+Règle : **largeur = caméra + 2 × max(côté gauche, côté droit)**, côté = marge du bord + contenu + 18,9.
+Elle retrouve l'alerte mesurée (340,3 pt calculés pour 340,16 mesurés) et donne aux autres alertes la
+bonne largeur (volume ≈ 257 pt…), au plus la largeur de la vue étendue (374,24 pt).
+
+## Couleurs
+
+Mesurées au **cœur** des formes colorées : 90ᵉ centile de (saturation + luminosité). La première mesure
+prenait les pixels les plus lumineux, c'est-à-dire les bords blanchis par la compression vidéo, d'où des
+couleurs délavées (orange `#f29b59` au lieu de `#ff8c2b`). Vérifié : OpenCV et ffmpeg (BT.709, pleine
+plage, conforme aux vidéos) donnent exactement les mêmes valeurs.
 
 ## Mise en page du contenu (pt, depuis le coin haut-gauche de l'île)
 
@@ -115,11 +137,11 @@ luminosité (la compression vidéo atténue les petits textes). Tailles de polic
 | Titre / artiste | x 108,3, lignes de base 51,4 / 72,7, 16,6 pt, `#ffffff` / `#8f8f90` |
 | Onde sonore | x 319,6, centre y 49,3, 6 barres de 2,7 pt, pas 4,72, hauteur 2,4–22,5 |
 | Temps | ligne de base 118,8, 10,9 pt, `#919092`, de x 25,4 à 349,5 |
-| Barre de progression | x 57,5 → 308,8, centre y 115,2, `#9b9a9f` / `#232224` |
+| Barre de progression | x 57,5 → 308,8, centre y 115,2, `#919098` / `#212022` |
 | Boutons | centre y 157,8, centres x 45,4 / 116,9 / 187,9 / 258,5 / 330,0 |
 | Pochette compacte | x 8,8, y 6,6, 23,6 × 23,6, rayon 6,11 |
-| Alerte | texte x 13,1, ligne de base 23,5, 15 pt ; batterie 33,3 × 17,6 à 14,06 du bord, `#5cfd8b` ; valeur `#8ff8c2` |
-| Minuteur étendu | boutons ⌀ 49,6 à x 16,8 et 75, y 19,3 ; « Minuteur » x 176,1 ; chiffres 35 pt jusqu'à x 357,4 ; `#f29b59` |
+| Alerte | texte x 13,1, ligne de base 23,5, 15 pt ; batterie 33,3 × 17,6 à 14,06 du bord, `#56fe36` ; valeur `#52ffa9` |
+| Minuteur étendu | boutons ⌀ 49,6 à x 16,8 et 75, y 19,3 ; « Minuteur » x 176,1 ; chiffres 35 pt jusqu'à x 357,4 ; `#ff8c2b` |
 
 ## Valeurs ESTIMÉES (non présentes dans les vidéos)
 

@@ -96,6 +96,24 @@ export interface IslandConfig {
   margeHautPt: Mesure<number>;
   couleurPilule: Mesure<string>;
   police: Mesure<string>;
+  /**
+   * Espacement des lettres selon la taille (comme le « tracking » de SF Pro sur iPhone) :
+   * espacement (em) = a + b · e^(c · taille en px) — formule « Dynamic Metrics » d'Inter.
+   */
+  typographie: {
+    suiviA: Mesure<number>;
+    suiviB: Mesure<number>;
+    suiviC: Mesure<number>;
+  };
+  /**
+   * Zone de la CAMÉRA : au centre-haut de l'île, de la taille du repos. Sur iPhone, aucun
+   * contenu n'y est jamais dessiné (les capteurs sont là) : le contenu va à gauche et à droite.
+   */
+  zoneCamera: {
+    largeurPt: Mesure<number>;
+    hauteurPt: Mesure<number>;
+    margePt: Mesure<number>;
+  };
 
   formes: Record<EtatIle, FormeEtat>;
   /** Formes particulières selon le contenu. */
@@ -228,6 +246,7 @@ export interface IslandConfig {
     texte: Texte;
     valeurCouleur: Mesure<string>;
     valeurDroitePt: Mesure<number>;
+    ecartValeurBatteriePt: Mesure<number>;
     batterieLargeurPt: Mesure<number>;
     batterieHauteurPt: Mesure<number>;
     batterieDroitePt: Mesure<number>;
@@ -309,6 +328,17 @@ export const islandConfig: IslandConfig = {
   margeHautPt: 14.06, // V4727 img 280–338 (médiane)
   couleurPilule: "#000000", // V4727 img 338, pixels intérieurs
   police: "'Inter Variable', Inter, 'Segoe UI Variable', 'Segoe UI', sans-serif",
+  typographie: {
+    // https://rsms.me/inter/dynmetrics/ — l'équivalent pour Inter du tableau de tracking d'Apple.
+    suiviA: -0.0223,
+    suiviB: 0.185,
+    suiviC: -0.1745,
+  },
+  zoneCamera: {
+    largeurPt: 125.48, // = largeur du repos (V4727 img 280–338) : la forme matérielle de la caméra
+    hauteurPt: 36.81, //  = hauteur du repos
+    margePt: 18.9, //     V4731 img 706 : « 98 % » commence à 251,7 pt, la caméra finit à 232,8 pt
+  },
 
   formes: {
     repos: forme(125.48, 36.81, 22.39, 2.553), //    V4727 img 280–338
@@ -421,8 +451,8 @@ export const islandConfig: IslandConfig = {
       barreFinPt: 308.8,
       barreCentreYPt: 115.2,
       barreHauteurPt: 6.0,
-      barrePleineCouleur: "#9b9a9f",
-      barreVideCouleur: "#232224",
+      barrePleineCouleur: "#919098", // couleurs : cœur saturé des formes (90e centile chroma + luminosité)
+      barreVideCouleur: "#212022",
       boutonsCentreYPt: 157.8,
       boutonsCentresXPt: [45.4, 116.9, 187.9, 258.5, 330.0],
       iconeLecturePt: 32.0,
@@ -434,44 +464,45 @@ export const islandConfig: IslandConfig = {
   },
 
   minuteur: {
-    couleur: "#f29b59", //         V4729 img 1153 (libellé, 90e centile)
+    couleur: "#ff8c2b", //         V4729 img 1153 (cœur des chiffres ; ancienne mesure délavée #f29b59)
     compactIconeXPt: 8.7, //        capture « 14m » fournie (estimation visuelle)
     compactIconeTaillePt: 21.0,
     compactTexteDroitePt: 7.5,
-    compactTexte: { taillePt: 16.6, graisse: 500, couleur: "#f29b59" },
+    compactTexte: { taillePt: 16.6, graisse: 500, couleur: "#ff8c2b" },
     etenduBoutonXPt: [16.8, 75.0], // V4729 img 1153
     etenduBoutonYPt: 19.3,
     etenduBoutonDiametrePt: 49.6,
-    etenduBoutonPauseFond: "#512f14",
+    etenduBoutonPauseFond: "#512b12",
     etenduBoutonAnnulerFond: "#2e2e2e",
     etenduLibelleXPt: 176.1,
     etenduBaselinePt: 57.0,
-    etenduLibelle: { taillePt: 16.6, graisse: 500, couleur: "#f29b59" },
+    etenduLibelle: { taillePt: 16.6, graisse: 500, couleur: "#ff8c2b" },
     etenduChiffresDroitePt: 357.4,
-    etenduChiffres: { taillePt: 35.0, graisse: 300, couleur: "#f29b59" },
+    etenduChiffres: { taillePt: 35.0, graisse: 300, couleur: "#ff8c2b" },
   },
 
   alerte: {
     texteXPt: 13.1, //            V4731 img 706
     baselinePt: 23.5,
     texte: { taillePt: 15.0, graisse: 500, couleur: "#ffffff" },
-    valeurCouleur: "#8ff8c2",
-    valeurDroitePt: 71.0,
+    valeurCouleur: "#52ffa9", // V4731 img 706 (cœur des chiffres)
+    valeurDroitePt: 55.16, // V4731 img 706 : « 98 % » finit à 285,0 pt (7,8 pt avant la batterie)
+    ecartValeurBatteriePt: 7.8, // V4731 img 706
     batterieLargeurPt: 33.3,
     batterieHauteurPt: 17.6,
     batterieDroitePt: 14.06,
-    batterieCouleur: "#5cfd8b",
-    batterieFaibleCouleur: "#d33930", // même rouge que l'indicateur mesuré
+    batterieCouleur: "#56fe36", // V4731 img 706
+    batterieFaibleCouleur: "#d3382a", // même rouge que l'indicateur mesuré
   },
 
   indicateurs: {
-    enregistrementCouleur: "#d33930", // V4728 img 18
+    enregistrementCouleur: "#d3382a", // V4728 img 18
     pointXPt: 11.2,
     pointDiametrePt: 14.5,
     confidentialiteDiametrePt: 6.0, //  estimation (non présent dans les vidéos)
     confidentialiteDroitePt: 15.4, //   estimation : centré sur la même position que le point d'enregistrement, à droite
-    cameraCouleur: "#5cfd8b", //        vert : couleur verte mesurée (V4731)
-    microCouleur: "#f29b59", //         orange : couleur orange mesurée (V4729)
+    cameraCouleur: "#56fe36", //        vert : couleur verte mesurée (V4731)
+    microCouleur: "#ff8c2b", //         orange : couleur orange mesurée (V4729)
   },
 
   durees: {

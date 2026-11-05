@@ -60,6 +60,19 @@ describe("Traducteur", () => {
     expect(t.minuteurEtat(minut("inactif"))).toEqual([{ type: "ACTIVITE_FIN", id: "minuteur" }]);
   });
 
+  it("batterie déjà faible au démarrage (sans chargeur) : alerte", () => {
+    expect(new Traducteur().batterieEtat(batt({ pourcentage: 18 }))[0]).toMatchObject({ alerte: { type: "batterie" } });
+    expect(new Traducteur().batterieEtat(batt({ pourcentage: 18, branche: true }))).toEqual([]);
+  });
+
+  it("appel : début et fin d'activité ; capture d'écran : alerte dédiée", () => {
+    const t = new Traducteur();
+    expect(t.appel({ actif: true, application: "Teams" })[0]?.type).toBe("ACTIVITE_DEBUT");
+    expect(t.appel({ actif: true, application: "Teams" })).toEqual([]);
+    expect(t.appel({ actif: false, application: null })).toEqual([{ type: "ACTIVITE_FIN", id: "appel" }]);
+    expect(t.pressePapiers({ type: "capture", apercu: "" })[0]).toMatchObject({ alerte: { type: "capture" } });
+  });
+
   it("batterie : pas d'alerte à la première lecture, alerte au branchement", () => {
     const t = new Traducteur();
     expect(t.batterieEtat(batt({}))).toEqual([]);

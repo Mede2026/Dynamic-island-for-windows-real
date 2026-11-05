@@ -25,6 +25,27 @@ pub fn reinitialiser(app: &AppHandle) {
 }
 
 pub const RACCOURCI_PANNEAU: &str = "ctrl+alt+d";
+/// Lanceur rapide (minuteur…).
+pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
+const LABEL_LANCEUR: &str = "lanceur";
+
+/// Ctrl+Alt+M : petit panneau « Minuteur » (durées prêtes, durée libre), ou le ferme.
+pub fn basculer_lanceur(app: &AppHandle) {
+    if let Some(f) = app.get_webview_window(LABEL_LANCEUR) {
+        let _ = f.close();
+        return;
+    }
+    let r = WebviewWindowBuilder::new(app, LABEL_LANCEUR, WebviewUrl::App("index.html?lanceur".into()))
+        .title("Lancer — Dynamic Island")
+        .inner_size(380.0, 250.0)
+        .resizable(false)
+        .always_on_top(true)
+        .center()
+        .build();
+    if let Err(e) = r {
+        journal!("plateau", "lanceur impossible à ouvrir : {e}");
+    }
+}
 const LABEL_PANNEAU: &str = "reglages";
 
 /// Ouvre (ou ramène devant) le panneau de réglages.
@@ -64,14 +85,21 @@ pub fn basculer_panneau(app: &AppHandle) {
     }
 }
 
-pub fn gestion_raccourci(app: &AppHandle, _raccourci: &Shortcut, evenement: ShortcutEvent) {
-    if evenement.state() == ShortcutState::Pressed {
+pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: ShortcutEvent) {
+    if evenement.state() != ShortcutState::Pressed {
+        return;
+    }
+    let lanceur: Result<Shortcut, _> = RACCOURCI_LANCEUR.parse();
+    if lanceur.map(|l| l.id() == raccourci.id()).unwrap_or(false) {
+        basculer_lanceur(app);
+    } else {
         basculer_panneau(app);
     }
 }
 
 pub fn installer(app: &AppHandle) -> tauri::Result<()> {
     let reglages = MenuItem::with_id(app, "reglages", "Réglages (Ctrl+Alt+D)", true, None::<&str>)?;
+    let lanceur = MenuItem::with_id(app, "lanceur", "Lancer un minuteur (Ctrl+Alt+M)", true, None::<&str>)?;
     let auto = CheckMenuItem::with_id(
         app,
         "auto",
@@ -139,6 +167,7 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         app,
         &[
             &reglages,
+            &lanceur,
             &arreter,
             &PredefinedMenuItem::separator(app)?,
             &tailles,
@@ -158,6 +187,7 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(true)
         .on_menu_event(move |app, ev| match ev.id().as_ref() {
             "reglages" => ouvrir_panneau(app),
+            "lanceur" => basculer_lanceur(app),
             "arreter-tests" => reinitialiser(app),
             id if id.starts_with("taille:") => {
                 if let Ok(t) = id.trim_start_matches("taille:").parse::<f64>() {

@@ -2,6 +2,7 @@
  * App — trois modes selon l'adresse :
  *  - (défaut)   : l'île (fenêtre transparente « ile ») ;
  *  - ?panneau   : le panneau de réglages (fenêtre « reglages », Ctrl+Alt+D) ;
+ *  - ?lanceur   : le lanceur rapide de minuteur (fenêtre « lanceur », Ctrl+Alt+M) ;
  *  - ?demo      : l'île dans un navigateur, sans backend (fond clair, scénarios factices).
  */
 
@@ -9,9 +10,11 @@ import { useEffect, useMemo } from "react";
 import { backend } from "./bridge/backend";
 import { demarrerPont, ecranCourant } from "./bridge/pont";
 import { jouer, type NomScenario } from "./demo/scenarios";
+import { Lanceur } from "./lanceur/Lanceur";
 import { Panneau } from "./panneau/Panneau";
 import { Ile } from "./rendu/Ile";
 import { IslandMachine } from "./state/islandMachine";
+import { config } from "./config/store";
 
 declare global {
   interface Window {
@@ -29,11 +32,20 @@ const parametres = new URLSearchParams(window.location.search);
 
 export default function App() {
   if (parametres.has("panneau")) return <Panneau />;
+  if (parametres.has("lanceur")) return <Lanceur />;
   return <AppIle demo={parametres.has("demo")} />;
 }
 
 function AppIle({ demo }: { demo: boolean }) {
-  const machine = useMemo(() => new IslandMachine(), []);
+  // Les durées suivent la configuration vivante (préférence « durée des alertes »).
+  const machine = useMemo(
+    () =>
+      new IslandMachine(() => ({
+        alerteAffichageMs: config().durees.alerteAffichageMs,
+        etenduFermetureAutoMs: config().durees.etenduFermetureAutoMs,
+      })),
+    [],
+  );
 
   useEffect(() => {
     if (demo) document.body.classList.add("demo");

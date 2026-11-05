@@ -93,6 +93,13 @@ export interface EtatMinuteur {
   dureeMs: number;
   restantMs: number;
   finAMs: number | null;
+  /** "horloge" : minuteur lu dans l'app Horloge de Windows (pas de boutons). */
+  source?: "app" | "horloge";
+}
+
+export interface Appel {
+  actif: boolean;
+  application: string | null;
 }
 
 export interface Notification {
@@ -120,7 +127,14 @@ export interface EvenementsBackend {
   "ne-pas-deranger": EtatNePasDeranger;
   minuteur: EtatMinuteur;
   notification: Notification;
-  "presse-papiers": { type: "texte" | "image" | "fichiers" | "autre"; apercu: string };
+  "presse-papiers": { type: "texte" | "image" | "capture" | "fichiers" | "autre"; apercu: string; miniature?: string | null };
+  /** Niveau sonore réel de la sortie (0–1), 30 fois par seconde pendant la musique. */
+  "niveau-audio": number;
+  /** Luminosité de l'écran intégré (0–100). */
+  luminosite: number;
+  appel: Appel;
+  /** Minuteur lu dans l'app Horloge de Windows. */
+  "minuteur-horloge": EtatMinuteur;
   confidentialite: { camera: boolean; micro: boolean };
   /** Panneau de réglages → île : valeurs modifiées en direct. */
   "config-direct": Record<string, unknown>;
@@ -139,6 +153,8 @@ export interface Parametres {
   cacherEnPleinEcran: boolean;
   /** Mode de compatibilité des clics traversants (prend effet au redémarrage). */
   clicsClassiques: boolean;
+  /** Préférences d'affichage (voir src/config/store.ts, `Preferences`). */
+  affichage: Record<string, unknown>;
 }
 
 export type NomEvenement = keyof EvenementsBackend;
@@ -158,4 +174,7 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "notification",
   "presse-papiers",
   "confidentialite",
+  "luminosite",
+  "appel",
+  "minuteur-horloge",
 ];

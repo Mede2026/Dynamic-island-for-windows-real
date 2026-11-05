@@ -5,23 +5,29 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as PE } from "react";
 import { backend } from "../bridge/backend";
-import { formaterDuree, formaterMinuteurCompact, positionActuelle, type Donnees, type PressePapiers } from "../bridge/donnees";
-import type { EtatBatterie, EtatMinuteur, EtatNePasDeranger, EtatVolume, Notification } from "../bridge/types";
+import { formaterDuree, formaterMinuteurCompact, majDonnees, positionActuelle, type Donnees } from "../bridge/donnees";
+import type { EtatMinuteur } from "../bridge/types";
 import type { IslandConfig, Texte } from "../island.config";
+import { cotesAlerte, ECART_ICONE_PT, hauteurMiniature, largeurMiniature, mesureConfig, specAlerte, tailleIcone } from "./alertes";
 import type { Alerte, EtatMachine } from "../state/islandMachine";
 import { v } from "../config/store";
+import { Onde } from "./onde";
+import { basculerMusiqueDeTest, estMusiqueDeTest } from "../demo/scenarios";
 import {
   IconeBatterie,
   IconeCloche,
   IconeFermer,
   IconeLecture,
   IconeLune,
+  IconeMicro,
   IconeMinuteur,
   IconeOuvrir,
   IconePause,
   IconePressePapiers,
   IconeSaut,
+  IconeSoleil,
   IconeSource,
+  IconeTelephone,
   IconeVolume,
 } from "./icones";
 
@@ -36,9 +42,22 @@ export interface Ctx {
   etat: EtatMachine;
 }
 
+/** Espacement des lettres selon la taille (équivalent du « tracking » de SF Pro). */
+export function suivi(cfg: IslandConfig, taillePx: number): string {
+  const ty = cfg.typographie;
+  return `${v(ty.suiviA) + v(ty.suiviB) * Math.exp(v(ty.suiviC) * taillePx)}em`;
+}
+
+let cfgTypo: IslandConfig | null = null;
+/** Mémorise la config pour `texte` (appelé par le rendu). */
+export function definirTypographie(cfg: IslandConfig) {
+  cfgTypo = cfg;
+}
+
 function texte(t: Texte, S: number, extra: CSSProperties = {}): CSSProperties {
   return {
     position: "absolute",
+    letterSpacing: cfgTypo ? suivi(cfgTypo, v(t.taillePt) * S) : undefined,
     fontSize: v(t.taillePt) * S,
     fontWeight: v(t.graisse),
     color: v(t.couleur),
@@ -93,43 +112,6 @@ function Pochette({ d, taille, rayon, style }: { d: Donnees; taille: number; ray
       {p && (
         <img src={urlPochette(p.id, p.pngBase64)} width={taille} height={taille} alt="" draggable={false} decoding="async" />
       )}
-    </div>
-  );
-}
-
-/** Onde sonore : barres animées (CSS, coût CPU quasi nul) à la couleur de la pochette. */
-function Onde(props: {
-  n: number;
-  largeurBarre: number;
-  pas: number;
-  hMin: number;
-  hMax: number;
-  couleur: string;
-  enLecture: boolean;
-  style: CSSProperties;
-}) {
-  const { n, largeurBarre, pas, hMin, hMax, couleur, enLecture, style } = props;
-  return (
-    <div style={{ position: "absolute", height: hMax, width: (n - 1) * pas + largeurBarre, ...style }}>
-      {Array.from({ length: n }, (_, i) => (
-        <div
-          key={i}
-          className={enLecture ? "onde-barre" : undefined}
-          style={{
-            position: "absolute",
-            left: i * pas,
-            top: (hMax - hMin) / 2,
-            width: largeurBarre,
-            height: hMin,
-            borderRadius: largeurBarre,
-            background: couleur,
-            // Hauteurs et rythmes différents par barre (aléatoire stable).
-            ["--h" as string]: `${(0.45 + 0.55 * ((i * 37) % 11) / 10) * (hMax / hMin)}`,
-            animationDuration: `${0.42 + ((i * 53) % 7) * 0.06}s`,
-            animationDelay: `${-((i * 29) % 9) * 0.07}s`,
-          }}
-        />
-      ))}
     </div>
   );
 }
@@ -360,7 +342,13 @@ export function MusiqueEtendu(ctx: Ctx) {
       <Bouton x={xs[1]!} y={y} taille={tSaut * 1.2} onClick={() => void backend.precedent()} desactive={!m?.peutPrecedent}>
         <IconeSaut taille={tSaut} couleur={v(e.iconeCouleur)} inverse />
       </Bouton>
-      <Bouton x={xs[2]!} y={y} taille={tLecture * 1.3} onClick={() => void backend.lecturePause()} desactive={!m?.peutLirePause}>
+      <Bouton
+        x={xs[2]!}
+        y={y}
+        taille={tLecture * 1.3}
+        onClick={() => (estMusiqueDeTest() ? basculerMusiqueDeTest() : void backend.lecturePause())}
+        desactive={!m?.peutLirePause}
+      >
         {enLecture ? <IconePause taille={tLecture} couleur={v(e.iconeCouleur)} /> : <IconeLecture taille={tLecture} couleur={v(e.iconeCouleur)} />}
       </Bouton>
       <Bouton x={xs[3]!} y={y} taille={tSaut * 1.2} onClick={() => void backend.suivant()} desactive={!m?.peutSuivant}>
@@ -414,6 +402,8 @@ export function MinuteurCompact({ cfg, S, d }: Ctx) {
         taille={ti}
         couleur={v(c.couleur)}
         progression={progression}
+        finAMs={m?.statut === "enCours" ? m.finAMs : null}
+        dureeMs={m?.dureeMs ?? 0}
         style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }}
       />
       <div
@@ -442,6 +432,8 @@ export function MinuteurMinimal({ cfg, S, d }: Ctx) {
       taille={ti}
       couleur={v(c.couleur)}
       progression={m && m.dureeMs ? restant / m.dureeMs : 1}
+      finAMs={m?.statut === "enCours" ? m.finAMs : null}
+      dureeMs={m?.dureeMs ?? 0}
       style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }}
     />
   );
@@ -457,6 +449,8 @@ export function MinuteurEtendu({ cfg, S, d }: Ctx) {
   const enPause = m?.statut === "pause";
   return (
     <>
+      {m?.source !== "horloge" && (
+        <>
       <button
         className="bouton-ile"
         onPointerDown={(e) => e.stopPropagation()}
@@ -481,8 +475,10 @@ export function MinuteurEtendu({ cfg, S, d }: Ctx) {
       >
         <IconeFermer taille={diam * 0.42} couleur="#ffffff" />
       </button>
+        </>
+      )}
       <div style={texte(c.etenduLibelle, S, { left: v(c.etenduLibelleXPt) * S, top: haut(v(c.etenduBaselinePt), c.etenduLibelle, S) })}>
-        Minuteur
+        {m?.source === "horloge" ? "Horloge" : "Minuteur"}
       </div>
       <div
         style={texte(c.etenduChiffres, S, {
@@ -502,155 +498,184 @@ export function MinuteurEtendu({ cfg, S, d }: Ctx) {
 // Alertes (forme mesurée sur « En charge 98 % »)
 // ---------------------------------------------------------------------------
 
-function LigneAlerte({
-  cfg,
-  S,
-  icone,
-  libelle,
-  valeur,
-  couleurValeur,
-  droite,
-}: Ctx & { icone?: React.ReactNode; libelle: string; valeur?: string; couleurValeur?: string; droite?: React.ReactNode }) {
+/** Alerte : contenu à gauche et à droite de la caméra (voir alertes.ts). */
+export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
+  const { cfg, S, alerte } = ctx;
   const a = cfg.alerte;
-  const L = v(cfg.formes.alerte.taille.pt.largeur) * S;
+  const spec = specAlerte(alerte, cfg);
+  const cotes = cotesAlerte(spec, cfg, mesureConfig(cfg));
   const h = v(cfg.formes.alerte.taille.pt.hauteur) * S;
-  const ti = v(a.texte.taillePt) * S * 1.15;
-  const xTexte = v(a.texteXPt) * S + (icone ? ti + 6 * S : 0);
+  const ti = tailleIcone(cfg) * S;
+  const blanc = v(a.texte.couleur);
+  const couleurIcone = spec.couleurIcone ?? blanc;
+  const icone = (() => {
+    switch (spec.icone) {
+      case "volume":
+        return <IconeVolume taille={ti} couleur={couleurIcone} />;
+      case "muet":
+        return <IconeVolume taille={ti} couleur={couleurIcone} muet />;
+      case "lune":
+        return <IconeLune taille={ti} couleur={couleurIcone} />;
+      case "cloche":
+        return <IconeCloche taille={ti} couleur={couleurIcone} />;
+      case "pressePapiers":
+        return <IconePressePapiers taille={ti} couleur={couleurIcone} />;
+      case "minuteur":
+        return <IconeMinuteur taille={ti} couleur={couleurIcone} progression={0} />;
+      case "soleil":
+        return <IconeSoleil taille={ti} couleur={couleurIcone} />;
+      default:
+        return null;
+    }
+  })();
+  const xLibelle = v(a.texteXPt) * S + (icone ? ti + (spec.libelle ? ECART_ICONE_PT * S : 0) : 0);
+  const droiteValeur = (v(a.batterieDroitePt) + (spec.batterie ? v(a.batterieLargeurPt) + v(a.ecartValeurBatteriePt) : 0)) * S;
+  const ligne = (extra: CSSProperties) =>
+    texte(a.texte, S, {
+      top: haut(v(a.baselinePt), a.texte, S),
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      paddingBottom: 2 * S,
+      ...extra,
+    });
   return (
     <>
       {icone && <div style={{ position: "absolute", left: v(a.texteXPt) * S, top: (h - ti) / 2, width: ti, height: ti }}>{icone}</div>}
-      <div
-        style={texte(a.texte, S, {
-          left: xTexte,
-          top: haut(v(a.baselinePt), a.texte, S),
-          maxWidth: L * 0.55,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          paddingBottom: 2 * S,
-        })}
-      >
-        {libelle}
-      </div>
-      {valeur && (
+      {spec.miniature && (
+        <img
+          src={`data:image/png;base64,${spec.miniature}`}
+          alt=""
+          decoding="async"
+          style={{
+            position: "absolute",
+            left: v(cfg.media.compact.pochetteXPt) * S,
+            top: (h - hauteurMiniature(cfg) * S) / 2,
+            width: largeurMiniature(cfg) * S,
+            height: hauteurMiniature(cfg) * S,
+            objectFit: "cover",
+            borderRadius: v(cfg.media.compact.pochetteRayonPt) * S,
+          }}
+        />
+      )}
+      {spec.libelle && <div style={ligne({ left: xLibelle, maxWidth: cotes.libelleMax * S })}>{spec.libelle}</div>}
+      {spec.valeur && (
         <div
-          style={texte(a.texte, S, {
-            right: v(a.valeurDroitePt) * S,
-            top: haut(v(a.baselinePt), a.texte, S),
-            color: couleurValeur ?? v(a.texte.couleur),
-            maxWidth: L * 0.4,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            paddingBottom: 2 * S,
+          style={ligne({
+            right: droiteValeur,
+            maxWidth: cotes.valeurMax * S,
+            color: spec.couleurValeur ?? blanc,
+            fontVariantNumeric: "tabular-nums",
           })}
         >
-          {valeur}
+          {spec.valeur}
         </div>
       )}
-      {droite}
+      {spec.batterie && (
+        <div style={{ position: "absolute", right: v(a.batterieDroitePt) * S, top: (h - v(a.batterieHauteurPt) * S) / 2 }}>
+          <IconeBatterie
+            largeur={v(a.batterieLargeurPt) * S}
+            hauteur={v(a.batterieHauteurPt) * S}
+            couleur={spec.batterie.couleur}
+            niveau={spec.batterie.niveau}
+            enCharge={spec.batterie.enCharge}
+          />
+        </div>
+      )}
     </>
   );
 }
 
-export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
-  const { cfg, S, alerte } = ctx;
-  const a = cfg.alerte;
-  const h = v(cfg.formes.alerte.taille.pt.hauteur) * S;
-  const blanc = v(a.texte.couleur);
-  const ti = v(a.texte.taillePt) * S * 1.15;
-  const batterie = (b: EtatBatterie, couleur: string) => (
-    <div style={{ position: "absolute", right: v(a.batterieDroitePt) * S, top: (h - v(a.batterieHauteurPt) * S) / 2 }}>
-      <IconeBatterie
-        largeur={v(a.batterieLargeurPt) * S}
-        hauteur={v(a.batterieHauteurPt) * S}
-        couleur={couleur}
-        niveau={(b.pourcentage ?? 100) / 100}
-        enCharge={b.branche}
-      />
-    </div>
-  );
+// ---------------------------------------------------------------------------
+// Appel en cours (Teams, Discord, Zoom…)
+// ---------------------------------------------------------------------------
 
-  switch (alerte.type) {
-    case "chargeur": {
-      const b = alerte.donnees as EtatBatterie;
-      const pct = b.pourcentage !== null ? `${b.pourcentage} %` : undefined;
-      const couleur = b.branche ? v(a.batterieCouleur) : blanc;
-      return (
-        <LigneAlerte
-          {...ctx}
-          libelle={b.branche ? "En charge" : "Sur batterie"}
-          valeur={pct}
-          couleurValeur={b.branche ? v(a.valeurCouleur) : blanc}
-          droite={batterie(b, couleur)}
-        />
-      );
-    }
-    case "batterie": {
-      const b = alerte.donnees as EtatBatterie;
-      return (
-        <LigneAlerte
-          {...ctx}
-          libelle="Batterie faible"
-          valeur={`${b.pourcentage ?? "?"} %`}
-          couleurValeur={v(a.batterieFaibleCouleur)}
-          droite={batterie(b, v(a.batterieFaibleCouleur))}
-        />
-      );
-    }
-    case "volume": {
-      const vol = alerte.donnees as EtatVolume;
-      return (
-        <LigneAlerte
-          {...ctx}
-          icone={<IconeVolume taille={ti} couleur={blanc} muet={vol.muet} />}
-          libelle={vol.muet ? "Son coupé" : "Volume"}
-          valeur={vol.muet ? undefined : `${Math.round(vol.niveau * 100)} %`}
-        />
-      );
-    }
-    case "neDerangePas": {
-      const n = alerte.donnees as EtatNePasDeranger;
-      return (
-        <LigneAlerte
-          {...ctx}
-          icone={<IconeLune taille={ti} couleur={blanc} />}
-          libelle="Ne pas déranger"
-          valeur={n.actif ? "Activé" : "Désactivé"}
-        />
-      );
-    }
-    case "notification": {
-      const n = alerte.donnees as Notification;
-      return (
-        <LigneAlerte
-          {...ctx}
-          icone={<IconeCloche taille={ti} couleur={blanc} />}
-          libelle={n.application || "Notification"}
-          valeur={n.textes[0]}
-        />
-      );
-    }
-    case "pressePapiers": {
-      const p = alerte.donnees as PressePapiers;
-      const libelles = { texte: "Texte copié", image: "Image copiée", fichiers: "Fichiers copiés", autre: "Copié" };
-      return (
-        <LigneAlerte
-          {...ctx}
-          icone={<IconePressePapiers taille={ti} couleur={blanc} />}
-          libelle={libelles[p.type]}
-          valeur={p.apercu}
-          couleurValeur={v(cfg.media.etendu.artiste.couleur)}
-        />
-      );
-    }
-    case "minuteurTermine":
-      return (
-        <LigneAlerte
-          {...ctx}
-          icone={<IconeMinuteur taille={ti} couleur={v(cfg.minuteur.couleur)} progression={0} />}
-          libelle="Minuteur"
-          valeur="Terminé"
-          couleurValeur={v(cfg.minuteur.couleur)}
-        />
-      );
-  }
+/** Durée de l'appel, rafraîchie chaque seconde seulement quand l'appel est affiché. */
+function useDureeAppel(d: Donnees): number {
+  const [, forcer] = useState(0);
+  useEffect(() => {
+    if (!d.appel) return;
+    const id = setInterval(() => forcer((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, [d.appel]);
+  return d.appel ? Date.now() - d.appel.debutMs : 0;
+}
+
+/** Vert de l'appel : le vert mesuré (V4731). */
+const vertAppel = (cfg: IslandConfig) => v(cfg.indicateurs.cameraCouleur);
+
+export function AppelCompact({ cfg, S, d }: Ctx) {
+  const duree = useDureeAppel(d);
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return (
+    <>
+      <IconeTelephone taille={ti} couleur={vertAppel(cfg)} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S) / 2,
+          color: vertAppel(cfg),
+          fontVariantNumeric: "tabular-nums",
+        })}
+      >
+        {formaterDuree(duree)}
+      </div>
+    </>
+  );
+}
+
+export function AppelMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeTelephone taille={ti} couleur={vertAppel(cfg)} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+/** Vue étendue : même disposition que le minuteur étendu (mesuré V4729). */
+export function AppelEtendu({ cfg, S, d }: Ctx) {
+  const duree = useDureeAppel(d);
+  const c = cfg.minuteur;
+  const diam = v(c.etenduBoutonDiametrePt) * S;
+  const [xMicro] = v(c.etenduBoutonXPt).map((x) => x * S);
+  const y = v(c.etenduBoutonYPt) * S;
+  const muet = d.appel?.muet ?? false;
+  return (
+    <>
+      <button
+        className="bouton-ile"
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          void backend.microMuet(!muet).then((m) => d.appel && majDonnees({ appel: { ...d.appel, muet: Boolean(m) } }));
+        }}
+        style={{
+          position: "absolute",
+          left: xMicro,
+          top: y,
+          width: diam,
+          height: diam,
+          borderRadius: diam,
+          background: muet ? "#ffffff" : v(c.etenduBoutonAnnulerFond),
+        }}
+        title={muet ? "Rétablir le micro" : "Couper le micro"}
+      >
+        <IconeMicro taille={diam * 0.46} couleur={muet ? "#000000" : "#ffffff"} coupe={muet} />
+      </button>
+      <div style={texte(c.etenduLibelle, S, { left: v(c.etenduLibelleXPt) * S, top: haut(v(c.etenduBaselinePt), c.etenduLibelle, S), color: vertAppel(cfg) })}>
+        {d.appel?.application ?? "Appel"}
+      </div>
+      <div
+        style={texte(c.etenduChiffres, S, {
+          right: (v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) - v(c.etenduChiffresDroitePt)) * S,
+          top: haut(v(c.etenduBaselinePt), c.etenduChiffres, S),
+          color: vertAppel(cfg),
+          fontVariantNumeric: "tabular-nums",
+        })}
+      >
+        {formaterDuree(duree)}
+      </div>
+    </>
+  );
 }

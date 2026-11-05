@@ -21,6 +21,7 @@
 import type { FormeEtat, IslandConfig, Ressort, RessortForme } from "../island.config";
 import type { EtatMachine, Transition } from "../state/islandMachine";
 import { v } from "../config/store";
+import { largeurAlerte, mesureConfig, specAlerte } from "./alertes";
 
 /** Géométrie de l'île en POINTS iPhone. */
 export interface Geometrie {
@@ -82,9 +83,14 @@ export function geometrieCible(e: EtatMachine, cfg: IslandConfig): Geometrie {
     case "split":
       return base(cfg.formes.split, true);
     case "etendu":
-      return base(typePrincipal(e) === "minuteur" ? cfg.formesContenu.etenduMinuteur : cfg.formes.etendu);
-    case "alerte":
-      return base(cfg.formes.alerte);
+      // Minuteur et appel : vue étendue basse (mesurée sur le minuteur, V4729).
+      return base(typePrincipal(e) === "musique" ? cfg.formes.etendu : cfg.formesContenu.etenduMinuteur);
+    case "alerte": {
+      // Largeur selon le contenu, rangé de part et d'autre de la caméra (alertes.ts).
+      const g = base(cfg.formes.alerte);
+      if (!e.alerte) return g;
+      return { ...g, largeur: largeurAlerte(specAlerte(e.alerte, cfg), cfg, mesureConfig(cfg)) };
+    }
   }
 }
 

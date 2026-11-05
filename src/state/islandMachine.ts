@@ -23,7 +23,7 @@ import { islandConfig, type EtatIle, type NomTransition } from "../island.config
 // ---------------------------------------------------------------------------
 
 /** Activités longues (affichées en compact / split / étendu). */
-export type TypeActivite = "minuteur" | "musique";
+export type TypeActivite = "minuteur" | "musique" | "appel";
 
 /** Alertes brèves (affichées puis retour automatique). */
 export type TypeAlerte =
@@ -33,7 +33,9 @@ export type TypeAlerte =
   | "neDerangePas"
   | "notification"
   | "minuteurTermine"
-  | "pressePapiers";
+  | "pressePapiers"
+  | "luminosite"
+  | "capture";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.
@@ -42,6 +44,7 @@ export type TypeAlerte =
  * pendant la musique va dans la bulle (capture split fournie + V4728).
  */
 export const PRIORITES: Record<TypeActivite, number> = {
+  appel: 3, // un appel passe devant tout (comme sur iPhone)
   musique: 2,
   minuteur: 1,
 };
@@ -384,7 +387,8 @@ export class IslandMachine {
   private minuteriesActives = new Map<NomMinuterie, unknown>();
 
   constructor(
-    private readonly durees: Durees = {
+    /** Durées fixes, ou fonction relue à chaque événement (préférences modifiables en direct). */
+    private readonly durees: Durees | (() => Durees) = {
       alerteAffichageMs: islandConfig.durees.alerteAffichageMs,
       etenduFermetureAutoMs: islandConfig.durees.etenduFermetureAutoMs,
     },
@@ -412,7 +416,8 @@ export class IslandMachine {
     try {
       while (this.file.length > 0) {
         const suivant = this.file.shift()!;
-        const { etat, effets } = reduire(this.etatCourant, suivant, this.durees);
+        const durees = typeof this.durees === "function" ? this.durees() : this.durees;
+        const { etat, effets } = reduire(this.etatCourant, suivant, durees);
         this.etatCourant = etat;
         this.executer(effets);
         for (const fn of this.abonnes) fn(etat, effets, suivant);

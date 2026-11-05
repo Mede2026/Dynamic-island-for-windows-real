@@ -12,8 +12,17 @@ export interface Confidentialite {
 }
 
 export interface PressePapiers {
-  type: "texte" | "image" | "fichiers" | "autre";
+  type: "texte" | "image" | "capture" | "fichiers" | "autre";
   apercu: string;
+  /** Miniature PNG base64 (image, capture d'écran). */
+  miniature?: string | null;
+}
+
+export interface AppelEnCours {
+  application: string;
+  /** Début de l'appel (ms depuis 1970) : la durée affichée part de là. */
+  debutMs: number;
+  muet: boolean;
 }
 
 export interface Donnees {
@@ -24,6 +33,7 @@ export interface Donnees {
   volume: EtatVolume | null;
   confidentialite: Confidentialite;
   fenetre: InfoFenetre | null;
+  appel: AppelEnCours | null;
 }
 
 let etat: Donnees = {
@@ -34,6 +44,7 @@ let etat: Donnees = {
   volume: null,
   confidentialite: { camera: false, micro: false },
   fenetre: null,
+  appel: null,
 };
 const abonnes = new Set<() => void>();
 

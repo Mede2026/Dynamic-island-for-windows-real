@@ -72,10 +72,15 @@ export const backend = {
   // Préférences mémorisées
   parametres: () => invoke<Parametres | null>("parametres_lire"),
   definirTaille: (taille: number) => invoke<Parametres>("parametres_definir_taille", { taille }),
+  definirAffichage: (affichage: Record<string, unknown>) => invoke<Parametres>("parametres_definir_affichage", { affichage }),
   definirClicsClassiques: (actif: boolean) => invoke<Parametres>("parametres_definir_clics_classiques", { actif }),
   /** Arrêter le test : prévient l'île (et toutes les fenêtres). */
   reinitialiser: () => invoke<void>("ile_reinitialiser"),
   quitter: () => invoke<void>("app_quitter"),
+  /** Couper / rétablir le micro (appel en cours). `null` = lire l'état. */
+  microMuet: (muet: boolean | null) => invoke<boolean>("micro_muet", { muet }),
+  /** L'île demande le niveau sonore réel (onde de la musique). */
+  niveauAudio: (actif: boolean) => invoke<void>("audio_niveau_actif", { actif }),
 
   // Minuteur
   minuteurDemarrer: (dureeMs: number) => invoke<EtatMinuteur>("minuteur_demarrer", { dureeMs }),

@@ -1,26 +1,25 @@
 /**
- * Panneau de réglages (développement) — ouvert avec Ctrl+Alt+D.
- *  - un curseur par valeur numérique de island.config.ts, appliqué EN DIRECT à l'île ;
- *  - des boutons pour déclencher chaque transition (une fois ou en boucle) ;
- *  - Exporter : copie les valeurs modifiées en JSON (à recopier dans island.config.ts) ;
- *  - options : écran, démarrage avec Windows, cacher en plein écran.
+ * Panneau de réglages — Ctrl+Alt+D (ouvre / ferme).
+ *  1. Arrêter le test / Quitter ;
+ *  2. Personnaliser : taille, vitesse, onde sonore, durée et choix des alertes (mémorisé) ;
+ *  3. Options : écran, démarrage avec Windows, plein écran, compatibilité des clics ;
+ *  4. Tester les animations (les tests s'arrêtent à la fermeture du panneau) ;
+ *  5. Mode développeur (replié) : chaque valeur de island.config.ts, en direct, + Exporter.
  */
 
 import { emitTo } from "@tauri-apps/api/event";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { backend, dansTauri } from "../bridge/backend";
 import type { InfoEcran } from "../bridge/types";
-import { lire } from "../config/store";
+import { lire, type Preferences } from "../config/store";
 import { SCENARIOS, type NomScenario } from "../demo/scenarios";
 import { islandConfig } from "../island.config";
 
-/** Chemins de toutes les valeurs numériques de la config. */
+/** Chemins de toutes les valeurs numériques de la config (mode développeur). */
 function cheminsNumeriques(obj: unknown, prefixe = ""): string[] {
   if (typeof obj === "number") return [prefixe];
   if (obj === null || typeof obj !== "object" || Array.isArray(obj)) return [];
   return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) =>
-    // Les tailles « dip » sont calculées (pt × ISLAND_SCALE) : pas de curseur ; la taille de
-    // l'île a son propre réglage (mémorisé) en haut du panneau.
     k === "dip" || k === "ISLAND_SCALE" ? [] : cheminsNumeriques(v, prefixe ? `${prefixe}.${k}` : k),
   );
 }
@@ -29,7 +28,6 @@ async function envoyer(nom: "config-direct" | "declencher", donnees: unknown) {
   if (dansTauri()) await emitTo("ile", nom, donnees);
 }
 
-/** Tailles proposées (DIP par point iPhone). 1,0 = taille mesurée par défaut. */
 const TAILLES: [string, number][] = [
   ["Petite", 0.85],
   ["Normale", 1.0],
@@ -37,20 +35,91 @@ const TAILLES: [string, number][] = [
   ["Très grande", 1.5],
 ];
 
+const ALERTES: [string, string][] = [
+  ["chargeur", "Chargeur branché / débranché"],
+  ["batterie", "Batterie faible (20 % et 10 %)"],
+  ["volume", "Volume"],
+  ["luminosite", "Luminosité"],
+  ["pressePapiers", "Presse-papiers"],
+  ["capture", "Capture d'écran"],
+  ["notification", "Notifications"],
+  ["neDerangePas", "Ne pas déranger"],
+  ["minuteurTermine", "Fin du minuteur"],
+];
+
 const BOUCLES: Record<string, NomScenario[]> = {
-  "Ouvrir / fermer (V3)": ["musique", "etendre", "fermer"],
-  "Split (V4)": ["musique", "minuteur", "finMinuteur"],
-  "Alerte (V7)": ["musique", "charge"],
-  "Repos ↔ compact (V2/V7)": ["musique", "finMusique"],
+  "Ouvrir / fermer": ["musique", "etendre", "fermer"],
+  "Split (musique + minuteur)": ["musique", "minuteur", "finMinuteur"],
+  "Alerte": ["musique", "charge"],
+  "Repos ↔ compact": ["musique", "finMusique"],
 };
 
-const style = {
-  page: { fontFamily: "'Inter Variable', 'Segoe UI', sans-serif", fontSize: 13, color: "#1c1c1e", background: "#f5f5f7", minHeight: "100vh", padding: 16, boxSizing: "border-box" as const, userSelect: "text" as const, overflow: "auto", height: "100vh" },
-  section: { background: "#fff", borderRadius: 12, padding: 12, marginBottom: 12, boxShadow: "0 1px 2px rgba(0,0,0,0.06)" },
-  titre: { fontSize: 15, fontWeight: 600, margin: "0 0 8px" },
-  bouton: { border: 0, borderRadius: 8, padding: "6px 10px", margin: "0 6px 6px 0", background: "#e8e8ed", cursor: "pointer", font: "inherit" },
-  ligne: { display: "grid", gridTemplateColumns: "1fr 140px 64px", gap: 8, alignItems: "center", padding: "2px 0" },
+const c = {
+  page: {
+    fontFamily: "'Inter Variable', 'Segoe UI', sans-serif",
+    fontSize: 13,
+    color: "#1c1c1e",
+    background: "#f2f2f7",
+    height: "100vh",
+    overflowY: "auto",
+    padding: 14,
+    boxSizing: "border-box",
+    userSelect: "text",
+    colorScheme: "light",
+  } satisfies CSSProperties,
+  section: { background: "#fff", borderRadius: 12, padding: "12px 14px", marginBottom: 12 } satisfies CSSProperties,
+  titre: { fontSize: 15, fontWeight: 600, margin: "0 0 10px" } satisfies CSSProperties,
+  note: { color: "#6e6e73", fontSize: 12, margin: "4px 0 0" } satisfies CSSProperties,
+  bouton: {
+    border: 0,
+    borderRadius: 8,
+    padding: "7px 11px",
+    margin: "0 6px 6px 0",
+    background: "#e5e5ea",
+    color: "#1c1c1e",
+    cursor: "pointer",
+    font: "inherit",
+  } satisfies CSSProperties,
+  ligne: { display: "flex", alignItems: "center", gap: 10, margin: "8px 0" } satisfies CSSProperties,
 };
+
+function Section({ titre, children }: { titre: string; children: ReactNode }) {
+  return (
+    <div style={c.section}>
+      <p style={c.titre}>{titre}</p>
+      {children}
+    </div>
+  );
+}
+
+function Curseur(props: { libelle: string; min: number; max: number; pas: number; valeur: number; texte: string; changer: (v: number) => void }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <span>{props.libelle}</span>
+        <span style={{ color: "#6e6e73" }}>{props.texte}</span>
+      </div>
+      <input
+        type="range"
+        min={props.min}
+        max={props.max}
+        step={props.pas}
+        value={props.valeur}
+        onChange={(e) => props.changer(Number(e.target.value))}
+        style={{ width: "100%" }}
+      />
+    </div>
+  );
+}
+
+function Case({ coche, changer, children }: { coche: boolean; changer: (v: boolean) => void; children: ReactNode }) {
+  return (
+    <label style={{ ...c.ligne, margin: "6px 0", cursor: "pointer" }}>
+      <input type="checkbox" checked={coche} onChange={(e) => changer(e.target.checked)} />
+      <span>{children}</span>
+    </label>
+  );
+}
 
 export function Panneau() {
   const chemins = useMemo(() => cheminsNumeriques(islandConfig), []);
@@ -60,14 +129,14 @@ export function Panneau() {
   const [ecrans, setEcrans] = useState<InfoEcran[]>([]);
   const [auto, setAuto] = useState(false);
   const [cacher, setCacher] = useState(false);
-  const [message, setMessage] = useState("");
-  const [taille, setTaille] = useState(1);
   const [clicsClassiques, setClicsClassiques] = useState(false);
+  const [taille, setTaille] = useState(1);
+  const [prefs, setPrefs] = useState<Preferences>({});
+  const [message, setMessage] = useState("");
   const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    document.body.style.background = "#f5f5f7";
-    document.documentElement.style.overflow = "auto";
+    document.body.style.background = "#f2f2f7";
     void backend.ecrans().then((e) => e && setEcrans(e));
     void backend.demarrageAuto().then((a) => setAuto(Boolean(a)));
     void backend.parametres().then((p) => {
@@ -75,26 +144,15 @@ export function Panneau() {
       setTaille(p.taille);
       setCacher(p.cacherEnPleinEcran);
       setClicsClassiques(p.clicsClassiques);
+      setPrefs((p.affichage ?? {}) as Preferences);
     });
   }, []);
-
-  const changerTaille = (t: number) => {
-    setTaille(t);
-    void backend.definirTaille(t);
-  };
-
-  const arreterTest = () => {
-    setBoucle(null);
-    setSurcharges({});
-    void backend.reinitialiser();
-    setMessage("Test arrêté : l'île affiche de nouveau ce qui se passe vraiment sur ton PC.");
-  };
 
   useEffect(() => {
     void envoyer("config-direct", surcharges);
   }, [surcharges]);
 
-  // Boucle de scénario : un pas toutes les 1,6 s.
+  // Boucle de test : un pas toutes les 1,6 s.
   useEffect(() => {
     if (!boucle) return;
     const pas = BOUCLES[boucle]!;
@@ -110,62 +168,87 @@ export function Panneau() {
     };
   }, [boucle]);
 
-  const visibles = chemins.filter((c) => c.toLowerCase().includes(filtre.toLowerCase()));
+  const changerPrefs = (p: Partial<Preferences>) => {
+    const nouvelles = { ...prefs, ...p };
+    setPrefs(nouvelles);
+    void backend.definirAffichage(p as Record<string, unknown>);
+  };
+  const changerTaille = (t: number) => {
+    setTaille(t);
+    void backend.definirTaille(t);
+  };
+  const arreterTest = () => {
+    setBoucle(null);
+    setSurcharges({});
+    void backend.reinitialiser();
+    setMessage("Test arrêté : l'île affiche de nouveau ce qui se passe vraiment sur ton PC.");
+  };
+  const masquees = prefs.alertesMasquees ?? [];
 
   return (
-    <div style={style.page}>
-      <div style={{ ...style.section, display: "flex", gap: 8 }}>
-        <button
-          style={{ ...style.bouton, flex: 1, margin: 0, padding: "10px 12px", background: "#ff3b30", color: "#fff", fontWeight: 600 }}
-          onClick={arreterTest}
-        >
+    <div style={c.page}>
+      <div style={{ ...c.section, display: "flex", gap: 8 }}>
+        <button style={{ ...c.bouton, flex: 1, margin: 0, padding: "10px 12px", background: "#ff3b30", color: "#fff", fontWeight: 600 }} onClick={arreterTest}>
           Arrêter le test (tout remettre comme avant)
         </button>
-        <button style={{ ...style.bouton, margin: 0 }} onClick={() => void backend.quitter()} title="Fermer complètement l'île">
+        <button style={{ ...c.bouton, margin: 0 }} onClick={() => void backend.quitter()}>
           Quitter l'île
         </button>
       </div>
-      {message && <p style={{ color: "#52514e", margin: "0 0 12px", whiteSpace: "pre-wrap" }}>{message}</p>}
+      {message && <p style={{ ...c.note, margin: "0 0 12px" }}>{message}</p>}
 
-      <div style={style.section}>
-        <p style={style.titre}>Taille de l'île</p>
-        <div style={{ marginBottom: 8 }}>
-          {TAILLES.map(([nom, t]) => (
-            <button
-              key={nom}
-              style={{ ...style.bouton, background: Math.abs(taille - t) < 0.001 ? "#0a84ff" : "#e8e8ed", color: Math.abs(taille - t) < 0.001 ? "#fff" : undefined }}
-              onClick={() => changerTaille(t)}
-            >
-              {nom}
-            </button>
-          ))}
+      <Section titre="Personnaliser">
+        <div style={{ marginBottom: 6 }}>
+          {TAILLES.map(([nom, t]) => {
+            const actif = Math.abs(taille - t) < 0.001;
+            return (
+              <button key={nom} style={{ ...c.bouton, background: actif ? "#0a84ff" : "#e5e5ea", color: actif ? "#fff" : "#1c1c1e" }} onClick={() => changerTaille(t)}>
+                {nom}
+              </button>
+            );
+          })}
         </div>
-        <input type="range" min={0.6} max={2} step={0.05} value={taille} onChange={(e) => changerTaille(Number(e.target.value))} style={{ width: "100%" }} />
-        <p style={{ color: "#52514e", margin: "4px 0 0" }}>
-          {Math.round(taille * 100)} % de la taille mesurée — les proportions restent exactes. Mémorisé au redémarrage.
-        </p>
-      </div>
+        <Curseur libelle="Taille de l'île" min={0.6} max={2} pas={0.05} valeur={taille} texte={`${Math.round(taille * 100)} %`} changer={changerTaille} />
+        <Curseur
+          libelle="Vitesse des animations"
+          min={0.5}
+          max={2}
+          pas={0.05}
+          valeur={prefs.vitesse ?? 1}
+          texte={(prefs.vitesse ?? 1) === 1 ? "comme l'iPhone" : `× ${(prefs.vitesse ?? 1).toFixed(2)}`}
+          changer={(v) => changerPrefs({ vitesse: v })}
+        />
+        <Curseur
+          libelle="Durée des alertes"
+          min={0.5}
+          max={3}
+          pas={0.1}
+          valeur={prefs.dureeAlertes ?? 1}
+          texte={`${(3 * (prefs.dureeAlertes ?? 1)).toFixed(1)} s`}
+          changer={(v) => changerPrefs({ dureeAlertes: v })}
+        />
+        <Case coche={prefs.onde ?? true} changer={(v) => changerPrefs({ onde: v })}>
+          Onde sonore pendant la musique (suit le vrai son)
+        </Case>
+        <p style={c.note}>Mémorisé au redémarrage. Les proportions et les courbes restent celles de l'iPhone.</p>
+      </Section>
 
-      <div style={style.section}>
-        <p style={style.titre}>Tester (les tests s'arrêtent en fermant ce panneau)</p>
-        {(Object.keys(SCENARIOS) as NomScenario[]).map((n) => (
-          <button key={n} style={style.bouton} onClick={() => void envoyer("declencher", n)} title={SCENARIOS[n]}>
-            {SCENARIOS[n]}
-          </button>
+      <Section titre="Alertes à afficher">
+        {ALERTES.map(([type, nom]) => (
+          <Case
+            key={type}
+            coche={!masquees.includes(type)}
+            changer={(v) => changerPrefs({ alertesMasquees: v ? masquees.filter((x) => x !== type) : [...masquees, type] })}
+          >
+            {nom}
+          </Case>
         ))}
-        <p style={{ ...style.titre, marginTop: 8 }}>En boucle</p>
-        {Object.keys(BOUCLES).map((b) => (
-          <button key={b} style={{ ...style.bouton, background: boucle === b ? "#0a84ff" : "#e8e8ed", color: boucle === b ? "#fff" : undefined }} onClick={() => setBoucle(boucle === b ? null : b)}>
-            {b}
-          </button>
-        ))}
-      </div>
+      </Section>
 
-      <div style={style.section}>
-        <p style={style.titre}>Options</p>
-        <label style={{ display: "block", marginBottom: 6 }}>
-          Écran :{" "}
-          <select onChange={(e) => void backend.choisirEcran(e.target.value || null)} defaultValue="">
+      <Section titre="Options">
+        <label style={c.ligne}>
+          <span>Écran</span>
+          <select onChange={(e) => void backend.choisirEcran(e.target.value || null)} defaultValue="" style={{ flex: 1, font: "inherit" }}>
             <option value="">Écran principal</option>
             {ecrans.map((e) => (
               <option key={e.id} value={e.id}>
@@ -174,42 +257,62 @@ export function Panneau() {
             ))}
           </select>
         </label>
-        <label style={{ display: "block", marginBottom: 6 }}>
-          <input type="checkbox" checked={auto} onChange={(e) => void backend.definirDemarrageAuto(e.target.checked).then((a) => setAuto(Boolean(a)))} /> Démarrer avec Windows
-        </label>
-        <label style={{ display: "block" }}>
-          <input
-            type="checkbox"
-            checked={cacher}
-            onChange={(e) => {
-              setCacher(e.target.checked);
-              void backend.cacherEnPleinEcran(e.target.checked);
-            }}
-          />{" "}
+        <Case coche={auto} changer={(v) => void backend.definirDemarrageAuto(v).then((a) => setAuto(Boolean(a)))}>
+          Démarrer avec Windows
+        </Case>
+        <Case
+          coche={cacher}
+          changer={(v) => {
+            setCacher(v);
+            void backend.cacherEnPleinEcran(v);
+          }}
+        >
           Cacher quand une app est en plein écran
-        </label>
-        <label style={{ display: "block", marginTop: 6 }}>
-          <input
-            type="checkbox"
-            checked={clicsClassiques}
-            onChange={(e) => {
-              setClicsClassiques(e.target.checked);
-              void backend.definirClicsClassiques(e.target.checked);
-            }}
-          />{" "}
+        </Case>
+        <Case
+          coche={clicsClassiques}
+          changer={(v) => {
+            setClicsClassiques(v);
+            void backend.definirClicsClassiques(v);
+          }}
+        >
           Mode de compatibilité des clics (seulement si l'île bloque des clics ; au prochain démarrage)
-        </label>
-      </div>
+        </Case>
+      </Section>
 
-      <div style={style.section}>
-        <p style={style.titre}>Valeurs (island.config.ts)</p>
-        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-          <input placeholder="Filtrer (ex. ressorts.ouvrir)" value={filtre} onChange={(e) => setFiltre(e.target.value)} style={{ flex: 1, font: "inherit", padding: 6, borderRadius: 8, border: "1px solid #d2d2d7" }} />
-          <button style={style.bouton} onClick={() => setSurcharges({})}>
+      <Section titre="Tester (s'arrête en fermant ce panneau)">
+        {(Object.keys(SCENARIOS) as NomScenario[]).map((n) => (
+          <button key={n} style={c.bouton} onClick={() => void envoyer("declencher", n)}>
+            {SCENARIOS[n]}
+          </button>
+        ))}
+        <p style={{ ...c.note, margin: "6px 0" }}>En boucle :</p>
+        {Object.keys(BOUCLES).map((b) => (
+          <button
+            key={b}
+            style={{ ...c.bouton, background: boucle === b ? "#0a84ff" : "#e5e5ea", color: boucle === b ? "#fff" : "#1c1c1e" }}
+            onClick={() => setBoucle(boucle === b ? null : b)}
+          >
+            {b}
+          </button>
+        ))}
+      </Section>
+
+      <details style={c.section}>
+        <summary style={{ ...c.titre, margin: 0, cursor: "pointer" }}>Mode développeur (valeurs mesurées brutes)</summary>
+        <p style={c.note}>Chaque valeur de island.config.ts, appliquée en direct (non mémorisée). « Exporter » copie les valeurs modifiées.</p>
+        <div style={{ display: "flex", gap: 6, margin: "10px 0" }}>
+          <input
+            placeholder="Filtrer (ex. ressorts.ouvrir)"
+            value={filtre}
+            onChange={(e) => setFiltre(e.target.value)}
+            style={{ flex: 1, minWidth: 0, font: "inherit", padding: 6, borderRadius: 8, border: "1px solid #d2d2d7" }}
+          />
+          <button style={{ ...c.bouton, margin: 0 }} onClick={() => setSurcharges({})}>
             Réinitialiser
           </button>
           <button
-            style={{ ...style.bouton, background: "#0a84ff", color: "#fff" }}
+            style={{ ...c.bouton, margin: 0, background: "#0a84ff", color: "#fff" }}
             onClick={() => {
               const json = JSON.stringify(surcharges, null, 2);
               void navigator.clipboard.writeText(json).then(
@@ -221,26 +324,40 @@ export function Panneau() {
             Exporter
           </button>
         </div>
-        {visibles.map((c) => {
-          const base = lire(islandConfig, c) as number;
-          const valeur = surcharges[c] ?? base;
-          const max = base === 0 ? 1 : Math.abs(base) * 2;
-          const min = base < 0 ? -max : 0;
-          return (
-            <div key={c} style={style.ligne}>
-              <span style={{ fontFamily: "monospace", fontSize: 11, color: surcharges[c] !== undefined ? "#0a84ff" : "#52514e" }}>{c}</span>
-              <input type="range" min={min} max={max} step={max / 400} value={valeur} onChange={(e) => setSurcharges({ ...surcharges, [c]: Number(e.target.value) })} />
-              <input
-                type="number"
-                value={Number(valeur.toFixed(4))}
-                step={max / 400}
-                onChange={(e) => setSurcharges({ ...surcharges, [c]: Number(e.target.value) })}
-                style={{ width: 64, font: "inherit", fontSize: 11 }}
-              />
-            </div>
-          );
-        })}
-      </div>
+        {chemins
+          .filter((ch) => ch.toLowerCase().includes(filtre.toLowerCase()))
+          .map((ch) => {
+            const base = lire(islandConfig, ch) as number;
+            const valeur = surcharges[ch] ?? base;
+            const max = base === 0 ? 1 : Math.abs(base) * 2;
+            const min = base < 0 ? -max : 0;
+            return (
+              <div key={ch} style={{ padding: "6px 0", borderBottom: "1px solid #f2f2f7" }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: surcharges[ch] !== undefined ? "#0a84ff" : "#3a3a3c", wordBreak: "break-all" }}>
+                  {ch}
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={max / 400}
+                    value={valeur}
+                    onChange={(e) => setSurcharges({ ...surcharges, [ch]: Number(e.target.value) })}
+                    style={{ flex: 1, minWidth: 0 }}
+                  />
+                  <input
+                    type="number"
+                    value={Number(valeur.toFixed(4))}
+                    step={max / 400}
+                    onChange={(e) => setSurcharges({ ...surcharges, [ch]: Number(e.target.value) })}
+                    style={{ width: 84, flex: "none", font: "inherit", fontSize: 12, color: "#1c1c1e", background: "#fff", border: "1px solid #d2d2d7", borderRadius: 6, padding: "2px 4px" }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+      </details>
     </div>
   );
 }
