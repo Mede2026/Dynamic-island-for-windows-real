@@ -1,0 +1,26 @@
+# Node
+node_modules/
+dist/
+*.log
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Python
+tools/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tools/output/*
+!tools/output/.gitkeep
+
+# Vidéos et captures de référence (lourdes) — gardées hors git
+tools/input/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

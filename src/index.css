@@ -1,0 +1,11 @@
+/* Phase 1 : la page doit être 100 % transparente (aucune valeur visuelle ici). */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
