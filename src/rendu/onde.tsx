@@ -3,7 +3,7 @@
  * (compteur de crête, lu 30 fois/s seulement quand une onde est visible et que ça joue).
  * Chaque barre suit le niveau avec un léger retard différent → une vague naturelle ;
  * un ressort adoucit chaque barre. En pause : de petits points (comme sur iPhone).
- * Musique de test ou navigateur : rythme simulé.
+ * Musique de test, navigateur, ou niveau sonore introuvable (aucun relevé reçu) : rythme simulé.
  */
 
 import { motion, motionValue, useSpring, type MotionValue } from "framer-motion";
@@ -17,33 +17,58 @@ const historique: number[] = new Array(12).fill(0);
 /** Change à chaque nouveau niveau (les barres s'y abonnent). */
 const tic = motionValue(0);
 
-/** Appelé par le pont à chaque niveau reçu du backend. */
-export function recevoirNiveau(n: number) {
+function pousser(n: number) {
   historique.pop();
   historique.unshift(Math.min(Math.max(n, 0), 1));
   tic.set(tic.get() + 1);
 }
 
+/** Dernier relevé du backend (ms) : sans relevé, l'onde passe au rythme simulé. */
+let dernierReleve = -Infinity;
+const SECOURS_MS = 1500;
+
+/** Appelé par le pont à chaque niveau reçu du backend. */
+export function recevoirNiveau(n: number) {
+  dernierReleve = performance.now();
+  arreterSimulation();
+  pousser(n);
+}
+
 // Demandes d'ondes visibles (plusieurs ondes peuvent coexister pendant une transition).
 let demandes = 0;
 let simulation: ReturnType<typeof setInterval> | null = null;
+let surveillance: ReturnType<typeof setTimeout> | null = null;
+
+function lancerSimulation() {
+  if (simulation) return;
+  // Rythme simulé (~120 BPM avec variations).
+  let t = 0;
+  simulation = setInterval(() => {
+    t += 1 / 30;
+    const temps = (t * 2) % 1;
+    pousser(0.35 + 0.45 * Math.exp(-temps * 6) + 0.15 * Math.random());
+  }, 33);
+}
+function arreterSimulation() {
+  if (simulation) clearInterval(simulation);
+  simulation = null;
+}
+
 function demander(actif: boolean) {
   demandes += actif ? 1 : -1;
   const reel = dansTauri() && !estMusiqueDeTest();
   if (reel) void backend.niveauAudio(demandes > 0);
-  if (!reel && demandes > 0 && !simulation) {
-    // Rythme simulé (~120 BPM avec variations).
-    let t = 0;
-    simulation = setInterval(() => {
-      t += 1 / 30;
-      const temps = (t * 2) % 1;
-      recevoirNiveau(0.35 + 0.45 * Math.exp(-temps * 6) + 0.15 * Math.random());
-    }, 33);
-  }
-  if ((reel || demandes <= 0) && simulation) {
-    clearInterval(simulation);
-    simulation = null;
-  }
+  if (surveillance) clearTimeout(surveillance);
+  surveillance = null;
+  if (demandes <= 0) return arreterSimulation();
+  if (!reel) return lancerSimulation();
+  arreterSimulation();
+  // Le backend ne répond pas (pas de sortie audio lisible) : rythme simulé plutôt qu'une onde morte.
+  const debut = performance.now();
+  surveillance = setTimeout(() => {
+    surveillance = null;
+    if (demandes > 0 && dernierReleve < debut) lancerSimulation();
+  }, SECOURS_MS);
 }
 
 /** Forme de l'onde : poids et retard (en relevés) de chaque barre. */
