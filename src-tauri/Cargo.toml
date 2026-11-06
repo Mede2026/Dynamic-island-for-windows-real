@@ -3,6 +3,7 @@ name = "dynamic-island"
 version = "0.1.0"
 description = "Réplique du Dynamic Island pour Windows"
 edition = "2021"
+license = "MIT"
 rust-version = "1.90"
 
 [lib]

@@ -8,15 +8,17 @@
 on screen recordings of a real iPhone 16 Pro (iOS 27), then checked against it: **less than 3 % difference**
 on every animation compared.
 
+[![Latest release](https://img.shields.io/github/v/release/Mede2026/Dynamic-island-for-windows-real?label=download&color=34C759)](https://github.com/Mede2026/Dynamic-island-for-windows-real/releases/latest)
 [![Windows build](https://github.com/Mede2026/Dynamic-island-for-windows-real/actions/workflows/windows.yml/badge.svg)](https://github.com/Mede2026/Dynamic-island-for-windows-real/actions/workflows/windows.yml)
 ![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows11&logoColor=white)
 ![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-backend-000000?logo=rust&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ![Dynamic Island for Windows: idle, music, split with timer, call, charging, clipboard, expanded player, expanded timer](docs/img/apercu.png)
 
-[**Download**](#-install) · [Features](#-what-it-does) · [Why it's the most realistic](#-why-its-the-most-realistic) · [En français](#-en-français)
+[**Download**](https://github.com/Mede2026/Dynamic-island-for-windows-real/releases/latest) · [Features](#-what-it-does) · [Why it's the most realistic](#-why-its-the-most-realistic) · [En français](#-en-français)
 
 </div>
 
@@ -64,10 +66,11 @@ Most Dynamic Island clones are drawn by eye. This one was **reverse-engineered f
 
 ## 📥 Install
 
-1. Go to [**Actions → Windows**](https://github.com/Mede2026/Dynamic-island-for-windows-real/actions/workflows/windows.yml), open the latest successful run.
-2. Download the **`installateur-windows`** artifact (you need to be signed in to GitHub).
-3. Unzip it and run the `.msi` or `.exe`.
-4. Launch **Dynamic Island** from the Start menu. It can **start with Windows** (tray icon menu).
+1. Go to the [**latest release**](https://github.com/Mede2026/Dynamic-island-for-windows-real/releases/latest).
+2. Download **`Dynamic.Island_…_x64-setup.exe`** and run it.
+3. Launch **Dynamic Island** from the Start menu. It can **start with Windows** (tray icon menu).
+
+> Windows SmartScreen may warn you because the app isn't signed (a paid certificate): click **More info → Run anyway**.
 
 Works at every Windows display scale (100 %, 125 %, 150 %, 200 %…) and on any monitor you choose.
 
@@ -182,9 +185,11 @@ ont été **mesurés** image par image sur des vidéos d'un vrai iPhone 16 Pro (
 - **Alertes** : chargeur, batterie 20 %, volume, luminosité, presse-papiers, capture d'écran, notifications, Ne pas déranger.
 - **Point vert / orange** quand la caméra ou le micro est utilisé.
 - **Clic** : petit rebond · **appui long** : vue étendue · **Ctrl + Alt + D** : réglages · **Ctrl + Alt + M** : minuteur rapide.
-- **Installer** : onglet **Actions** → **Windows** → dernier passage → artefact `installateur-windows`.
+- **Installer** : page [**Releases**](https://github.com/Mede2026/Dynamic-island-for-windows-real/releases/latest) → fichier `…-setup.exe`.
 
-## ⚖️ Legal
+## ⚖️ License & legal
+
+Code under the [**MIT license**](LICENSE): free to use, modify and share, as long as the copyright notice is kept.
 
 Independent project, **not affiliated with Apple**. No Apple icon, image or font is used: the icons are simple
 shapes drawn for this project ([`src/rendu/icones.tsx`](src/rendu/icones.tsx)) and the font is **Inter** (OFL license).
