@@ -16,3 +16,15 @@ describe("recherche partout", () => {
     expect(correspondance("Spotify", "xyz")).toBe(0);
   });
 });
+
+import { normaliserMode } from "../ventilateurs/Ventilateurs";
+describe("modes d'Asus Fan Control", () => {
+  it("reconnaît les noms de mode, quelle que soit l'écriture", () => {
+    expect(normaliserMode("Silent")).toBe("silent");
+    expect(normaliserMode("MAX")).toBe("max");
+    expect(normaliserMode("Curve")).toBe("curve");
+    expect(normaliserMode("balanced")).toBe("normal");
+    expect(normaliserMode("manual")).toBeNull();
+    expect(normaliserMode(null)).toBeNull();
+  });
+});

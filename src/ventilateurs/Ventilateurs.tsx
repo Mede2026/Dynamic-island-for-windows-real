@@ -34,6 +34,18 @@ const DEMO: StatutVentilo = {
   error: null,
 };
 
+/** Nom de mode d'Asus Fan Control → nos boutons (majuscules, synonymes anglais/français). */
+export function normaliserMode(mode: string | null | undefined): string | null {
+  const m = (mode ?? "").trim().toLowerCase();
+  if (!m) return null;
+  if (/^(silent|silence|silencieux|quiet|whisper)/.test(m)) return "silent";
+  if (/^(normal|balanced|equilibre|équilibré|standard|default)/.test(m)) return "normal";
+  if (/^(max|maximum|turbo|full|performance|perf)/.test(m)) return "max";
+  if (/^(curve|courbe|custom|perso)/.test(m)) return "curve";
+  if (/^(auto|automatic|automatique|bios)/.test(m)) return "auto";
+  return null;
+}
+
 export function couleurTemperature(t: number | null): string {
   if (t === null) return "#fff";
   return t >= 85 ? "#ff453a" : t >= 70 ? "#ff9f0a" : "#fff";
@@ -50,6 +62,8 @@ export function Ventilateurs() {
   const direct = useDonnees().ventilo;
   const [erreur, setErreur] = useState("");
   const [vitesse, setVitesse] = useState<number | null>(null);
+  // Dernier profil cliqué (retenu) : reste en bleu tant qu'Asus Fan Control n'annonce pas un AUTRE mode.
+  const [choisi, setChoisi] = useState<string | null>(() => localStorage.getItem("ile-ventilo-profil"));
   const s: StatutVentilo | null | undefined = dansTauri() ? direct : DEMO;
 
   const agir = (p: Promise<StatutVentilo>) =>
@@ -74,8 +88,15 @@ export function Ventilateurs() {
     );
   }
 
-  const profilActif = s.appliedPercent === 0 && !s.controlOn ? "auto" : (s.mode ?? "");
-  const pourcent = vitesse ?? (s.appliedPercent && s.appliedPercent > 0 ? s.appliedPercent : (s.speed ?? 50));
+  // Profil actif : le mode annoncé (quel que soit son nom exact), sinon le dernier cliqué, sinon auto.
+  const modeConnu = normaliserMode(s.mode);
+  const rienDeForce = s.appliedPercent === 0 && !s.controlOn;
+  const profilActif =
+    choisi === "auto" && rienDeForce ? "auto" : modeConnu && modeConnu !== "auto" ? modeConnu : (choisi ?? (rienDeForce ? "auto" : (modeConnu ?? "")));
+  // Vitesse APPLIQUÉE par le mode (pas la vitesse manuelle réglée) : 0 = automatique, -1 = arrêtés.
+  const applique = s.appliedPercent ?? 0;
+  const pourcent = vitesse ?? (applique > 0 ? applique : (s.speed ?? 50));
+  const texteVitesse = vitesse !== null ? `${Math.round(vitesse)} %` : s.fansStopped || applique < 0 ? "Arrêtés" : applique > 0 ? `${Math.round(applique)} %` : "Auto";
   const limite = s.batteryLimit;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
@@ -93,7 +114,15 @@ export function Ventilateurs() {
 
       <div style={{ display: "flex", gap: 6 }}>
         {PROFILS.map(([id, nom]) => (
-          <Pastille key={id} actif={profilActif === id} onClick={() => agir(id === "auto" ? backend.ventiloAuto() : backend.ventiloProfil(id as "silent"))}>
+          <Pastille
+            key={id}
+            actif={profilActif === id}
+            onClick={() => {
+              setChoisi(id);
+              localStorage.setItem("ile-ventilo-profil", id);
+              agir(id === "auto" ? backend.ventiloAuto() : backend.ventiloProfil(id as "silent"));
+            }}
+          >
             {nom}
           </Pastille>
         ))}
@@ -113,9 +142,9 @@ export function Ventilateurs() {
             if (vitesse !== null) agir(backend.ventiloVitesse(vitesse));
             setVitesse(null);
           }}
-          style={{ flex: 1, accentColor: "#64d2ff" }}
+          style={{ flex: 1, accentColor: "#64d2ff", opacity: applique > 0 || vitesse !== null ? 1 : 0.55 }}
         />
-        <span style={{ width: 38, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{Math.round(pourcent)} %</span>
+        <span style={{ width: 62, textAlign: "right", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{texteVitesse}</span>
       </label>
 
       {limite && (

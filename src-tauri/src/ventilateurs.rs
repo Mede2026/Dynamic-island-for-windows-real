@@ -164,6 +164,8 @@ pub fn suivre(app: &tauri::AppHandle) {
     let app = app.clone();
     let _ = std::thread::Builder::new().name("ile-ventilateurs".into()).spawn(move || {
         let mut annonce_absent = false;
+        type Resume = (Option<String>, Option<f64>, bool, Option<f64>);
+        let mut dernier: Option<Resume> = None;
         loop {
             match ouvrir() {
                 Ok(mut canal) => {
@@ -174,6 +176,12 @@ pub fn suivre(app: &tauri::AppHandle) {
                             let Ok(ligne) = ligne else { break };
                             match lire_reponse(&ligne).and_then(|v| serde_json::from_value::<Statut>(v).map_err(|e| e.to_string())) {
                                 Ok(s) => {
+                                    // Journal quand le mode change (aide à comprendre le statut d'Asus Fan Control).
+                                    let resume = (s.mode.clone(), s.applied_percent, s.control_on, s.speed);
+                                    if dernier.as_ref() != Some(&resume) {
+                                        crate::journal!("ventilateurs", "mode={:?} appliqué={:?} contrôle={} vitesse={:?}", resume.0, resume.1, resume.2, resume.3);
+                                        dernier = Some(resume);
+                                    }
                                     let _ = app.emit("ventilateurs", Some(s));
                                 }
                                 Err(e) => crate::journal!("ventilateurs", "statut ignoré : {e}"),
