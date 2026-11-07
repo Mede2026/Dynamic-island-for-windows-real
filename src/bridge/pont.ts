@@ -184,6 +184,9 @@ export function demarrerPont(machine: IslandMachine): () => void {
     fermetureEtagere = setTimeout(fermerEtagere, dureeMs);
   };
   arrets.push(ecouter("ouvrir-etagere", () => ouvrirEtagere(8000)));
+  // Quelque chose est traîné près de l'île (bouton gauche enfoncé) : l'étagère s'ouvre en
+  // grand pour recevoir des fichiers ; elle se referme si on ne lâche rien.
+  arrets.push(ecouter("glisser-proche", () => ouvrirEtagere(4000)));
   if (dansTauri()) {
     arrets.push(
       getCurrentWebview().onDragDropEvent((e) => {

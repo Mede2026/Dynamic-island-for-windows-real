@@ -154,6 +154,8 @@ export interface EvenementsBackend {
   "redemarrage-requis": boolean;
   /** Menu de l'icône ou Ctrl+Alt+E : ouvrir l'étagère. */
   "ouvrir-etagere": null;
+  /** Bouton gauche enfoncé et curseur amené près de l'île (glisser-déposer probable). */
+  "glisser-proche": null;
   /** Connexion Internet perdue / retrouvée. */
   internet: { connecte: boolean; nom: string | null };
   /** Panneau de réglages → île : valeurs modifiées en direct. */

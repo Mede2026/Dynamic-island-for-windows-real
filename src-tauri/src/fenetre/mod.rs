@@ -147,6 +147,19 @@ pub fn curseur_dans_zones(curseur: (i32, i32), origine: (i32, i32), echelle: f64
         .any(|z| x >= z.x && x < z.x + z.largeur && y >= z.y && y < z.y + z.hauteur)
 }
 
+/// Zones agrandies de `marge` DIP de chaque côté (et jusqu'au haut de l'écran).
+pub fn zones_agrandies(zones: &[RectDip], marge: f64) -> Vec<RectDip> {
+    zones
+        .iter()
+        .map(|z| RectDip {
+            x: z.x - marge,
+            y: 0.0,
+            largeur: z.largeur + 2.0 * marge,
+            hauteur: z.y + z.hauteur + marge,
+        })
+        .collect()
+}
+
 /// Zone d'affichage en pixels physiques (x, y, largeur, hauteur), arrondie vers l'extérieur.
 pub fn region_px(r: RectDip, echelle: f64) -> (i32, i32, i32, i32) {
     let x0 = (r.x * echelle).floor() as i32;
@@ -343,6 +356,11 @@ fn lancer_fil_curseur(app: AppHandle) {
             let etat = app.state::<EtatFenetre>();
             let mut dedans_avant = false;
             let mut bouton_avant = false;
+            // Glisser-déposer : bouton gauche enfoncé AILLEURS, puis curseur amené près de l'île
+            // → l'étagère s'ouvre en grand (cible facile pour lâcher des fichiers).
+            let mut appui_hors_ile = false;
+            let mut proche_depuis: Option<std::time::Instant> = None;
+            let mut signale = false;
             loop {
                 // Dort tant qu'il n'y a rien à surveiller (CPU ≈ 0 % au repos).
                 // Attention : ne JAMAIS appeler la fenêtre en gardant ce verrou (les commandes
@@ -367,6 +385,29 @@ fn lancer_fil_curseur(app: AppHandle) {
                         }
                         let _ = app.emit(evenements::SURVOL, dedans);
                         dedans_avant = dedans;
+                    }
+
+                    if let Some(bouton) = plateforme::bouton_gauche_enfonce() {
+                        if !bouton {
+                            appui_hors_ile = false;
+                            proche_depuis = None;
+                            signale = false;
+                        } else if !appui_hors_ile && proche_depuis.is_none() && !signale {
+                            // Début d'un appui : seulement s'il commence loin de l'île.
+                            appui_hors_ile =
+                                !curseur_dans_zones(curseur, origine, echelle, &zones_agrandies(&zones, 60.0));
+                        }
+                        if bouton && appui_hors_ile && !signale {
+                            if curseur_dans_zones(curseur, origine, echelle, &zones_agrandies(&zones, 60.0)) {
+                                let debut = *proche_depuis.get_or_insert_with(std::time::Instant::now);
+                                if debut.elapsed() > Duration::from_millis(250) {
+                                    let _ = app.emit("glisser-proche", ());
+                                    signale = true;
+                                }
+                            } else {
+                                proche_depuis = None;
+                            }
+                        }
                     }
 
                     if etat.ecouter_clic_exterieur.load(Ordering::Relaxed) {
