@@ -432,6 +432,20 @@ export function Panneau() {
               <option value="encoche">Encoche collée en haut (Mac)</option>
             </select>
           </label>
+          <label style={c.ligne}>
+            <span>Afficher l'île</span>
+            <select
+              value={prefs.visibilite ?? "toujours"}
+              onChange={(e) =>
+                changerPrefs({ visibilite: e.target.value as "toujours" | "activites" | "alertes" })
+              }
+              style={{ flex: 1, font: "inherit" }}
+            >
+              <option value="toujours">Toujours</option>
+              <option value="activites">Seulement quand il se passe quelque chose</option>
+              <option value="alertes">Seulement pour les alertes</option>
+            </select>
+          </label>
           <p style={c.note}>
             Mémorisé au redémarrage. Les proportions et les courbes restent
             celles de l'iPhone.

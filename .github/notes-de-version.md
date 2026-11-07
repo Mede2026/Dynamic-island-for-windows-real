@@ -13,6 +13,8 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 ### New in this version
 
+- 🫥 **Hidden mode** (Settings → Appearance → « Afficher l'île »): the island stays hidden behind the top of the screen and only drops down for alerts — or for anything happening
+
 - 🔍 **Search, quick timer, recently copied and note now open INSIDE the island** — no more separate windows (only Settings stays a window)
 - 📸 **Screenshots**: the island reshapes around a large preview of your capture
 - 🎤 Lyrics on **two lines** (no more « … ») and better sync, plus a « late / early » slider in Settings → Music
@@ -33,4 +35,4 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 🇫🇷 **En français :** installe le fichier `…-setup.exe`, puis lance **Dynamic Island** depuis le menu Démarrer. Si Windows SmartScreen affiche un avertissement : **Informations complémentaires → Exécuter quand même**. Déjà installée ? L'île propose elle-même la mise à jour (« Installer »).
 
-**Nouveau :** recherche, minuteur rapide, textes copiés et note s'ouvrent **dans l'île** ; la capture d'écran s'affiche en grand dans l'île ; paroles sur **2 lignes** mieux synchronisées (réglage « en retard / en avance ») ; OCR en une seule animation ; clic droit → **Mise à jour · Cacher l'île · Quitter**.
+**Nouveau :** mode **cachée** (Réglages → Apparence → « Afficher l'île » : seulement pour les alertes, ou seulement quand il se passe quelque chose) ; recherche, minuteur rapide, textes copiés et note s'ouvrent **dans l'île** ; la capture d'écran s'affiche en grand dans l'île ; paroles sur **2 lignes** mieux synchronisées (réglage « en retard / en avance ») ; OCR en une seule animation ; clic droit → **Mise à jour · Cacher l'île · Quitter**.

@@ -81,6 +81,22 @@ export function parolesVisibles(e: EtatMachine): boolean {
   return d.media?.statut === "lecture" && (d.paroles?.lignes.length ?? 0) > 0;
 }
 
+/** Activités ouvertes à la demande : toujours visibles, même en mode « alertes seulement ». */
+const DEMANDEES = ["menu", "outil", "etagere", "ecoute", "appelEntrant"];
+
+/**
+ * L'île est-elle cachée (préférence « visibilite ») ? Elle remonte alors derrière le haut de
+ * l'écran et redescend quand quelque chose arrive.
+ */
+export function ileMasquee(e: EtatMachine): boolean {
+  const mode = preferencesActuelles().visibilite ?? "toujours";
+  if (mode === "toujours") return false;
+  if (e.mode === "repos") return true;
+  if (mode === "activites") return false;
+  if (e.mode === "alerte" || e.mode === "etendu") return false;
+  return !e.activites.some((a) => DEMANDEES.includes(a.type));
+}
+
 /** Forme finale pour un état de la machine. */
 export function geometrieCible(e: EtatMachine, cfg: IslandConfig): Geometrie {
   const fondue = -v(cfg.bulle.diametrePt);

@@ -29,6 +29,11 @@ export interface Preferences {
   appsIgnorees?: string[];
   /** Paroles synchronisées sous la caméra pendant la musique (activé par défaut). */
   paroles?: boolean;
+  /**
+   * Quand l'île se montre : « toujours » (par défaut), « activites » (cachée au repos) ou
+   * « alertes » (seulement pour les alertes et les outils ouverts à la demande).
+   */
+  visibilite?: "toujours" | "activites" | "alertes";
   /** Décalage des paroles (ms) : positif = les paroles arrivent plus tôt. */
   decalageParolesMs?: number;
   /** Remplacer l'indicateur de volume / luminosité de Windows par l'île (lu par le backend). */

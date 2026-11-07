@@ -61,7 +61,7 @@ The island sits at the top-center of your screen, like on an iPhone, and reacts 
 - Updates itself: the island tells you when a new version is out and installs it in one click.
 - Every display scale (100 % → 200 %+), any monitor, starts with Windows, can hide in fullscreen and from screen sharing.
 
-And the little things you only notice on a real iPhone: nothing is ever drawn where the camera would be, the island **shrinks before changing activity**, gets a **vertical bump** before splitting, **bounces** when tapped, and content **fades in from a blur** with the measured delays. Prefer a Mac look? There's a **notch mode** too.
+And the little things you only notice on a real iPhone: nothing is ever drawn where the camera would be, the island **shrinks before changing activity**, gets a **vertical bump** before splitting, **bounces** when tapped, and content **fades in from a blur** with the measured delays. Prefer a Mac look? There's a **notch mode** too. Want a clean screen? **Hidden mode** keeps the island out of sight until an alert comes in.
 
 ## 🎯 Why it's the most realistic
 

@@ -105,3 +105,20 @@ describe("plans", () => {
     expect(new Set([cleContenu(r!), cleContenu(c!), cleContenu(s!)]).size).toBe(3);
   });
 });
+
+describe("île cachée (préférence « visibilite »)", () => {
+  it("toujours / activités / alertes seulement", async () => {
+    const { definirPreferences, preferencesActuelles } = await import("../config/store");
+    const { ileMasquee } = await import("./choregraphie");
+    const avant = preferencesActuelles();
+    const [repos, compact] = suite(musique);
+    const alerte = suite(musique, { type: "ALERTE", alerte: { type: "chargeur" } }).at(-1)!;
+    definirPreferences({ ...avant, visibilite: "toujours" });
+    expect([ileMasquee(repos!), ileMasquee(compact!), ileMasquee(alerte)]).toEqual([false, false, false]);
+    definirPreferences({ ...avant, visibilite: "activites" });
+    expect([ileMasquee(repos!), ileMasquee(compact!), ileMasquee(alerte)]).toEqual([true, false, false]);
+    definirPreferences({ ...avant, visibilite: "alertes" });
+    expect([ileMasquee(repos!), ileMasquee(compact!), ileMasquee(alerte)]).toEqual([true, true, false]);
+    definirPreferences(avant);
+  });
+});

@@ -20,7 +20,7 @@ import type { IslandConfig, Ressort } from "../island.config";
 import type { Cible, EtatMachine, IslandMachine } from "../state/islandMachine";
 import { preferencesActuelles, useConfig, v } from "../config/store";
 import { cleContenu, geometrieCible,
-  parolesVisibles, geometriesDuPlan, planifier, type Geometrie, type Phase } from "./choregraphie";
+  ileMasquee, parolesVisibles, geometriesDuPlan, planifier, type Geometrie, type Phase } from "./choregraphie";
 import {
   AlerteContenu,
   AppelCompact,
@@ -265,12 +265,19 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   const [canevasL, canevasH] = tailleCanevas(cfg);
 
   const cx = canevasL / 2;
+  // Île cachée (préférence « visibilite ») : rien de touchable, les clics passent dessous.
+  const masquee = ileMasquee(etat);
+  const masqueeRef = useRef(masquee);
+  masqueeRef.current = masquee;
   const envoyerZones = useCallback(
     (geos: Geometrie[], finale: Geometrie) => {
-      void backend.zonesTouchables(zonesTouchables(finale, cfg, cx), zoneAffichage(geos, cfg, cx, [canevasL, canevasH]));
+      void backend.zonesTouchables(masqueeRef.current ? [] : zonesTouchables(finale, cfg, cx), zoneAffichage(geos, cfg, cx, [canevasL, canevasH]));
     },
     [cfg, cx, canevasL, canevasH],
   );
+  useEffect(() => {
+    envoyerZones([cibleRef.current], cibleRef.current);
+  }, [masquee, envoyerZones]);
 
   // Taille du canevas → backend (fenêtre redimensionnée et recentrée) : seulement si elle change.
   useEffect(() => {
@@ -482,7 +489,16 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   const couche = (enfants: ReactNode) => <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{enfants}</div>;
 
   return (
-    <div
+    <motion.div
+      // Mode « cachée » : l'île remonte derrière le haut de l'écran (après avoir fini de
+      // rétrécir) et redescend aussitôt qu'une alerte arrive.
+      initial={false}
+      animate={masquee ? { y: -(y0 + cible.hauteur * S + 12 * S), opacity: 0 } : { y: 0, opacity: 1 }}
+      transition={
+        masquee
+          ? { delay: 0.45, duration: 0.35, ease: [0.4, 0, 1, 1] }
+          : { y: { type: "spring", stiffness: 260, damping: 26 }, opacity: { duration: 0.12 } }
+      }
       style={{ position: "absolute", left: 0, top: 0, width: canevasL, height: canevasH, fontFamily: v(cfg.police) }}
       onContextMenu={(e) => {
         // Clic droit sur l'île : l'île s'ouvre avec ses outils (minuteur, chanson, étagère…).
@@ -606,7 +622,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
           </AnimatePresence>
         </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
