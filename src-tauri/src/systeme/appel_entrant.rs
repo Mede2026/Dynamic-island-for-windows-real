@@ -12,6 +12,12 @@ fn executables(application: &str) -> &'static [&'static str] {
     let a = application.to_lowercase();
     if a.contains("teams") {
         &["ms-teams", "teams"]
+    } else if a.contains("téléphone")
+        || a.contains("telephone")
+        || a.contains("lien avec windows")
+        || a.contains("phone link")
+    {
+        &["phoneexperiencehost", "yourphone", "phonelink"]
     } else if a.contains("whatsapp") {
         &["whatsapp"]
     } else if a.contains("discord") {

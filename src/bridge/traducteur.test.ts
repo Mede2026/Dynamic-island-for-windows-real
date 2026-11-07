@@ -145,4 +145,11 @@ describe("Traducteur", () => {
     expect(appelEntrant({ id: 2, application: "WhatsApp", textes: ["Incoming voice call", "Papa"] })?.nom).toBe("Papa");
     expect(appelEntrant({ id: 3, application: "Messages", textes: ["Salut", "on se rappelle ?"] })).toBeNull();
   });
+
+  it("téléphone relié par Lien avec Windows", () => {
+    expect(appelEntrant({ id: 1, application: "Lien avec Windows", textes: ["Appel entrant", "Maman"] })).toEqual({ nom: "Maman", application: "Téléphone" });
+    const evs = new Traducteur().notification({ id: 2, application: "Phone Link", textes: ["Papa", "Tu rentres à quelle heure ?"] });
+    const e = evs[0];
+    expect(e?.type === "ALERTE" && (e.alerte.donnees as { application: string }).application).toBe("Téléphone");
+  });
 });

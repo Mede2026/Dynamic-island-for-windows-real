@@ -37,7 +37,10 @@ pub struct Appel {
 }
 
 /// Applications d'appel reconnues (fragment du nom dans le registre → nom affiché).
-const APPS_APPEL: [(&str, &str); 10] = [
+const APPS_APPEL: [(&str, &str); 12] = [
+    // « Lien avec Windows » (Phone Link) : appel du téléphone pris sur le PC.
+    ("yourphone", "Téléphone"),
+    ("phonelink", "Téléphone"),
     ("teams", "Teams"),
     ("discord", "Discord"),
     ("zoom", "Zoom"),

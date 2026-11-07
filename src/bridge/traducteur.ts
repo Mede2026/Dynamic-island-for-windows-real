@@ -31,10 +31,14 @@ export const ID_APPEL_ENTRANT = "appelEntrant";
 
 const MOTS_APPEL = /appel entrant|appel (vocal|vidéo|video) entrant|incoming (voice |video )?call|vous appelle|t'appelle|is calling|calling you|appel de groupe entrant/i;
 
+/** App « Lien avec Windows » (Phone Link) : le téléphone relié au PC. */
+export const estLienTelephone = (app: string) => /lien avec windows|phone link|votre téléphone|your phone/i.test(app);
+
 /** Notification d'appel qui sonne → nom de l'appelant et app, sinon null. */
 export function appelEntrant(n: Notification): { nom: string; application: string } | null {
   const texte = n.textes.join(" ");
   if (!MOTS_APPEL.test(texte)) return null;
+  if (estLienTelephone(n.application)) n = { ...n, application: "Téléphone" };
   // Le nom : le premier texte qui n'est pas la phrase « appel entrant ».
   const nom =
     n.textes.find((t) => t.trim() && !MOTS_APPEL.test(t))?.trim() ??
@@ -171,6 +175,8 @@ export class Traducteur {
         return [{ type: "ALERTE", alerte: { type: "minuteurTermine", donnees: null } }];
       }
     }
+    // SMS et notifications du téléphone relié : affichés comme venant du « Téléphone ».
+    if (estLienTelephone(n.application)) n = { ...n, application: "Téléphone" };
     const code = codeVerification(n.textes.join(" "));
     if (code) return [{ type: "ALERTE", alerte: { type: "notification", donnees: { ...n, code }, dureeFacteur: 2.5 } }];
     return [{ type: "ALERTE", alerte: { type: "notification", donnees: n } }];
