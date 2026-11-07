@@ -136,6 +136,12 @@ export interface EvenementsBackend {
   /** Minuteur lu dans l'app Horloge de Windows. */
   "minuteur-horloge": EtatMinuteur;
   confidentialite: { camera: boolean; micro: boolean };
+  /** Verr. Maj / Verr. Num activé ou désactivé. */
+  verrouillage: Verrouillage;
+  /** Clé USB ou disque externe branché / retiré. */
+  usb: LecteurUsb;
+  /** Appareil Bluetooth connecté / déconnecté. */
+  bluetooth: AppareilBluetooth;
   /** Panneau de réglages → île : valeurs modifiées en direct. */
   "config-direct": Record<string, unknown>;
   /** Panneau de réglages → île : jouer un scénario de démonstration. */
@@ -144,6 +150,29 @@ export interface EvenementsBackend {
   reinitialiser: null;
   /** Préférences mémorisées (taille de l'île…). */
   parametres: Parametres;
+}
+
+export interface Verrouillage {
+  touche: "majuscules" | "numerique";
+  actif: boolean;
+}
+
+export interface LecteurUsb {
+  branche: boolean;
+  /** « E: » */
+  lettre: string;
+  /** Nom du volume, ou vide. */
+  nom: string;
+  amovible: boolean;
+}
+
+export type CategorieBluetooth = "audio" | "clavier" | "souris" | "telephone" | "manette" | "autre";
+
+export interface AppareilBluetooth {
+  nom: string;
+  connecte: boolean;
+  categorie: CategorieBluetooth;
+  batterie: number | null;
 }
 
 export interface Parametres {
@@ -177,4 +206,7 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "luminosite",
   "appel",
   "minuteur-horloge",
+  "verrouillage",
+  "usb",
+  "bluetooth",
 ];

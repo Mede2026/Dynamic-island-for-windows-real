@@ -6,6 +6,7 @@
  */
 
 import type { Evenement } from "../state/islandMachine";
+import type { AppareilBluetooth, LecteurUsb, Verrouillage } from "./types";
 import type { Appel, EtatBatterie, EtatMedia, EtatMinuteur, EtatNePasDeranger, EtatVolume, Notification } from "./types";
 import type { PressePapiers } from "./donnees";
 
@@ -105,6 +106,18 @@ export class Traducteur {
     // Win+Maj+S : alerte « Capture d'écran » avec sa miniature.
     if (p.type === "capture") return [{ type: "ALERTE", alerte: { type: "capture", donnees: p } }];
     return [{ type: "ALERTE", alerte: { type: "pressePapiers", donnees: p } }];
+  }
+
+  verrouillage(v: Verrouillage): Evenement[] {
+    return [{ type: "ALERTE", alerte: { type: "verrouillage", donnees: v } }];
+  }
+
+  usb(u: LecteurUsb): Evenement[] {
+    return [{ type: "ALERTE", alerte: { type: "usb", donnees: u } }];
+  }
+
+  bluetooth(b: AppareilBluetooth): Evenement[] {
+    return [{ type: "ALERTE", alerte: { type: "bluetooth", donnees: b } }];
   }
 
   luminosite(niveau: number): Evenement[] {

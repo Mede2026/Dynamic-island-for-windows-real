@@ -99,6 +99,10 @@ export const SCENARIOS = {
   camera: "Point vert (caméra)",
   micro: "Point orange (micro)",
   confidentialiteOff: "Aucun point",
+  verrMaj: "Verr. Maj activé",
+  usb: "Clé USB branchée",
+  bluetooth: "Écouteurs Bluetooth connectés (batterie)",
+  bluetoothOff: "Souris Bluetooth déconnectée",
 } as const;
 
 export type NomScenario = keyof typeof SCENARIOS;
@@ -176,6 +180,24 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       break;
     case "confidentialiteOff":
       majDonnees({ confidentialite: { camera: false, micro: false } });
+      break;
+    case "verrMaj":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "verrouillage", donnees: { touche: "majuscules", actif: true } } });
+      break;
+    case "usb":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "usb", donnees: { branche: true, lettre: "E:", nom: "KINGSTON", amovible: true } } });
+      break;
+    case "bluetooth":
+      machine.envoyer({
+        type: "ALERTE",
+        alerte: { type: "bluetooth", donnees: { nom: "Écouteurs de Médéric", connecte: true, categorie: "audio", batterie: 80 } },
+      });
+      break;
+    case "bluetoothOff":
+      machine.envoyer({
+        type: "ALERTE",
+        alerte: { type: "bluetooth", donnees: { nom: "MX Master 3S", connecte: false, categorie: "souris", batterie: null } },
+      });
       break;
   }
 }

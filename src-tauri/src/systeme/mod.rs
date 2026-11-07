@@ -6,6 +6,8 @@
 //!  - a une version Windows (`#[cfg(windows)]`) et un repli vide pour les autres systèmes.
 
 pub mod batterie;
+pub mod bluetooth;
+pub mod clavier;
 pub mod confidentialite;
 pub mod luminosite;
 pub mod micro;
@@ -13,6 +15,7 @@ pub mod ne_pas_deranger;
 pub mod niveau_audio;
 pub mod notifications;
 pub mod presse_papiers;
+pub mod usb;
 pub mod volume;
 
 use tauri::AppHandle;
@@ -26,6 +29,9 @@ pub fn demarrer(app: &AppHandle) {
     confidentialite::demarrer(app.clone());
     niveau_audio::demarrer(app.clone());
     luminosite::demarrer(app.clone());
+    clavier::demarrer(app.clone());
+    usb::demarrer(app.clone());
+    bluetooth::demarrer(app.clone());
 }
 
 #[tauri::command]

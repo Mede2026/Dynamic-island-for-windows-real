@@ -22,17 +22,25 @@ pub fn chemin_journal() -> Option<PathBuf> {
 }
 
 /// Ouvre le fichier journal (remis à zéro à chaque démarrage) et installe la gestion des plantages.
+/// Le journal du lancement précédent est gardé dans `journal-precedent.txt` : après un
+/// plantage, relancer l'île n'efface donc pas la trace.
 pub fn initialiser() {
     if let Some(chemin) = chemin_journal() {
         if let Some(d) = chemin.parent() {
             let _ = std::fs::create_dir_all(d);
+            let _ = std::fs::rename(&chemin, d.join("journal-precedent.txt"));
         }
         *FICHIER.lock().unwrap() = std::fs::File::create(&chemin).ok();
     }
     std::panic::set_hook(Box::new(|info| {
-        let message = format!("Plantage : {info}");
+        let fil = std::thread::current();
+        let nom = fil.name().unwrap_or("?");
+        let message = format!("Plantage (fil « {nom} ») : {info}");
         ecrire("ERREUR", &message);
-        afficher_erreur(&message);
+        // Un fil secondaire qui plante s'arrête seul (l'île continue) : simple ligne au journal.
+        if nom == "main" {
+            afficher_erreur(&message);
+        }
     }));
 }
 

@@ -220,3 +220,89 @@ export function IconeMicro({ taille, couleur, style, coupe }: P & { coupe?: bool
     </svg>
   );
 }
+
+/** Flèche vers le haut posée sur une barre (Verr. Maj). */
+export function IconeMajuscules({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path d="M12 3.2 4 11.6h4.6v4.2h6.8v-4.2H20z" fill="none" stroke={couleur} strokeWidth="2" strokeLinejoin="round" />
+      <rect x="8.6" y="18.4" width="6.8" height="2.4" rx="1" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Pavé numérique : chiffre 1 dans un carré arrondi (Verr. Num). */
+export function IconeNumerique({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke={couleur} strokeWidth="2" />
+      <path d="M10 9.2 12.6 7.6v9" stroke={couleur} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Clé USB : corps arrondi et embout. */
+export function IconeUsb({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <rect x="9" y="2.6" width="6" height="5" rx="0.8" fill="none" stroke={couleur} strokeWidth="1.8" />
+      <rect x="10.6" y="4.2" width="1.1" height="1.6" fill={couleur} />
+      <rect x="12.3" y="4.2" width="1.1" height="1.6" fill={couleur} />
+      <rect x="7" y="8" width="10" height="13.4" rx="2.6" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Casque audio (écouteurs, casque, enceinte Bluetooth). */
+export function IconeCasque({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path d="M4.2 14.5V12a7.8 7.8 0 0 1 15.6 0v2.5" fill="none" stroke={couleur} strokeWidth="2" strokeLinecap="round" />
+      <rect x="3" y="13" width="5" height="8" rx="2.2" fill={couleur} />
+      <rect x="16" y="13" width="5" height="8" rx="2.2" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Clavier : rectangle arrondi avec touches. */
+export function IconeClavier({ taille, couleur, style }: P) {
+  const touches = [6.5, 9.5, 12.5, 15.5].flatMap((x) => [<rect key={`a${x}`} x={x} y="9" width="2" height="2" rx="0.5" fill={couleur} />, <rect key={`b${x}`} x={x} y="12" width="2" height="2" rx="0.5" fill={couleur} />]);
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <rect x="2.5" y="6" width="19" height="12.5" rx="2.6" fill="none" stroke={couleur} strokeWidth="1.8" />
+      {touches}
+      <rect x="8" y="15" width="8" height="1.6" rx="0.8" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Souris. */
+export function IconeSouris({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <rect x="6.5" y="3" width="11" height="18" rx="5.5" stroke={couleur} strokeWidth="2" />
+      <path d="M12 6.4v3.4" stroke={couleur} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Manette de jeu. */
+export function IconeManette({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path d="M7 7.5h10a5 5 0 0 1 4.9 6l-.8 3.8a2 2 0 0 1-3.5.8l-2.1-2.6H8.5l-2.1 2.6a2 2 0 0 1-3.5-.8l-.8-3.8A5 5 0 0 1 7 7.5z" fill={couleur} />
+      <path d="M7.5 10.4v3M6 11.9h3" stroke="#000" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="15.6" cy="11" r="0.95" fill="#000" />
+      <circle cx="17.6" cy="12.8" r="0.95" fill="#000" />
+    </svg>
+  );
+}
+
+/** Symbole Bluetooth stylisé (deux triangles sur une barre), dessiné pour ce projet. */
+export function IconeBluetooth({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M6.8 7.6 17 16.4 12 20.6V3.4l5 4.2L6.8 16.4" stroke={couleur} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

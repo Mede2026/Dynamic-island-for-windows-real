@@ -35,7 +35,10 @@ export type TypeAlerte =
   | "minuteurTermine"
   | "pressePapiers"
   | "luminosite"
-  | "capture";
+  | "capture"
+  | "verrouillage"
+  | "usb"
+  | "bluetooth";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.

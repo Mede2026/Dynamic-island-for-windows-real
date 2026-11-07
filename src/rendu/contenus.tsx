@@ -25,6 +25,14 @@ import { Onde } from "./onde";
 import { basculerMusiqueDeTest, estMusiqueDeTest } from "../demo/scenarios";
 import {
   IconeBatterie,
+  IconeBluetooth,
+  IconeCasque,
+  IconeClavier,
+  IconeMajuscules,
+  IconeManette,
+  IconeNumerique,
+  IconeSouris,
+  IconeUsb,
   IconeCloche,
   IconeFermer,
   IconeLecture,
@@ -534,6 +542,24 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeMinuteur taille={ti} couleur={couleurIcone} progression={0} />;
       case "soleil":
         return <IconeSoleil taille={ti} couleur={couleurIcone} />;
+      case "majuscules":
+        return <IconeMajuscules taille={ti} couleur={couleurIcone} />;
+      case "numerique":
+        return <IconeNumerique taille={ti} couleur={couleurIcone} />;
+      case "usb":
+        return <IconeUsb taille={ti} couleur={couleurIcone} />;
+      case "casque":
+        return <IconeCasque taille={ti} couleur={couleurIcone} />;
+      case "clavier":
+        return <IconeClavier taille={ti} couleur={couleurIcone} />;
+      case "souris":
+        return <IconeSouris taille={ti} couleur={couleurIcone} />;
+      case "manette":
+        return <IconeManette taille={ti} couleur={couleurIcone} />;
+      case "telephone":
+        return <IconeTelephone taille={ti} couleur={couleurIcone} />;
+      case "bluetooth":
+        return <IconeBluetooth taille={ti} couleur={couleurIcone} />;
       default:
         return null;
     }
@@ -586,8 +612,8 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
             left: v(a.texteXPt) * S,
             top: haut(baselineDetail(cfg), a.texte, S),
             maxWidth: (largeurAlerte(spec, cfg, mesureConfig(cfg)) - 2 * v(a.texteXPt)) * S,
-            color: v(cfg.media.etendu.artiste.couleur),
-            fontWeight: 400,
+            color: spec.detailFort ? blanc : v(cfg.media.etendu.artiste.couleur),
+            fontWeight: spec.detailFort ? v(a.texte.graisse) : 400,
             overflow: "hidden",
             textOverflow: "ellipsis",
             paddingBottom: 2 * S,

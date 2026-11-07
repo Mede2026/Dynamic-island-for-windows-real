@@ -29,6 +29,9 @@ windows-core = "0.62"
 windows = { version = "0.62", features = [
   # WinRT
   "Data_Xml_Dom",
+  "Devices_Bluetooth",
+  "Devices_Bluetooth_GenericAttributeProfile",
+  "Devices_Enumeration",
   "Foundation",
   "Foundation_Collections",
   "Media_Control",
@@ -43,6 +46,7 @@ windows = { version = "0.62", features = [
   "Win32_Graphics_Dwm",
   "Win32_Graphics_Gdi",
   "Win32_Storage_EnhancedStorage",
+  "Win32_Storage_FileSystem",
   "Win32_Media_Audio",
   "Win32_Media_Audio_Endpoints",
   "Win32_System_Com",
@@ -69,5 +73,4 @@ windows = { version = "0.62", features = [
 codegen-units = 1
 lto = true
 opt-level = "s"
-panic = "abort"
 strip = true

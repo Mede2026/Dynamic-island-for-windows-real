@@ -45,6 +45,9 @@ const ALERTES: [string, string][] = [
   ["notification", "Notifications"],
   ["neDerangePas", "Ne pas déranger"],
   ["minuteurTermine", "Fin du minuteur"],
+  ["bluetooth", "Appareils Bluetooth"],
+  ["usb", "Clé USB / disque externe"],
+  ["verrouillage", "Verr. Maj / Verr. Num"],
 ];
 
 const BOUCLES: Record<string, NomScenario[]> = {

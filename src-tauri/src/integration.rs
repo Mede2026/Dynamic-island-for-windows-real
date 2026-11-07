@@ -164,9 +164,21 @@ pub fn installer() {
             if let Err(e) = enregistrer_identite() {
                 journal!("integration", "nom des notifications impossible : {e}");
             }
+            // Garde-fou : si la création du menu fait planter l'île, le témoin reste sur le
+            // disque et on ne réessaie plus aux lancements suivants.
+            let temoin = journal::dossier_app().map(|d| d.join("jump-list-en-cours"));
+            if temoin.as_ref().is_some_and(|t| t.exists()) {
+                return journal!("integration", "menu de l'icône désactivé (plantage précédent)");
+            }
+            if let Some(t) = &temoin {
+                let _ = std::fs::write(t, "");
+            }
             match unsafe { creer_jump_list(&exe) } {
                 Ok(()) => journal!("integration", "menu de l'icône (Jump List) créé"),
                 Err(e) => journal!("integration", "menu de l'icône impossible : {e}"),
+            }
+            if let Some(t) = &temoin {
+                let _ = std::fs::remove_file(t);
             }
         })
         .ok();
@@ -230,9 +242,9 @@ fn enregistrer_identite() -> windows::core::Result<()> {
 /// Menu de l'icône épinglée (clic droit) : « Tâches » de la Jump List.
 #[cfg(windows)]
 unsafe fn creer_jump_list(exe: &str) -> windows::core::Result<()> {
-    use windows::core::{Interface, HSTRING, PWSTR};
+    use windows::core::{Interface, HSTRING};
     use windows::Win32::Storage::EnhancedStorage::PKEY_Title;
-    use windows::Win32::System::Com::StructuredStorage::PROPVARIANT;
+    use windows::Win32::System::Com::StructuredStorage::{PropVariantClear, PROPVARIANT};
     use windows::Win32::System::Com::{
         CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED,
     };
@@ -240,10 +252,11 @@ unsafe fn creer_jump_list(exe: &str) -> windows::core::Result<()> {
     use windows::Win32::UI::Shell::Common::{IObjectArray, IObjectCollection};
     use windows::Win32::UI::Shell::PropertiesSystem::IPropertyStore;
     use windows::Win32::UI::Shell::{
-        DestinationList, EnumerableObjectCollection, ICustomDestinationList, IShellLinkW, ShellLink,
+        DestinationList, EnumerableObjectCollection, ICustomDestinationList, IShellLinkW, SHStrDupW, ShellLink,
     };
 
     let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+    journal!("integration", "menu de l'icône : création…");
     let liste: ICustomDestinationList = CoCreateInstance(&DestinationList, None, CLSCTX_INPROC_SERVER)?;
     liste.SetAppID(&HSTRING::from(AUMID))?;
     let mut places = 0u32;
@@ -257,12 +270,16 @@ unsafe fn creer_jump_list(exe: &str) -> windows::core::Result<()> {
         lien.SetIconLocation(&HSTRING::from(exe), 0)?;
         lien.SetDescription(&HSTRING::from(titre))?;
         let proprietes: IPropertyStore = lien.cast()?;
-        let mut texte: Vec<u16> = titre.encode_utf16().chain([0]).collect();
+        // Méthode documentée (InitPropVariantFromString) : chaîne allouée par COM, copiée
+        // par SetValue, puis libérée par PropVariantClear. Une chaîne de Rust provoquait
+        // une corruption du tas (plantage de la v0.1.2 au démarrage).
+        let chaine = SHStrDupW(&HSTRING::from(titre))?;
         let mut valeur = PROPVARIANT::default();
         (*valeur.Anonymous.Anonymous).vt = VT_LPWSTR;
-        (*valeur.Anonymous.Anonymous).Anonymous.pwszVal = PWSTR(texte.as_mut_ptr());
-        // SetValue copie la valeur : `texte` peut être libéré ensuite (pas de PropVariantClear).
-        proprietes.SetValue(&PKEY_Title, &valeur)?;
+        (*valeur.Anonymous.Anonymous).Anonymous.pwszVal = chaine;
+        let r = proprietes.SetValue(&PKEY_Title, &valeur);
+        let _ = PropVariantClear(&mut valeur);
+        r?;
         proprietes.Commit()?;
         taches.AddObject(&lien)
     };
@@ -275,6 +292,7 @@ unsafe fn creer_jump_list(exe: &str) -> windows::core::Result<()> {
     ajouter("Lanceur de minuteur…", "--lanceur")?;
     ajouter("Réglages de l'île", "--reglages")?;
 
+    journal!("integration", "menu de l'icône : tâches prêtes");
     let tableau: IObjectArray = taches.cast()?;
     liste.AddUserTasks(&tableau)?;
     liste.CommitList()

@@ -9,13 +9,47 @@
  * Module pur (testé) : la mesure du texte est injectée.
  */
 
-import type { EtatBatterie, EtatNePasDeranger, EtatVolume, Notification } from "../bridge/types";
+import type {
+  AppareilBluetooth,
+  CategorieBluetooth,
+  EtatBatterie,
+  EtatNePasDeranger,
+  EtatVolume,
+  LecteurUsb,
+  Notification,
+  Verrouillage,
+} from "../bridge/types";
 import type { PressePapiers } from "../bridge/donnees";
 import type { IslandConfig } from "../island.config";
 import type { Alerte } from "../state/islandMachine";
 import { v } from "../config/store";
 
-export type NomIcone = "volume" | "muet" | "lune" | "cloche" | "pressePapiers" | "minuteur" | "soleil";
+export type NomIcone =
+  | "volume"
+  | "muet"
+  | "lune"
+  | "cloche"
+  | "pressePapiers"
+  | "minuteur"
+  | "soleil"
+  | "majuscules"
+  | "numerique"
+  | "usb"
+  | "casque"
+  | "clavier"
+  | "souris"
+  | "manette"
+  | "telephone"
+  | "bluetooth";
+
+const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
+  audio: "casque",
+  clavier: "clavier",
+  souris: "souris",
+  manette: "manette",
+  telephone: "telephone",
+  autre: "bluetooth",
+};
 
 export interface SpecAlerte {
   /** À gauche : miniature (capture d'écran), PNG base64. */
@@ -29,6 +63,8 @@ export interface SpecAlerte {
   couleurValeur?: string;
   /** Deuxième ligne, SOUS la caméra (toute la largeur) : texte d'une notification. */
   detail?: string;
+  /** Détail en blanc et gras (nom d'appareil déplacé sous la caméra) plutôt qu'en gris. */
+  detailFort?: boolean;
   /** Texte servant à mesurer la valeur (ex. « 100 % ») pour une largeur stable. */
   valeurReference?: string;
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
@@ -91,7 +127,22 @@ export function mesureConfig(cfg: IslandConfig): Mesureur {
   );
 }
 
-export function specAlerte(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
+/**
+ * Contenu d'une alerte. Si le libellé (nom d'un appareil, d'une clé USB…) ne tient pas à
+ * gauche de la caméra, il passe sur une 2e ligne SOUS la caméra au lieu d'être coupé.
+ */
+export function specAlerte(alerte: Alerte, cfg: IslandConfig, mesurer: Mesureur = mesureConfig(cfg)): SpecAlerte {
+  const spec = specBrute(alerte, cfg);
+  if (!spec.libelle || spec.detail || spec.miniature) return spec;
+  const t = v(cfg.alerte.texte.taillePt);
+  const coteMax = (v(cfg.formes.etendu.taille.pt.largeur) - v(cfg.zoneCamera.largeurPt)) / 2;
+  const debut = v(cfg.alerte.texteXPt) + (spec.icone ? tailleIcone(cfg) + ECART_ICONE_PT : 0);
+  const besoin = debut + mesurer(spec.libelle, t, v(cfg.alerte.texte.graisse)) + v(cfg.zoneCamera.margePt);
+  if (besoin <= coteMax) return spec;
+  return { ...spec, libelle: undefined, detail: spec.libelle, detailFort: true };
+}
+
+function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
   const a = cfg.alerte;
   const blanc = v(a.texte.couleur);
   switch (alerte.type) {
@@ -148,6 +199,57 @@ export function specAlerte(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
     case "luminosite": {
       const n = typeof alerte.donnees === "number" ? alerte.donnees : 50;
       return { icone: "soleil", valeur: `${Math.round(n)} %`, valeurReference: "100 %" };
+    }
+    case "verrouillage": {
+      const k = { touche: "majuscules", actif: true, ...(alerte.donnees as Partial<Verrouillage>) } as Verrouillage;
+      return {
+        icone: k.touche === "majuscules" ? "majuscules" : "numerique",
+        couleurIcone: k.actif ? blanc : v(cfg.media.etendu.artiste.couleur),
+        libelle: k.touche === "majuscules" ? "Verr. Maj" : "Verr. Num",
+        valeur: k.actif ? "Activé" : "Désactivé",
+        couleurValeur: k.actif ? blanc : v(cfg.media.etendu.artiste.couleur),
+        valeurReference: "Désactivé",
+      };
+    }
+    case "usb": {
+      const u = { branche: true, lettre: "", nom: "", amovible: true, ...(alerte.donnees as Partial<LecteurUsb>) } as LecteurUsb;
+      return {
+        icone: "usb",
+        couleurIcone: u.branche ? blanc : v(cfg.media.etendu.artiste.couleur),
+        libelle: u.nom || (u.amovible ? "Clé USB" : "Disque externe"),
+        valeur: u.branche ? u.lettre || "Branché" : "Retiré",
+        couleurValeur: u.branche ? blanc : v(cfg.media.etendu.artiste.couleur),
+      };
+    }
+    case "bluetooth": {
+      const b = {
+        nom: "Appareil",
+        connecte: true,
+        categorie: "autre",
+        batterie: null,
+        ...(alerte.donnees as Partial<AppareilBluetooth>),
+      } as AppareilBluetooth;
+      const gris = v(cfg.media.etendu.artiste.couleur);
+      // Comme les écouteurs sur iPhone : nom à gauche, batterie à droite (si connue).
+      if (b.connecte && b.batterie !== null) {
+        const faible = b.batterie <= 20;
+        const couleur = faible ? v(a.batterieFaibleCouleur) : v(a.batterieCouleur);
+        return {
+          icone: ICONES_BLUETOOTH[b.categorie],
+          libelle: b.nom,
+          valeur: `${b.batterie} %`,
+          couleurValeur: faible ? couleur : blanc,
+          valeurReference: "100 %",
+          batterie: { niveau: b.batterie / 100, couleur, enCharge: false },
+        };
+      }
+      return {
+        icone: ICONES_BLUETOOTH[b.categorie],
+        couleurIcone: b.connecte ? blanc : gris,
+        libelle: b.nom,
+        valeur: b.connecte ? "Connecté" : "Déconnecté",
+        couleurValeur: b.connecte ? blanc : gris,
+      };
     }
     case "minuteurTermine":
       return {

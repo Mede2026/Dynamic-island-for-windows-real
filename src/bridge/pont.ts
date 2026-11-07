@@ -86,6 +86,9 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(ecouter("presse-papiers", (p) => envoyer(traducteur.pressePapiers(p))));
   arrets.push(ecouter("niveau-audio", (n) => recevoirNiveau(n)));
   arrets.push(ecouter("luminosite", (n) => envoyer(traducteur.luminosite(n))));
+  arrets.push(ecouter("verrouillage", (v) => envoyer(traducteur.verrouillage(v))));
+  arrets.push(ecouter("usb", (u) => envoyer(traducteur.usb(u))));
+  arrets.push(ecouter("bluetooth", (b) => envoyer(traducteur.bluetooth(b))));
   arrets.push(
     ecouter("appel", (a) => {
       majDonnees({ appel: a.actif ? { application: a.application ?? "Appel", debutMs: Date.now(), muet: false } : null });
