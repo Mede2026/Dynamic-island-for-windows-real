@@ -38,6 +38,9 @@ fn publier(app: &AppHandle, etat: EtatVolume, initial: bool) {
         if initial { " (initial)" } else { "" }
     );
     *d = Some(etat.clone());
+    if !initial {
+        crate::systeme::osd::signaler();
+    }
     #[derive(Clone, Serialize)]
     #[serde(rename_all = "camelCase")]
     struct Message {

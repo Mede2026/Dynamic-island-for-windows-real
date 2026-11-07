@@ -80,6 +80,12 @@ export const backend = {
   /** Couper / rétablir le micro (appel en cours). `null` = lire l'état. */
   microMuet: (muet: boolean | null) => invoke<boolean>("micro_muet", { muet }),
   /** L'île demande le niveau sonore réel (onde de la musique). */
+  copierTexte: (texte: string) => invoke<void>("copier_texte", { texte }),
+  copierFichiers: (chemins: string[]) => invoke<void>("copier_fichiers", { chemins }),
+  ouvrirFichier: (chemin: string, dansExplorateur = false) => invoke<void>("ouvrir_fichier", { chemin, dansExplorateur }),
+  etagereLire: () => invoke<string[]>("etagere_lire"),
+  etagereAjouter: (chemins: string[]) => invoke<string[]>("etagere_ajouter", { chemins }),
+  etagereRetirer: (chemin: string | null) => invoke<string[]>("etagere_retirer", { chemin }),
   rechercheRapide: (terme: string) => invoke<unknown>("recherche_rapide", { terme }),
   ouvrirLien: (lien: string) => invoke<void>("ouvrir_lien", { lien }),
   parolesChercher: (artiste: string, titre: string, album: string, dureeS: number | null) =>

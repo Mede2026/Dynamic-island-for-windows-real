@@ -92,6 +92,7 @@ pub fn demarrer(app: AppHandle) {
                     if let Some(o) = &objets[0] {
                         if let Some(niveau) = valeur(o, "Brightness") {
                             journal!("luminosite", "{niveau} %");
+                            crate::systeme::osd::signaler();
                             let _ = app.emit(EVENEMENT, niveau);
                         }
                     }

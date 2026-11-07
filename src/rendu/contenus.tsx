@@ -37,7 +37,11 @@ import {
   IconeSouris,
   IconeUsb,
   IconeCloche,
+  IconeCopier,
+  IconeDossier,
   IconeFermer,
+  IconeFichier,
+  IconeTelechargement,
   IconeHorloge,
   IconeLecture,
   IconeLune,
@@ -565,6 +569,194 @@ export function MinuteurEtendu({ cfg, S, d }: Ctx) {
 }
 
 // ---------------------------------------------------------------------------
+// Téléchargements en cours (dossier Téléchargements)
+// ---------------------------------------------------------------------------
+
+const BLEU = "#0a84ff";
+
+/** « 12,4 Mo », « 830 Ko », « 1,2 Go ». */
+export function formaterOctets(o: number): string {
+  const u = ["o", "Ko", "Mo", "Go", "To"];
+  let i = 0;
+  let x = o;
+  while (x >= 1000 && i < u.length - 1) {
+    x /= 1024;
+    i++;
+  }
+  return `${x.toLocaleString("fr-CA", { maximumFractionDigits: x < 10 && i > 0 ? 1 : 0 })} ${u[i]}`;
+}
+
+/** Icône avec un anneau qui tourne (pas de pourcentage connu). */
+function IconeTelechargementActif({ taille, style }: { taille: number; style?: CSSProperties }) {
+  return (
+    <div style={{ position: "absolute", width: taille, height: taille, ...style }}>
+      <motion.svg
+        width={taille}
+        height={taille}
+        viewBox="0 0 24 24"
+        style={{ position: "absolute", inset: 0 }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+      >
+        <circle cx="12" cy="12" r="10.6" fill="none" stroke={BLEU} strokeOpacity="0.25" strokeWidth="2" />
+        <path d="M12 1.4a10.6 10.6 0 0 1 10.6 10.6" fill="none" stroke={BLEU} strokeWidth="2" strokeLinecap="round" />
+      </motion.svg>
+      <IconeTelechargement taille={taille * 0.56} couleur={BLEU} style={{ position: "absolute", left: taille * 0.22, top: taille * 0.2 }} />
+    </div>
+  );
+}
+
+export function TelechargementCompact({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  const total = d.telechargements.reduce((s, t) => s + t.octets, 0);
+  return (
+    <>
+      <IconeTelechargementActif taille={ti} style={{ left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S) / 2,
+          fontVariantNumeric: "tabular-nums",
+          color: BLEU,
+          left: undefined,
+          fontSize: v(c.compactTexte.taillePt) * S * 0.82,
+        })}
+      >
+        {formaterOctets(total)}
+      </div>
+    </>
+  );
+}
+
+export function TelechargementMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeTelechargementActif taille={ti} style={{ left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+export function TelechargementEtendu({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const premier = d.telechargements[0];
+  const gauche = (v(c.etenduBoutonXPt)[0] ?? 0) * S;
+  const diam = v(c.etenduBoutonDiametrePt) * S;
+  const y = v(c.etenduBoutonYPt) * S;
+  const vitesse = d.telechargements.reduce((s, t) => s + t.vitesse, 0);
+  const autres = d.telechargements.length - 1;
+  const largeur = v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) * S;
+  return (
+    <>
+      <IconeTelechargementActif taille={diam} style={{ left: gauche, top: y }} />
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.08, color: "#ffffff", width: largeur - gauche * 2 - diam * 1.25, overflow: "hidden", textOverflow: "ellipsis" })}>
+        {premier?.nom ?? "Téléchargement"}
+      </div>
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.55, color: v(cfg.media.etendu.artiste.couleur), fontWeight: 400 })}>
+        {formaterOctets(premier?.octets ?? 0)}
+        {vitesse > 0 ? ` · ${formaterOctets(vitesse)}/s` : ""}
+        {autres > 0 ? ` · ${autres} autre${autres > 1 ? "s" : ""}` : ""}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Étagère : fichiers déposés sur l'île
+// ---------------------------------------------------------------------------
+
+const nomFichier = (chemin: string) => chemin.split(/[\\/]/).pop() ?? chemin;
+
+export function EtagereCompact({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return (
+    <>
+      <IconeDossier taille={ti} couleur="#64a8ff" style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S) / 2,
+          fontVariantNumeric: "tabular-nums",
+          color: "#ffffff",
+          left: undefined,
+        })}
+      >
+        {d.etagere.length}
+      </div>
+    </>
+  );
+}
+
+export function EtagereMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeDossier taille={ti} couleur="#64a8ff" style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+/** Bouton de l'île : ne déclenche ni l'appui long ni la fermeture. */
+function boutonIle(faire: () => void) {
+  return {
+    className: "bouton-ile",
+    onPointerDown: (e: PE) => e.stopPropagation(),
+    onPointerUp: (e: PE) => e.stopPropagation(),
+    onClick: (e: { stopPropagation: () => void }) => {
+      e.stopPropagation();
+      faire();
+    },
+  };
+}
+
+/** Vue étendue : la liste des fichiers ; clic = ouvrir ; copier (coller dans l'Explorateur) ; retirer. */
+export function EtagereEtendu({ cfg, S, d }: Ctx) {
+  const largeur = v(cfg.formes.etendu.taille.pt.largeur) * S;
+  const hauteur = v(cfg.formes.etendu.taille.pt.hauteur) * S;
+  const marge = 20 * S;
+  const ligne = 26 * S;
+  const visibles = d.etagere.slice(0, 5);
+  const gris = v(cfg.media.etendu.artiste.couleur);
+  const t = 13.5 * S;
+  return (
+    <div style={{ position: "absolute", left: marge, top: marge * 0.9, width: largeur - 2 * marge, height: hauteur - marge * 1.6, fontSize: t, color: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 * S, height: ligne, fontWeight: 600 }}>
+        <IconeDossier taille={t * 1.3} couleur="#64a8ff" />
+        <span style={{ flex: 1 }}>Étagère · {d.etagere.length}</span>
+        <button {...boutonIle(() => void backend.copierFichiers(d.etagere))} style={{ color: "#64a8ff", fontSize: t * 0.9, fontWeight: 600 }}>
+          Tout copier
+        </button>
+        <button {...boutonIle(() => void backend.etagereRetirer(null))} style={{ color: gris, fontSize: t * 0.9, fontWeight: 600, marginLeft: 10 * S }}>
+          Vider
+        </button>
+      </div>
+      {visibles.map((chemin) => (
+        <div key={chemin} style={{ display: "flex", alignItems: "center", gap: 8 * S, height: ligne }}>
+          <IconeFichier taille={t * 1.2} couleur="#d1d1d6" />
+          <button
+            {...boutonIle(() => void backend.ouvrirFichier(chemin))}
+            title={chemin}
+            style={{ flex: 1, justifyContent: "flex-start", color: "#fff", fontSize: t, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}
+          >
+            {nomFichier(chemin)}
+          </button>
+          <button {...boutonIle(() => void backend.copierFichiers([chemin]))} title="Copier (puis coller où tu veux)">
+            <IconeCopier taille={t * 1.15} couleur={gris} />
+          </button>
+          <button {...boutonIle(() => void backend.ouvrirFichier(chemin, true))} title="Afficher dans l'Explorateur">
+            <IconeOuvrir taille={t * 1.1} couleur={gris} />
+          </button>
+          <button {...boutonIle(() => void backend.etagereRetirer(chemin))} title="Retirer de l'étagère">
+            <IconeFermer taille={t * 0.95} couleur={gris} />
+          </button>
+        </div>
+      ))}
+      {d.etagere.length > visibles.length && <div style={{ color: gris, fontSize: t * 0.9 }}>et {d.etagere.length - visibles.length} autre(s)…</div>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Horloge au survol (île au repos) : heure à droite, cadran à gauche
 // ---------------------------------------------------------------------------
 
@@ -647,6 +839,26 @@ export function HorlogeEtendu({ cfg, S }: Ctx) {
 // Alertes (forme mesurée sur « En charge 98 % »)
 // ---------------------------------------------------------------------------
 
+/** Valeur cliquable d'une alerte : copier un code (puis « Copié »), ouvrir un fichier. */
+function BoutonAction({ action, style, children }: { action: NonNullable<ReturnType<typeof specAlerte>["action"]>; style: CSSProperties; children: string }) {
+  const [fait, setFait] = useState(false);
+  return (
+    <div
+      role="button"
+      style={style}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (action.type === "copier") void backend.copierTexte(action.texte).then(() => setFait(true));
+        else void backend.ouvrirFichier(action.chemin);
+      }}
+    >
+      {fait ? "Copié" : children}
+    </div>
+  );
+}
+
 /** Alerte : contenu à gauche et à droite de la caméra (voir alertes.ts). */
 export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
   const { cfg, S, alerte } = ctx;
@@ -691,6 +903,8 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeTelephone taille={ti} couleur={couleurIcone} />;
       case "bluetooth":
         return <IconeBluetooth taille={ti} couleur={couleurIcone} />;
+      case "telechargement":
+        return <IconeTelechargement taille={ti} couleur={couleurIcone} />;
       default:
         return null;
     }
@@ -725,7 +939,7 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         />
       )}
       {spec.libelle && <div style={ligne({ left: xLibelle, maxWidth: cotes.libelleMax * S })}>{spec.libelle}</div>}
-      {spec.valeur && (
+      {spec.valeur && !spec.action && (
         <div
           style={ligne({
             right: droiteValeur,
@@ -736,6 +950,21 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         >
           {spec.valeur}
         </div>
+      )}
+      {spec.valeur && spec.action && (
+        <BoutonAction
+          action={spec.action}
+          style={ligne({
+            right: droiteValeur,
+            maxWidth: cotes.valeurMax * S,
+            color: spec.couleurValeur ?? blanc,
+            fontVariantNumeric: "tabular-nums",
+            pointerEvents: "auto",
+            cursor: "pointer",
+          })}
+        >
+          {spec.valeur}
+        </BoutonAction>
       )}
       {spec.detail && (
         <div

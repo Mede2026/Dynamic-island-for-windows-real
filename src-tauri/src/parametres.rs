@@ -115,7 +115,9 @@ pub fn parametres_definir_affichage(
     app: AppHandle,
     affichage: serde_json::Map<String, serde_json::Value>,
 ) -> Parametres {
-    modifier(&app, |p| p.affichage.extend(affichage))
+    let p = modifier(&app, |p| p.affichage.extend(affichage));
+    crate::systeme::osd::configurer(crate::systeme::osd::voulu(&p.affichage));
+    p
 }
 
 /// Prend effet au prochain démarrage.

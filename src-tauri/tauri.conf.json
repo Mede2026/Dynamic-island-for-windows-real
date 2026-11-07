@@ -25,7 +25,7 @@
         "minimizable": false,
         "focus": false,
         "visible": false,
-        "dragDropEnabled": false
+        "dragDropEnabled": true
       }
     ],
     "security": {

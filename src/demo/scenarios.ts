@@ -105,6 +105,10 @@ export const SCENARIOS = {
   bluetoothOff: "Souris Bluetooth déconnectée",
   horloge: "Horloge (survol de l'île au repos)",
   paroles: "Paroles en direct (avec la musique)",
+  telechargement: "Téléchargement en cours",
+  finTelechargement: "Téléchargement terminé",
+  etagere: "Étagère (3 fichiers)",
+  code: "Notification avec un code à copier",
   finHorloge: "Fin de l'horloge",
 } as const;
 
@@ -192,6 +196,25 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       majDonnees({ paroles: { cle: "demo", lignes: textes.map((texte, i) => ({ t: t0 + i * 2500, texte })) } });
       break;
     }
+    case "telechargement":
+      majDonnees({ telechargements: [{ nom: "setup-jeu.exe", octets: 48_200_000, vitesse: 6_300_000 }] });
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "telechargement", type: "telechargement" } });
+      break;
+    case "finTelechargement":
+      majDonnees({ telechargements: [] });
+      machine.envoyer({ type: "ACTIVITE_FIN", id: "telechargement" });
+      machine.envoyer({ type: "ALERTE", alerte: { type: "telechargementTermine", donnees: { nom: "setup-jeu.exe", chemin: "C:\\setup-jeu.exe" } } });
+      break;
+    case "etagere":
+      majDonnees({ etagere: ["C:\\Users\\Mederic\\Documents\\Partition batterie.pdf", "C:\\Users\\Mederic\\Pictures\\Charlevoix.jpg", "C:\\Users\\Mederic\\Music\\set-dj.mp3"] });
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "etagere", type: "etagere" } });
+      break;
+    case "code":
+      machine.envoyer({
+        type: "ALERTE",
+        alerte: { type: "notification", donnees: { id: 1, application: "Desjardins", textes: ["Votre code de vérification est 482913"], code: "482913" }, dureeFacteur: 2.5 },
+      });
+      break;
     case "horloge":
       machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "horloge", type: "horloge" } });
       break;

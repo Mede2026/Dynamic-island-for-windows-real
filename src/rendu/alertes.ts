@@ -40,7 +40,8 @@ export type NomIcone =
   | "souris"
   | "manette"
   | "telephone"
-  | "bluetooth";
+  | "bluetooth"
+  | "telechargement";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -68,6 +69,8 @@ export interface SpecAlerte {
   /** Texte servant à mesurer la valeur (ex. « 100 % ») pour une largeur stable. */
   valeurReference?: string;
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
+  /** La valeur est un bouton : copier un code, ouvrir un fichier téléchargé. */
+  action?: { type: "copier"; texte: string } | { type: "ouvrir"; chemin: string };
 }
 
 /** Largeur d'un texte (pt) : (texte, taille pt, graisse, chiffres à chasse fixe) → largeur pt. */
@@ -182,10 +185,26 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
       };
     }
     case "notification": {
-      const n = { application: "", textes: [], ...(alerte.donnees as Partial<Notification>) } as Notification;
+      const n = { application: "", textes: [], ...(alerte.donnees as Partial<Notification & { code: string }>) } as Notification & {
+        code?: string;
+      };
       // Ligne 1 (à côté de la caméra) : l'app ; ligne 2 (sous la caméra) : le texte.
       // Pas d'icône : le nom de l'app a besoin de toute la place à gauche de la caméra.
-      return { libelle: n.application || "Notification", detail: n.textes.join(" — ") || undefined };
+      const spec: SpecAlerte = { libelle: n.application || "Notification", detail: n.textes.join(" — ") || undefined };
+      // Code de vérification : à droite, en vert, un clic le copie.
+      if (n.code) return { ...spec, valeur: n.code, couleurValeur: v(a.valeurCouleur), action: { type: "copier", texte: n.code } };
+      return spec;
+    }
+    case "telechargementTermine": {
+      const t = { nom: "", chemin: "", ...(alerte.donnees as Partial<{ nom: string; chemin: string }>) };
+      return {
+        icone: "telechargement",
+        couleurIcone: v(a.valeurCouleur),
+        libelle: t.nom || "Téléchargement",
+        valeur: "Ouvrir",
+        couleurValeur: v(a.valeurCouleur),
+        action: t.chemin ? { type: "ouvrir", chemin: t.chemin } : undefined,
+      };
     }
     case "pressePapiers": {
       const p = { type: "autre", apercu: "", ...(alerte.donnees as Partial<PressePapiers>) } as PressePapiers;

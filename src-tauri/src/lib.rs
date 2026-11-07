@@ -11,6 +11,7 @@
 use tauri::Manager;
 
 pub mod demarrage;
+pub mod etagere;
 pub mod evenements;
 pub mod fenetre;
 pub mod horloge;
@@ -40,6 +41,12 @@ fn app_quitter(app: tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Processus gardien de l'indicateur de volume (voir systeme/osd.rs) : rien d'autre.
+    let args: Vec<String> = std::env::args().collect();
+    if let Some(i) = args.iter().position(|a| a == systeme::osd::ARGUMENT_GARDIEN) {
+        systeme::osd::gardien(args.get(i + 1).map(String::as_str).unwrap_or(""));
+        return;
+    }
     journal::initialiser();
     journal!("app", "version {}", env!("CARGO_PKG_VERSION"));
     // Même identité que les raccourcis de l'installateur (icône épinglée, notifications).
@@ -82,6 +89,12 @@ pub fn run() {
             systeme::systeme_ne_pas_deranger,
             systeme::notifications_etat,
             paroles::paroles_chercher,
+            systeme::ecrire::copier_texte,
+            systeme::ecrire::copier_fichiers,
+            systeme::ecrire::ouvrir_fichier,
+            etagere::etagere_lire,
+            etagere::etagere_ajouter,
+            etagere::etagere_retirer,
             recherche::recherche_rapide,
             recherche::ouvrir_lien,
             minuteur::minuteur_demarrer,
@@ -136,13 +149,24 @@ pub fn run() {
                 journal!("plateau", "icône de notification impossible : {e}");
             }
             media::demarrer(handle);
+            etagere::charger();
             systeme::demarrer(handle);
+            // Indicateur de Windows : remettre d'abord (fin brutale précédente), puis remplacer.
+            systeme::osd::restaurer();
+            systeme::osd::configurer(systeme::osd::voulu(&parametres::lire(handle).affichage));
             horloge::demarrer(handle.clone());
             integration::installer();
             integration::executer(handle, &std::env::args().collect::<Vec<_>>(), false);
             Ok(())
         })
-        .run(tauri::generate_context!());
+        .build(tauri::generate_context!())
+        .map(|app| {
+            app.run(|_, evenement| {
+                if let tauri::RunEvent::Exit = evenement {
+                    systeme::osd::configurer(false);
+                }
+            })
+        });
     if let Err(e) = resultat {
         journal!("app", "erreur au lancement : {e}");
         journal::afficher_erreur(&e.to_string());

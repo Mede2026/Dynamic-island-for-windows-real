@@ -321,3 +321,42 @@ export function IconeHorloge({ taille, couleur, style, heure }: P & { heure: Dat
     </svg>
   );
 }
+
+/** Flèche vers le bas dans un bac (téléchargement). */
+export function IconeTelechargement({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M12 3.5v11M7.2 10l4.8 4.8 4.8-4.8" stroke={couleur} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4.5 15.5v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2.5" stroke={couleur} strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Dossier (étagère). */
+export function IconeDossier({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path d="M3 7.2A2.2 2.2 0 0 1 5.2 5h4.1l2 2.2h7.5A2.2 2.2 0 0 1 21 9.4v8.4a2.2 2.2 0 0 1-2.2 2.2H5.2A2.2 2.2 0 0 1 3 17.8z" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Feuille (fichier) avec un coin plié. */
+export function IconeFichier({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path d="M6.5 2.5h7.2l4.8 4.8v12.2a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2z" fill={couleur} opacity="0.9" />
+      <path d="M13.7 2.5v3.8a1 1 0 0 0 1 1h3.8" fill="none" stroke="#000" strokeOpacity="0.35" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+/** Deux feuilles superposées (copier). */
+export function IconeCopier({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <rect x="8" y="8" width="12" height="12" rx="2.5" stroke={couleur} strokeWidth="2" />
+      <path d="M16 5.5V5a1.5 1.5 0 0 0-1.5-1.5h-9A1.5 1.5 0 0 0 4 5v9a1.5 1.5 0 0 0 1.5 1.5H6" stroke={couleur} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}

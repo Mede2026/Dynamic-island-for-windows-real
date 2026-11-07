@@ -48,6 +48,7 @@ const ALERTES: [string, string][] = [
   ["bluetooth", "Appareils Bluetooth"],
   ["usb", "Clé USB / disque externe"],
   ["verrouillage", "Verr. Maj / Verr. Num"],
+  ["telechargementTermine", "Téléchargement terminé"],
 ];
 
 const BOUCLES: Record<string, NomScenario[]> = {
@@ -312,6 +313,9 @@ export function Panneau() {
           }}
         >
           Cacher quand une app est en plein écran
+        </Case>
+        <Case coche={prefs.remplacerOsd ?? true} changer={(v) => changerPrefs({ remplacerOsd: v })}>
+          Remplacer l'indicateur de volume et de luminosité de Windows par l'île
         </Case>
         <Case coche={prefs.notificationMinuteur ?? true} changer={(v) => changerPrefs({ notificationMinuteur: v })}>
           Notification Windows à la fin du minuteur (bouton « Répéter »)

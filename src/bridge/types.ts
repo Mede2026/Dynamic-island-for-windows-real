@@ -142,6 +142,10 @@ export interface EvenementsBackend {
   usb: LecteurUsb;
   /** Appareil Bluetooth connecté / déconnecté. */
   bluetooth: AppareilBluetooth;
+  /** Téléchargements en cours (dossier Téléchargements) et fichier tout juste terminé. */
+  telechargements: EtatTelechargements;
+  /** Fichiers de l'étagère (chemins). */
+  etagere: string[];
   /** Panneau de réglages → île : valeurs modifiées en direct. */
   "config-direct": Record<string, unknown>;
   /** Panneau de réglages → île : jouer un scénario de démonstration. */
@@ -173,6 +177,19 @@ export interface AppareilBluetooth {
   connecte: boolean;
   categorie: CategorieBluetooth;
   batterie: number | null;
+}
+
+export interface Telechargement {
+  nom: string;
+  octets: number;
+  /** Octets par seconde. */
+  vitesse: number;
+}
+
+export interface EtatTelechargements {
+  enCours: Telechargement[];
+  /** [nom, chemin] du fichier tout juste terminé. */
+  termine: [string, string] | null;
 }
 
 export interface Parametres {
@@ -209,4 +226,6 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "verrouillage",
   "usb",
   "bluetooth",
+  "telechargements",
+  "etagere",
 ];

@@ -6,7 +6,7 @@
  */
 
 import type { Evenement } from "../state/islandMachine";
-import type { AppareilBluetooth, LecteurUsb, Verrouillage } from "./types";
+import type { AppareilBluetooth, EtatTelechargements, LecteurUsb, Verrouillage } from "./types";
 import type { Appel, EtatBatterie, EtatMedia, EtatMinuteur, EtatNePasDeranger, EtatVolume, Notification } from "./types";
 import type { PressePapiers } from "./donnees";
 
@@ -23,7 +23,22 @@ function musiqueActive(m: EtatMedia): boolean {
   return m.statut === "lecture" || m.statut === "changement" || (m.statut === "pause" && m.titre !== "");
 }
 
+const ID_TELECHARGEMENT = "telechargement";
+const ID_ETAGERE = "etagere";
+
+/**
+ * Code de vérification dans une notification (« Votre code : 482 913 », « 123456 is your
+ * verification code »). Il faut un mot-clé ET un nombre de 4 à 8 chiffres.
+ */
+export function codeVerification(texte: string): string | null {
+  if (!/code|otp|v[ée]rification|verification|s[ée]curit[ée]|passcode|2fa|connexion|login|sign.?in|confirm/i.test(texte)) return null;
+  const m = /(?<![\d\w])(\d{3}[ -]\d{3}|\d{4,8})(?![\d\w])/.exec(texte);
+  return m ? m[1]!.replace(/[ -]/g, "") : null;
+}
+
 export class Traducteur {
+  private telechargement = false;
+  private etagerePleine = false;
   private musique = false;
   private minuteur = false;
   private batterie: EtatBatterie | null = null;
@@ -85,6 +100,30 @@ export class Traducteur {
     return [{ type: "ALERTE", alerte: { type: "neDerangePas", donnees: n } }];
   }
 
+  telechargements(t: EtatTelechargements): Evenement[] {
+    const evs: Evenement[] = [];
+    const actif = t.enCours.length > 0;
+    if (actif && !this.telechargement) evs.push({ type: "ACTIVITE_DEBUT", activite: { id: ID_TELECHARGEMENT, type: "telechargement" } });
+    if (!actif && this.telechargement) evs.push({ type: "ACTIVITE_FIN", id: ID_TELECHARGEMENT });
+    this.telechargement = actif;
+    if (t.termine) {
+      evs.push({
+        type: "ALERTE",
+        alerte: { type: "telechargementTermine", donnees: { nom: t.termine[0], chemin: t.termine[1] }, dureeFacteur: 1.7 },
+      });
+    }
+    return evs;
+  }
+
+  etagere(fichiers: string[]): Evenement[] {
+    const actif = fichiers.length > 0;
+    const avant = this.etagerePleine;
+    this.etagerePleine = actif;
+    if (actif && !avant) return [{ type: "ACTIVITE_DEBUT", activite: { id: ID_ETAGERE, type: "etagere" } }];
+    if (!actif && avant) return [{ type: "ACTIVITE_FIN", id: ID_ETAGERE }];
+    return [];
+  }
+
   notification(n: Notification): Evenement[] {
     // L'outil de capture envoie une notification à chaque capture : l'alerte « Capture »
     // (avec miniature) s'affiche déjà, on ne la double pas.
@@ -99,6 +138,8 @@ export class Traducteur {
         return [{ type: "ALERTE", alerte: { type: "minuteurTermine", donnees: null } }];
       }
     }
+    const code = codeVerification(n.textes.join(" "));
+    if (code) return [{ type: "ALERTE", alerte: { type: "notification", donnees: { ...n, code }, dureeFacteur: 2.5 } }];
     return [{ type: "ALERTE", alerte: { type: "notification", donnees: n } }];
   }
 

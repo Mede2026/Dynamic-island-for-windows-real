@@ -35,6 +35,13 @@ mod win {
     static ENVOI: OnceLock<Mutex<Sender<Verrouillage>>> = OnceLock::new();
 
     unsafe extern "system" fn crochet(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+        if code == HC_ACTION as i32 {
+            // Touches volume / multimédia : l'indicateur de Windows va s'afficher.
+            let vk = (*(lparam.0 as *const KBDLLHOOKSTRUCT)).vkCode;
+            if (0xAD..=0xB3).contains(&vk) {
+                crate::systeme::osd::signaler();
+            }
+        }
         if code == HC_ACTION as i32 && (wparam.0 as u32 == WM_KEYUP || wparam.0 as u32 == WM_SYSKEYUP) {
             let touche = &*(lparam.0 as *const KBDLLHOOKSTRUCT);
             let v = if touche.vkCode == VK_CAPITAL.0 as u32 {

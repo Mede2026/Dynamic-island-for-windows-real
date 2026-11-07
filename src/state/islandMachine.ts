@@ -23,7 +23,7 @@ import { islandConfig, type EtatIle, type NomTransition } from "../island.config
 // ---------------------------------------------------------------------------
 
 /** Activités longues (affichées en compact / split / étendu). */
-export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge";
+export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge" | "telechargement" | "etagere";
 
 /** Alertes brèves (affichées puis retour automatique). */
 export type TypeAlerte =
@@ -38,7 +38,8 @@ export type TypeAlerte =
   | "capture"
   | "verrouillage"
   | "usb"
-  | "bluetooth";
+  | "bluetooth"
+  | "telechargementTermine";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.
@@ -50,6 +51,8 @@ export const PRIORITES: Record<TypeActivite, number> = {
   appel: 3, // un appel passe devant tout (comme sur iPhone)
   musique: 2,
   minuteur: 1,
+  telechargement: 1,
+  etagere: 0.5, // fichiers gardés sous la main : discret, cède la place au reste
   horloge: 0, // horloge au survol de l'île au repos : cède la place à tout le reste
 };
 
@@ -65,6 +68,8 @@ export interface Activite {
 export interface Alerte {
   type: TypeAlerte;
   donnees?: unknown;
+  /** Multiplie la durée d'affichage (ex. 2 pour un code à copier : le temps de cliquer). */
+  dureeFacteur?: number;
 }
 
 /** Où le clic a eu lieu en mode split. */
@@ -288,7 +293,12 @@ export function reduire(etat: EtatMachine, ev: Evenement, durees: Durees): Resul
       e = stabiliser(etat, e, effets);
       // Une nouvelle alerte (ex. volume qui change encore) relance le compte à rebours.
       e = annuler(e, "alerte", effets);
-      e = demarrer(e, "alerte", durees.alerteAffichageMs, effets);
+      e = demarrer(
+        e,
+        "alerte",
+        durees.alerteAffichageMs === null ? null : durees.alerteAffichageMs * (ev.alerte.dureeFacteur ?? 1),
+        effets,
+      );
       break;
     }
 

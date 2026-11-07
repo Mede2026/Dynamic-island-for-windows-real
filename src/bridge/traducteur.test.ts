@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Traducteur } from "./traducteur";
+import { codeVerification, Traducteur } from "./traducteur";
 import type { EtatBatterie, EtatMedia, EtatMinuteur } from "./types";
 
 const media = (p: Partial<EtatMedia>): EtatMedia => ({
@@ -127,5 +127,13 @@ describe("Traducteur", () => {
     expect(type(t.notification(n("Horloge", "Alarme", "7:00")))).toBe("notification");
     expect(t.notification(n("Dynamic Island", "Minuteur terminé", "5 min"))).toEqual([]);
     expect(type(t.notification(n("Messages", "Salut")))).toBe("notification");
+  });
+
+  it("trouve les codes de vérification", () => {
+    expect(codeVerification("Votre code de vérification est 482913")).toBe("482913");
+    expect(codeVerification("123 456 is your verification code")).toBe("123456");
+    expect(codeVerification("G-1234 code Google")).toBe("1234");
+    expect(codeVerification("Rendez-vous à 1530 demain")).toBeNull();
+    expect(codeVerification("Ton code postal J4B")).toBeNull();
   });
 });

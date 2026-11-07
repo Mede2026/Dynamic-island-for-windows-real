@@ -10,6 +10,7 @@
 
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import type { IslandMachine } from "../state/islandMachine";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { backend, dansTauri, ecouter } from "./backend";
 import { cleChanson, lireLrc } from "./paroles";
 import { majDonnees } from "./donnees";
@@ -132,6 +133,26 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(ecouter("verrouillage", (v) => envoyer(traducteur.verrouillage(v))));
   arrets.push(ecouter("usb", (u) => envoyer(traducteur.usb(u))));
   arrets.push(ecouter("bluetooth", (b) => envoyer(traducteur.bluetooth(b))));
+  arrets.push(
+    ecouter("telechargements", (t) => {
+      majDonnees({ telechargements: t.enCours });
+      envoyer(traducteur.telechargements(t));
+    }),
+  );
+  const etagere = (liste: string[]) => {
+    majDonnees({ etagere: liste });
+    envoyer(traducteur.etagere(liste));
+  };
+  arrets.push(ecouter("etagere", etagere));
+  void backend.etagereLire().then((l) => l && etagere(l));
+  // Fichiers glissés sur l'île → l'étagère.
+  if (dansTauri()) {
+    arrets.push(
+      getCurrentWebview().onDragDropEvent((e) => {
+        if (e.payload.type === "drop" && e.payload.paths.length > 0) void backend.etagereAjouter(e.payload.paths);
+      }),
+    );
+  }
   arrets.push(
     ecouter("appel", (a) => {
       majDonnees({ appel: a.actif ? { application: a.application ?? "Appel", debutMs: Date.now(), muet: false } : null });

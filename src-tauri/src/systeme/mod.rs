@@ -9,12 +9,15 @@ pub mod batterie;
 pub mod bluetooth;
 pub mod clavier;
 pub mod confidentialite;
+pub mod ecrire;
 pub mod luminosite;
 pub mod micro;
 pub mod ne_pas_deranger;
 pub mod niveau_audio;
 pub mod notifications;
+pub mod osd;
 pub mod presse_papiers;
+pub mod telechargements;
 pub mod usb;
 pub mod volume;
 
@@ -32,6 +35,7 @@ pub fn demarrer(app: &AppHandle) {
     clavier::demarrer(app.clone());
     usb::demarrer(app.clone());
     bluetooth::demarrer(app.clone());
+    telechargements::demarrer(app.clone());
 }
 
 #[tauri::command]

@@ -29,6 +29,8 @@ export interface Preferences {
   appsIgnorees?: string[];
   /** Paroles synchronisées sous la caméra pendant la musique (activé par défaut). */
   paroles?: boolean;
+  /** Remplacer l'indicateur de volume / luminosité de Windows par l'île (lu par le backend). */
+  remplacerOsd?: boolean;
 }
 
 /** L'app (identifiant ou nom affiché) est-elle dans la liste des apps ignorées ? */
