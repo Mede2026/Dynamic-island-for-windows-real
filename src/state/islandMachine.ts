@@ -23,7 +23,7 @@ import { islandConfig, type EtatIle, type NomTransition } from "../island.config
 // ---------------------------------------------------------------------------
 
 /** Activités longues (affichées en compact / split / étendu). */
-export type TypeActivite = "minuteur" | "musique" | "appel";
+export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge";
 
 /** Alertes brèves (affichées puis retour automatique). */
 export type TypeAlerte =
@@ -50,6 +50,7 @@ export const PRIORITES: Record<TypeActivite, number> = {
   appel: 3, // un appel passe devant tout (comme sur iPhone)
   musique: 2,
   minuteur: 1,
+  horloge: 0, // horloge au survol de l'île au repos : cède la place à tout le reste
 };
 
 export interface Activite {

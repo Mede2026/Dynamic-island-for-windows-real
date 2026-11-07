@@ -35,6 +35,7 @@ import {
   IconeUsb,
   IconeCloche,
   IconeFermer,
+  IconeHorloge,
   IconeLecture,
   IconeLune,
   IconeMicro,
@@ -507,6 +508,85 @@ export function MinuteurEtendu({ cfg, S, d }: Ctx) {
         })}
       >
         {formaterDuree(restant)}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Horloge au survol (île au repos) : heure à droite, cadran à gauche
+// ---------------------------------------------------------------------------
+
+/** Heure actuelle, rafraîchie chaque seconde. */
+function useMaintenant(): Date {
+  const [maintenant, setMaintenant] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setMaintenant(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return maintenant;
+}
+
+const heureCourte = (d: Date) => d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit", hour12: false }).replace(" h ", ":");
+
+export function HorlogeCompact({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const maintenant = useMaintenant();
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return (
+    <>
+      <IconeHorloge taille={ti} couleur="#ffffff" heure={maintenant} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S) / 2,
+          fontVariantNumeric: "tabular-nums",
+          color: "#ffffff",
+          left: undefined,
+        })}
+      >
+        {heureCourte(maintenant)}
+      </div>
+    </>
+  );
+}
+
+export function HorlogeMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const maintenant = useMaintenant();
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeHorloge taille={ti} couleur="#ffffff" heure={maintenant} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+/** Vue étendue : date à gauche (même place que « Minuteur »), heure en grand à droite. */
+export function HorlogeEtendu({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const maintenant = useMaintenant();
+  const jour = maintenant.toLocaleDateString("fr-CA", { weekday: "long" });
+  const date = maintenant.toLocaleDateString("fr-CA", { day: "numeric", month: "long" });
+  const gris = v(cfg.media.etendu.artiste.couleur);
+  // Date alignée à gauche, là où sont les boutons du minuteur.
+  const gauche = (v(c.etenduBoutonXPt)[0] ?? 0) * S;
+  return (
+    <>
+      <div style={texte(c.etenduLibelle, S, { left: gauche, top: haut(v(c.etenduBaselinePt), c.etenduLibelle, S) - v(c.etenduLibelle.taillePt) * S * 0.62, color: "#ffffff" })}>
+        {jour.charAt(0).toUpperCase() + jour.slice(1)}
+      </div>
+      <div style={texte(c.etenduLibelle, S, { left: gauche, top: haut(v(c.etenduBaselinePt), c.etenduLibelle, S) + v(c.etenduLibelle.taillePt) * S * 0.62, color: gris, fontWeight: 400 })}>
+        {date}
+      </div>
+      <div
+        style={texte(c.etenduChiffres, S, {
+          right: (v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) - v(c.etenduChiffresDroitePt)) * S,
+          top: haut(v(c.etenduBaselinePt), c.etenduChiffres, S),
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: "-0.01em",
+          color: "#ffffff",
+        })}
+      >
+        {heureCourte(maintenant)}
       </div>
     </>
   );

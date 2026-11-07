@@ -57,6 +57,27 @@ export function demarrerPont(machine: IslandMachine): () => void {
     );
   }
 
+  // Horloge au survol : la souris sur l'île au repos → l'heure (comme une activité).
+  let minuterieHorloge: ReturnType<typeof setTimeout> | null = null;
+  const horlogeAffichee = () => machine.etat.activites.some((a) => a.id === "horloge");
+  const horlogeAuSurvol = (dedans: boolean) => {
+    if (minuterieHorloge) clearTimeout(minuterieHorloge);
+    const verifier = () => {
+      minuterieHorloge = null;
+      const e = machine.etat;
+      if (dedans) {
+        if (preferencesActuelles().horlogeSurvol !== false && e.mode === "repos" && e.activites.length === 0) {
+          machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "horloge", type: "horloge" } });
+        }
+      } else if (horlogeAffichee()) {
+        // Vue étendue ouverte : attendre qu'elle se referme.
+        if (e.mode === "etendu" || e.survol) minuterieHorloge = setTimeout(verifier, 800);
+        else machine.envoyer({ type: "ACTIVITE_FIN", id: "horloge" });
+      }
+    };
+    minuterieHorloge = setTimeout(verifier, dedans ? 250 : 450);
+  };
+
   // 2. Traduction vers la machine à états.
   arrets.push(
     ecouter("media", (m) => {
@@ -127,7 +148,12 @@ export function demarrerPont(machine: IslandMachine): () => void {
   );
   arrets.push(ecouter("ne-pas-deranger", (n) => envoyer(traducteur.nePasDerangerEtat(n))));
   arrets.push(ecouter("notification", (n) => envoyer(traducteur.notification(n))));
-  arrets.push(ecouter("survol", (s) => envoyer(traducteur.survol(s))));
+  arrets.push(
+    ecouter("survol", (s) => {
+      envoyer(traducteur.survol(s));
+      horlogeAuSurvol(s);
+    }),
+  );
   arrets.push(ecouter("clic-exterieur", () => envoyer(traducteur.clicExterieur())));
   arrets.push(
     ecouter("ecran", (info) => {

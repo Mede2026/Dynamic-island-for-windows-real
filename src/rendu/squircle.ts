@@ -50,3 +50,25 @@ export function cheminIle(x: number, y: number, w: number, h: number, a: number,
   [...coin].reverse().forEach(([cx, cy]) => ajouter(x + cx, y + h - cy));
   return parties.join("") + "Z";
 }
+
+/**
+ * Mode « encoche » (style Mac) : la forme part du HAUT DE L'ÉCRAN (y = 0) jusqu'au bas de
+ * l'île (yIle + h). Coins du bas : superellipse (plus serrée qu'en mode île) ; en haut, deux
+ * petites « oreilles » concaves raccordent l'encoche au bord de l'écran.
+ */
+export function cheminEncoche(x: number, yIle: number, w: number, h: number, a: number, n: number, oreille: number): string {
+  const H = yIle + h;
+  if (w <= 0 || H <= 0) return "";
+  const aa = Math.max(0.01, Math.min(a, w / 2, H / 2));
+  const coin = pointsCoin(aa, Math.max(n, 1.01), H / 2);
+  const o = Math.max(0, Math.min(oreille, H / 2));
+  const parties: string[] = [`M${f(x - o)} 0`, `L${f(x + w + o)} 0`];
+  // Oreille droite : arc concave du bord de l'écran vers le côté de l'encoche.
+  if (o > 0) parties.push(`A${f(o)} ${f(o)} 0 0 0 ${f(x + w)} ${f(o)}`);
+  // Bas-droite puis bas-gauche (mêmes symétries que cheminIle).
+  coin.forEach(([cx, cy]) => parties.push(`L${f(x + w - cx)} ${f(H - cy)}`));
+  [...coin].reverse().forEach(([cx, cy]) => parties.push(`L${f(x + cx)} ${f(H - cy)}`));
+  parties.push(`L${f(x)} ${f(o)}`);
+  if (o > 0) parties.push(`A${f(o)} ${f(o)} 0 0 0 ${f(x - o)} 0`);
+  return parties.join("") + "Z";
+}

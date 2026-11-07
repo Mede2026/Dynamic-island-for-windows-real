@@ -233,6 +233,20 @@ export function Panneau() {
         <Case coche={prefs.onde ?? true} changer={(v) => changerPrefs({ onde: v })}>
           Onde sonore pendant la musique (suit le vrai son)
         </Case>
+        <Case coche={prefs.horlogeSurvol ?? true} changer={(v) => changerPrefs({ horlogeSurvol: v })}>
+          Horloge quand la souris passe sur l'île au repos
+        </Case>
+        <label style={c.ligne}>
+          <span>Forme</span>
+          <select
+            value={prefs.forme ?? "ile"}
+            onChange={(e) => changerPrefs({ forme: e.target.value as "ile" | "encoche" })}
+            style={{ flex: 1, font: "inherit" }}
+          >
+            <option value="ile">Île (iPhone)</option>
+            <option value="encoche">Encoche collée en haut (Mac)</option>
+          </select>
+        </label>
         <p style={c.note}>Mémorisé au redémarrage. Les proportions et les courbes restent celles de l'iPhone.</p>
       </Section>
 

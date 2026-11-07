@@ -21,6 +21,10 @@ export interface Preferences {
   alertesMasquees?: string[];
   /** Notification Windows (avec « Répéter ») à la fin du minuteur — lue par le backend. */
   notificationMinuteur?: boolean;
+  /** Horloge quand la souris passe sur l'île au repos (activée par défaut). */
+  horlogeSurvol?: boolean;
+  /** Forme : île de l'iPhone (par défaut) ou encoche collée en haut de l'écran (style Mac). */
+  forme?: "ile" | "encoche";
 }
 
 let preferences: Preferences = {};

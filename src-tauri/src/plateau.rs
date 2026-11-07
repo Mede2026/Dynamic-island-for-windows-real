@@ -28,14 +28,17 @@ pub const RACCOURCI_PANNEAU: &str = "ctrl+alt+d";
 /// Lanceur rapide (minuteur…).
 pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
 const LABEL_LANCEUR: &str = "lanceur";
+/// Cacher / afficher l'île.
+pub const RACCOURCI_CACHER: &str = "ctrl+alt+h";
 
 /// Enregistre les raccourcis un par un ; en cas de refus (déjà pris par un autre programme),
 /// essaie un raccourci de secours et le note dans le journal — sans jamais bloquer le démarrage.
 pub fn enregistrer_raccourcis(app: &AppHandle) {
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
-    let essais: [(&str, &[&str]); 2] = [
+    let essais: [(&str, &[&str]); 3] = [
         ("réglages", &[RACCOURCI_PANNEAU, "ctrl+alt+shift+d"]),
         ("lanceur", &[RACCOURCI_LANCEUR, "ctrl+alt+shift+m"]),
+        ("cacher", &[RACCOURCI_CACHER, "ctrl+alt+shift+h"]),
     ];
     for (nom, raccourcis) in essais {
         let ok = raccourcis.iter().find(|r| match app.global_shortcut().register(**r) {
@@ -133,6 +136,8 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     };
     if est(RACCOURCI_LANCEUR) || est("ctrl+alt+shift+m") {
         basculer_lanceur(app);
+    } else if est(RACCOURCI_CACHER) || est("ctrl+alt+shift+h") {
+        fenetre::basculer_cachee(app);
     } else {
         basculer_panneau(app);
     }
@@ -141,6 +146,13 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
 pub fn installer(app: &AppHandle) -> tauri::Result<()> {
     let reglages = MenuItem::with_id(app, "reglages", "Réglages (Ctrl+Alt+D)", true, None::<&str>)?;
     let lanceur = MenuItem::with_id(app, "lanceur", "Lancer un minuteur (Ctrl+Alt+M)", true, None::<&str>)?;
+    let cacher_ile = MenuItem::with_id(
+        app,
+        "cacher-ile",
+        "Cacher / afficher l'île (Ctrl+Alt+H)",
+        true,
+        None::<&str>,
+    )?;
     let auto = CheckMenuItem::with_id(
         app,
         "auto",
@@ -209,6 +221,7 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         &[
             &reglages,
             &lanceur,
+            &cacher_ile,
             &arreter,
             &PredefinedMenuItem::separator(app)?,
             &tailles,
@@ -229,6 +242,9 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         .on_menu_event(move |app, ev| match ev.id().as_ref() {
             "reglages" => ouvrir_panneau(app),
             "lanceur" => basculer_lanceur(app),
+            "cacher-ile" => {
+                fenetre::basculer_cachee(app);
+            }
             "arreter-tests" => reinitialiser(app),
             id if id.starts_with("taille:") => {
                 if let Ok(t) = id.trim_start_matches("taille:").parse::<f64>() {

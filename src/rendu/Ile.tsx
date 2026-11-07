@@ -18,7 +18,7 @@ import { backend } from "../bridge/backend";
 import { useDonnees } from "../bridge/donnees";
 import type { IslandConfig, Ressort } from "../island.config";
 import type { Cible, EtatMachine, IslandMachine } from "../state/islandMachine";
-import { useConfig, v } from "../config/store";
+import { preferencesActuelles, useConfig, v } from "../config/store";
 import { cleContenu, geometrieCible, geometriesDuPlan, planifier, type Geometrie, type Phase } from "./choregraphie";
 import {
   AlerteContenu,
@@ -26,6 +26,9 @@ import {
   AppelEtendu,
   AppelMinimal,
   MinuteurCompact,
+  HorlogeCompact,
+  HorlogeEtendu,
+  HorlogeMinimal,
   MinuteurEtendu,
   MinuteurMinimal,
   MusiqueCompact,
@@ -33,7 +36,7 @@ import {
   MusiqueMinimal,
   type Ctx,
 } from "./contenus";
-import { cheminIle } from "./squircle";
+import { cheminEncoche, cheminIle } from "./squircle";
 import { definirTypographie } from "./contenus";
 
 /** Marge autour de l'île dans le canevas (pt) : place pour l'ombre et l'appui. */
@@ -82,6 +85,10 @@ interface Rect {
   hauteur: number;
 }
 
+/** Mode encoche : rayon des coins du bas (fraction de la hauteur) et « oreilles » du haut (pt). */
+const RAYON_ENCOCHE = 0.32;
+const OREILLE_ENCOCHE_PT = 7;
+
 /** Marge (pt) pour le dépassement des ressorts au-delà de leur cible. */
 const MARGE_RESSORT_PT = 12;
 
@@ -108,7 +115,7 @@ export function zoneAffichage(geos: Geometrie[], cfg: IslandConfig, cx: number, 
     b = Math.max(b, y0 + (geo.hauteur * (1 + k)) / 2 + m);
   }
   const x = Math.max(0, cx + g * S);
-  const y = Math.max(0, h * S);
+  const y = preferencesActuelles().forme === "encoche" ? 0 : Math.max(0, h * S);
   return {
     x,
     y,
@@ -294,14 +301,19 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   // Géométrie en px CSS. Centre de l'île = centre du canevas + décalage mesuré.
   const y0 = v(cfg.margeHautPt) * S;
   const centre = useTransform(val.decalage, (dx) => cx + dx * S);
-  const cheminPrincipal = useTransform([val.largeur, val.hauteur, val.rayon, val.exposant, centre], ([l, h, r, n, c]) =>
-    cheminIle((c as number) - ((l as number) * S) / 2, y0, (l as number) * S, (h as number) * S, (r as number) * S, n as number),
-  );
+  // Mode encoche (style Mac) : collée au haut de l'écran, coins du bas plus serrés.
+  const cheminPrincipal = useTransform([val.largeur, val.hauteur, val.rayon, val.exposant, centre], ([l, h, r, n, c]) => {
+    const x = (c as number) - ((l as number) * S) / 2;
+    if (preferencesActuelles().forme !== "encoche") return cheminIle(x, y0, (l as number) * S, (h as number) * S, (r as number) * S, n as number);
+    const rayonEncoche = Math.min(r as number, (h as number) * RAYON_ENCOCHE);
+    return cheminEncoche(x, y0, (l as number) * S, (h as number) * S, rayonEncoche * S, n as number, OREILLE_ENCOCHE_PT * S);
+  });
   const diam = v(cfg.bulle.diametrePt);
   const cheminBulle = useTransform([val.largeur, val.bulleEcart, centre], ([l, e, c]) =>
     cheminIle((c as number) + ((l as number) * S) / 2 + (e as number) * S, y0, diam * S, diam * S, (diam / 2) * S, 2),
   );
-  const origineY = useTransform(val.hauteur, (h) => y0 + (h * S) / 2);
+  // Gonflement / rebond : depuis le centre de l'île, ou depuis le haut de l'écran en mode encoche.
+  const origineY = useTransform(val.hauteur, (h) => (preferencesActuelles().forme === "encoche" ? 0 : y0 + (h * S) / 2));
   const transformation = useTransform([val.echelle, origineY, centre], ([e, oy, c]) => {
     const k = e as number;
     const o = oy as number;
@@ -408,7 +420,11 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   const gaucheIle = useTransform([val.largeur, centre], ([l, c]) => (c as number) - ((l as number) * S) / 2);
   const largeurIle = useTransform(val.largeur, (l) => l * S);
   const hauteurIle = useTransform(val.hauteur, (h) => h * S);
-  const rayonIle = useTransform(val.rayon, (r) => r * S);
+  const rayonIle = useTransform([val.rayon, val.hauteur], ([r, h]) =>
+    preferencesActuelles().forme === "encoche"
+      ? `0 0 ${Math.min(r as number, (h as number) * RAYON_ENCOCHE) * S}px ${Math.min(r as number, (h as number) * RAYON_ENCOCHE) * S}px`
+      : `${(r as number) * S}px`,
+  );
   const bulleGauche = useTransform(
     [val.largeur, val.bulleEcart, centre],
     ([l, e, c]) => (c as number) + ((l as number) * S) / 2 + (e as number) * S,
@@ -463,7 +479,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
             borderRadius: rayonIle,
             overflow: "hidden",
             scale: val.echelle,
-            originY: 0.5,
+            originY: preferencesActuelles().forme === "encoche" ? `${-y0}px` : 0.5,
             cursor: "default",
             touchAction: "none",
             pointerEvents: "auto",
@@ -550,11 +566,11 @@ function choisirContenu(ctx: Ctx): ReactNode {
     case "repos":
       return null;
     case "compact":
-      return type === "appel" ? <AppelCompact {...ctx} /> : type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
+      return type === "horloge" ? <HorlogeCompact {...ctx} /> : type === "appel" ? <AppelCompact {...ctx} /> : type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
     case "split":
-      return type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
+      return type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
     case "etendu":
-      return type === "appel" ? <AppelEtendu {...ctx} /> : type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
+      return type === "horloge" ? <HorlogeEtendu {...ctx} /> : type === "appel" ? <AppelEtendu {...ctx} /> : type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
     case "alerte":
       return e.alerte ? <AlerteContenu {...ctx} alerte={e.alerte} /> : null;
   }
@@ -566,12 +582,12 @@ function choisirBulle(ctx: Ctx): ReactNode {
   const type = typeDe(etat, etat.bulleId);
   const diam = v(cfg.bulle.diametrePt) * S;
   // Les contenus « minimal » sont placés comme dans l'île ; on les recentre dans la bulle.
-  const decalage = type === "minuteur" || type === "appel"
+  const decalage = type === "minuteur" || type === "appel" || type === "horloge"
     ? diam / 2 - (v(cfg.minuteur.compactIconeXPt) + v(cfg.minuteur.compactIconeTaillePt) / 2) * S
     : diam / 2 - (v(cfg.media.compact.pochetteXPt) + v(cfg.media.compact.pochetteTaillePt) / 2) * S;
   return (
     <div style={{ position: "absolute", left: decalage, top: 0, width: diam, height: diam }}>
-      {type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
+      {type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
     </div>
   );
 }

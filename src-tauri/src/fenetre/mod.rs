@@ -106,6 +106,8 @@ pub struct EtatFenetre {
     pub cacher_en_plein_ecran: AtomicBool,
     pub ecouter_clic_exterieur: AtomicBool,
     pub plein_ecran: AtomicBool,
+    /// Cachée par l'utilisateur (Ctrl+Alt+H ou menu de l'icône).
+    pub cachee: AtomicBool,
     /// Windows : clics traversants par RÉGION de fenêtre (fluide) au lieu de WS_EX_LAYERED.
     pub mode_region: AtomicBool,
     /// Zone d'affichage demandée par le front-end (DIP, relative à la fenêtre).
@@ -414,9 +416,20 @@ fn lancer_fil_lent(app: AppHandle) {
         .expect("impossible de lancer le fil des écrans");
 }
 
+/// Cache / affiche l'île (Ctrl+Alt+H). Renvoie le nouvel état (true = cachée).
+pub fn basculer_cachee(app: &AppHandle) -> bool {
+    let etat = app.state::<EtatFenetre>();
+    let cachee = !etat.cachee.load(Ordering::Relaxed);
+    etat.cachee.store(cachee, Ordering::Relaxed);
+    journal!("fenetre", "île {}", if cachee { "cachée" } else { "affichée" });
+    appliquer_visibilite(app);
+    cachee
+}
+
 fn appliquer_visibilite(app: &AppHandle) {
     let etat = app.state::<EtatFenetre>();
-    let cacher = etat.cacher_en_plein_ecran.load(Ordering::Relaxed) && etat.plein_ecran.load(Ordering::Relaxed);
+    let cacher = etat.cachee.load(Ordering::Relaxed)
+        || (etat.cacher_en_plein_ecran.load(Ordering::Relaxed) && etat.plein_ecran.load(Ordering::Relaxed));
     if let Some(fen) = fenetre(app) {
         let _ = if cacher { fen.hide() } else { fen.show() };
     }

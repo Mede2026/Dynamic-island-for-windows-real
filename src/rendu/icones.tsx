@@ -306,3 +306,18 @@ export function IconeBluetooth({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Cadran d'horloge dont les aiguilles montrent l'heure donnée. */
+export function IconeHorloge({ taille, couleur, style, heure }: P & { heure: Date }) {
+  const m = heure.getMinutes() + heure.getSeconds() / 60;
+  const h = (heure.getHours() % 12) + m / 60;
+  const aiguille = (angle: number, long: number) =>
+    `M12 12L${12 + Math.sin(angle) * long} ${12 - Math.cos(angle) * long}`;
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <circle cx="12" cy="12" r="9.6" stroke={couleur} strokeWidth="2" />
+      <path d={aiguille((h / 12) * 2 * Math.PI, 4.6)} stroke={couleur} strokeWidth="2.2" strokeLinecap="round" />
+      <path d={aiguille((m / 60) * 2 * Math.PI, 6.8)} stroke={couleur} strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}

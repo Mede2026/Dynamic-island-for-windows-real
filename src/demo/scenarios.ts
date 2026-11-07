@@ -103,6 +103,8 @@ export const SCENARIOS = {
   usb: "Clé USB branchée",
   bluetooth: "Écouteurs Bluetooth connectés (batterie)",
   bluetoothOff: "Souris Bluetooth déconnectée",
+  horloge: "Horloge (survol de l'île au repos)",
+  finHorloge: "Fin de l'horloge",
 } as const;
 
 export type NomScenario = keyof typeof SCENARIOS;
@@ -180,6 +182,12 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       break;
     case "confidentialiteOff":
       majDonnees({ confidentialite: { camera: false, micro: false } });
+      break;
+    case "horloge":
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "horloge", type: "horloge" } });
+      break;
+    case "finHorloge":
+      machine.envoyer({ type: "ACTIVITE_FIN", id: "horloge" });
       break;
     case "verrMaj":
       machine.envoyer({ type: "ALERTE", alerte: { type: "verrouillage", donnees: { touche: "majuscules", actif: true } } });
