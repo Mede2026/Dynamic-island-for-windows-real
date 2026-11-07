@@ -392,3 +392,24 @@ export function IconeNote({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Imprimante. */
+export function IconeImprimante({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M7 8V3.5h10V8" stroke={couleur} strokeWidth="2" strokeLinejoin="round" />
+      <rect x="3" y="8" width="18" height="9" rx="2.4" fill={couleur} />
+      <rect x="7" y="13.5" width="10" height="7" rx="1" fill="#000" stroke={couleur} strokeWidth="2" />
+    </svg>
+  );
+}
+
+/** Deux flèches en cercle (mise à jour). */
+export function IconeMiseAJour({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M19.5 9.5A8 8 0 0 0 5 7.5M4.5 14.5A8 8 0 0 0 19 16.5" stroke={couleur} strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M5 3.5v4h4M19 20.5v-4h-4" stroke={couleur} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

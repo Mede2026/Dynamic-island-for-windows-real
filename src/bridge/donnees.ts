@@ -5,7 +5,7 @@
 import type { ParolesChanson } from "./paroles";
 
 import { useSyncExternalStore } from "react";
-import type { EtatBatterie, EtatMedia, EtatMinuteur, EtatVolume, InfoFenetre, Pochette, Telechargement } from "./types";
+import type { EtatBatterie, EtatMedia, EtatMinuteur, EtatVolume, InfoFenetre, Pochette, Telechargement, TravailImpression } from "./types";
 
 export interface Confidentialite {
   camera: boolean;
@@ -38,6 +38,9 @@ export interface Donnees {
   /** Paroles synchronisées de la chanson en cours (LRCLIB), si trouvées. */
   paroles: ParolesChanson | null;
   telechargements: Telechargement[];
+  impressions: TravailImpression[];
+  /** Appel qui sonne (nom de l'appelant, app). */
+  appelEntrant: { nom: string; application: string } | null;
   /** Fichiers de l'étagère (chemins complets). */
   etagere: string[];
 }
@@ -53,6 +56,8 @@ let etat: Donnees = {
   appel: null,
   paroles: null,
   telechargements: [],
+  impressions: [],
+  appelEntrant: null,
   etagere: [],
 };
 const abonnes = new Set<() => void>();

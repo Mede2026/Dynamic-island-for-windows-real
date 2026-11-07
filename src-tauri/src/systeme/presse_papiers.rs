@@ -132,6 +132,24 @@ mod win {
         Some(v)
     }
 
+    /// Le contenu est-il marqué « à ne pas surveiller / pas d'historique » (mots de passe) ?
+    unsafe fn sensible() -> bool {
+        use windows::core::w;
+        use windows::Win32::System::DataExchange::RegisterClipboardFormatW;
+        let exclu = RegisterClipboardFormatW(w!("ExcludeClipboardContentFromMonitorProcessing"));
+        let ignore = RegisterClipboardFormatW(w!("Clipboard Viewer Ignore"));
+        if (exclu != 0 && IsClipboardFormatAvailable(exclu).is_ok())
+            || (ignore != 0 && IsClipboardFormatAvailable(ignore).is_ok())
+        {
+            return true;
+        }
+        // « CanIncludeInClipboardHistory » = 0 : l'app refuse l'historique.
+        let historique = RegisterClipboardFormatW(w!("CanIncludeInClipboardHistory"));
+        historique != 0
+            && IsClipboardFormatAvailable(historique).is_ok()
+            && octets(historique).is_some_and(|o| o.len() >= 4 && u32::from_le_bytes([o[0], o[1], o[2], o[3]]) == 0)
+    }
+
     fn copie(genre: &'static str, apercu: String, miniature: Option<String>) -> Option<Copie> {
         Some(Copie {
             genre,
@@ -151,13 +169,20 @@ mod win {
                         let u: Vec<u16> = o
                             .chunks_exact(2)
                             .map(|c| u16::from_le_bytes([c[0], c[1]]))
-                            .take(4096)
+                            .take(crate::systeme::historique::LONGUEUR_MAX)
                             .collect();
                         let fin = u.iter().position(|&c| c == 0).unwrap_or(u.len());
                         String::from_utf16_lossy(&u[..fin])
                     })
                     .unwrap_or_default();
-                copie("texte", apercu_texte(&texte), None)
+                // Mot de passe copié depuis un gestionnaire (il le signale à Windows) : ni
+                // aperçu, ni historique.
+                if sensible() {
+                    copie("texte", String::new(), None)
+                } else {
+                    crate::systeme::historique::ajouter(&texte);
+                    copie("texte", apercu_texte(&texte), None)
+                }
             } else if IsClipboardFormatAvailable(CF_HDROP).is_ok() {
                 copie("fichiers", String::new(), None)
             } else if IsClipboardFormatAvailable(CF_DIB).is_ok() || IsClipboardFormatAvailable(CF_BITMAP).is_ok() {

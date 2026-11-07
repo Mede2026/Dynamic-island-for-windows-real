@@ -53,7 +53,24 @@ jobs:
         run: |
           $exe = (Resolve-Path src-tauri/target/release/dynamic-island.exe).Path
           $p = Start-Process $exe -PassThru
-          Start-Sleep -Seconds 20
+          Start-Sleep -Seconds 12
+          # Captures du haut de l'écran (île au repos, puis souris dessus) pour vérifier l'affichage.
+          Add-Type -AssemblyName System.Drawing, System.Windows.Forms
+          $ecran = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          function Capturer($nom) {
+            $img = New-Object System.Drawing.Bitmap $ecran.Width, 220
+            $g = [System.Drawing.Graphics]::FromImage($img)
+            $g.CopyFromScreen($ecran.X, $ecran.Y, 0, 0, $img.Size)
+            New-Item -ItemType Directory -Force captures | Out-Null
+            $img.Save("captures/$nom.png")
+            $g.Dispose(); $img.Dispose()
+          }
+          Capturer "repos"
+          [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point ([int]($ecran.Width / 2)), 30
+          Start-Sleep -Seconds 3
+          Capturer "survol"
+          [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point ([int]($ecran.Width / 2)), 600
+          Start-Sleep -Seconds 5
           $journal = "$env:APPDATA\com.mederic.dynamicisland\journal.txt"
           Write-Host "----- journal.txt -----"
           if (Test-Path $journal) { Get-Content $journal } else { Write-Host "(pas de journal)" }
@@ -63,6 +80,12 @@ jobs:
           Stop-Process -Id $p.Id -Force
           if ($plantage) { Write-Host "PLANTAGE signalé dans le journal"; exit 1 }
           Write-Host "OK : l'île tourne encore après 20 s"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: captures-ecran
+          path: captures/*.png
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v6
         with:
           name: installateur-windows

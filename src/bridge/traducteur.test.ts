@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { codeVerification, Traducteur } from "./traducteur";
+import { appelEntrant, codeVerification, Traducteur } from "./traducteur";
 import type { EtatBatterie, EtatMedia, EtatMinuteur } from "./types";
 
 const media = (p: Partial<EtatMedia>): EtatMedia => ({
@@ -135,5 +135,14 @@ describe("Traducteur", () => {
     expect(codeVerification("G-1234 code Google")).toBe("1234");
     expect(codeVerification("Rendez-vous à 1530 demain")).toBeNull();
     expect(codeVerification("Ton code postal J4B")).toBeNull();
+  });
+
+  it("reconnaît un appel qui sonne", () => {
+    expect(appelEntrant({ id: 1, application: "Microsoft Teams", textes: ["Marie Tremblay", "vous appelle"] })).toEqual({
+      nom: "Marie Tremblay",
+      application: "Microsoft Teams",
+    });
+    expect(appelEntrant({ id: 2, application: "WhatsApp", textes: ["Incoming voice call", "Papa"] })?.nom).toBe("Papa");
+    expect(appelEntrant({ id: 3, application: "Messages", textes: ["Salut", "on se rappelle ?"] })).toBeNull();
   });
 });

@@ -84,7 +84,9 @@ pub fn demarrer(app: AppHandle) {
                     for e in entrees.flatten() {
                         let nom = e.file_name().to_string_lossy().into_owned();
                         if let Some(final_) = nom_final(&nom) {
-                            let taille = e.metadata().map(|m| m.len()).unwrap_or(0);
+                            // Taille lue sur le fichier lui-même : celle du dossier (mise en cache
+                            // par Windows) cesse d'avancer pendant que le navigateur écrit.
+                            let taille = std::fs::metadata(e.path()).map(|m| m.len()).unwrap_or(0);
                             let suivi = suivis
                                 .entry(nom.clone())
                                 .or_insert_with(|| (final_.clone(), Vec::new()));

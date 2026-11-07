@@ -27,11 +27,28 @@ function pousser(n: number) {
 let dernierReleve = -Infinity;
 const SECOURS_MS = 1500;
 
-/** Appelé par le pont à chaque niveau reçu du backend. */
+/** Plus fort niveau récent (décroît lentement) : sert à « normaliser » l'onde. */
+let crete = 0;
+let silenceDepuis: number | null = null;
+
+/**
+ * Appelé par le pont à chaque niveau reçu du backend (30 fois/s).
+ * Gain automatique : l'onde bouge autant à faible volume qu'à fort volume. Si Windows ne
+ * rapporte que du silence pendant que la musique joue (certains pilotes), rythme simulé.
+ */
 export function recevoirNiveau(n: number) {
-  dernierReleve = performance.now();
+  const maintenant = performance.now();
+  dernierReleve = maintenant;
+  crete = Math.max(n, crete * 0.997);
+  if (crete < 0.003) {
+    silenceDepuis ??= maintenant;
+    if (maintenant - silenceDepuis > 2500) lancerSimulation();
+    if (!simulation) pousser(0);
+    return;
+  }
+  silenceDepuis = null;
   arreterSimulation();
-  pousser(n);
+  pousser(Math.min(n / Math.max(crete, 0.05), 1));
 }
 
 // Demandes d'ondes visibles (plusieurs ondes peuvent coexister pendant une transition).

@@ -71,6 +71,8 @@ function calculer(): IslandConfig {
   const k = preferences.vitesse && preferences.vitesse > 0 ? 1 / preferences.vitesse : 1;
   if (k !== 1) accelerer(c, k);
   if (preferences.dureeAlertes) c.durees.alerteAffichageMs = (c.durees.alerteAffichageMs ?? 0) * preferences.dureeAlertes;
+  // Mode encoche : collée au bord de l'écran (pas d'espace au-dessus), comme l'encoche d'un Mac.
+  if (preferences.forme === "encoche") c.margeHautPt = 0;
   for (const [chemin, v] of Object.entries(surcharges)) ecrire(c as unknown as Record<string, unknown>, chemin, v);
   // Les tailles en DIP suivent toujours pt × ISLAND_SCALE.
   const s = c.ISLAND_SCALE ?? 1;

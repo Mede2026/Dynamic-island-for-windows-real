@@ -79,6 +79,26 @@ fn chercher_en_ligne(artiste: &str, titre: &str, album: &str, duree_s: Option<u3
         web::encoder(artiste)
     );
     let (code, corps) = web::get(&url, &[])?;
+    if code == 200 {
+        if let Some(p) = analyser(&corps).filter(|p| p.synchronisees.is_some()) {
+            return Ok(Some(p));
+        }
+    }
+    // Dernier essai : recherche libre (« titre artiste »), sans « (feat. …) » ni « - Remastered ».
+    let titre_court = titre
+        .split(['(', '['])
+        .next()
+        .unwrap_or(titre)
+        .split(" - ")
+        .next()
+        .unwrap_or(titre)
+        .trim();
+    let premier_artiste = artiste.split([',', '&']).next().unwrap_or(artiste).trim();
+    let url = format!(
+        "{base}/search?q={}",
+        web::encoder(&format!("{titre_court} {premier_artiste}"))
+    );
+    let (code, corps) = web::get(&url, &[])?;
     Ok(if code == 200 { analyser(&corps) } else { None })
 }
 
@@ -91,7 +111,7 @@ pub async fn paroles_chercher(artiste: String, titre: String, album: String, dur
     let dossier = journal::dossier_app().map(|d| d.join("paroles"));
     let fichier = dossier
         .as_ref()
-        .map(|d| d.join(format!("{}.json", cle_cache(&artiste, &titre))));
+        .map(|d| d.join(format!("v2-{}.json", cle_cache(&artiste, &titre))));
     if let Some(f) = &fichier {
         if let Ok(texte) = std::fs::read_to_string(f) {
             return serde_json::from_str::<Option<PourCache>>(&texte)

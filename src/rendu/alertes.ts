@@ -18,6 +18,7 @@ import type {
   LecteurUsb,
   Notification,
   Reconnaissance,
+  TravailImpression,
   Verrouillage,
 } from "../bridge/types";
 import type { PressePapiers } from "../bridge/donnees";
@@ -46,7 +47,9 @@ export type NomIcone =
   | "wifi"
   | "wifiCoupe"
   | "oeil"
-  | "note";
+  | "note"
+  | "imprimante"
+  | "miseAJour";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -78,6 +81,8 @@ export interface SpecAlerte {
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
   /** La valeur est un bouton : copier un code, ouvrir un fichier téléchargé. */
   action?: { type: "copier"; texte: string } | { type: "ouvrir"; chemin: string } | { type: "lien"; url: string };
+  /** Bouton à droite de la 2e ligne ; « fermer » referme simplement l'alerte (« Plus tard »). */
+  boutonDetail?: string;
 }
 
 /** Largeur d'un texte (pt) : (texte, taille pt, graisse, chiffres à chasse fixe) → largeur pt. */
@@ -197,7 +202,14 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
       };
       // Ligne 1 (à côté de la caméra) : l'app ; ligne 2 (sous la caméra) : le texte.
       // Pas d'icône : le nom de l'app a besoin de toute la place à gauche de la caméra.
-      const spec: SpecAlerte = { libelle: n.application || "Notification", detail: n.textes.join(" — ") || undefined };
+      const app = n.application || "Notification";
+      const textes = n.textes.filter((t) => t.trim());
+      // Comme une bannière d'iPhone : le titre (blanc) à gauche de la caméra, l'app (gris) à
+      // droite, le message dessous.
+      const spec: SpecAlerte =
+        textes.length >= 2
+          ? { libelle: textes[0], valeur: app, couleurValeur: v(cfg.media.etendu.artiste.couleur), detail: textes.slice(1).join(" ") }
+          : { libelle: app, detail: textes[0] || undefined };
       // Code de vérification : à droite, en vert, un clic le copie.
       if (n.code) return { ...spec, valeur: n.code, couleurValeur: v(a.valeurCouleur), action: { type: "copier", texte: n.code } };
       return spec;
@@ -226,6 +238,28 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
         action: r.lien ? { type: "lien", url: r.lien } : undefined,
       };
     }
+    case "impression": {
+      const t = { document: "", erreur: null, ...(alerte.donnees as Partial<TravailImpression>) } as TravailImpression;
+      if (t.erreur) {
+        const rouge = v(a.batterieFaibleCouleur);
+        return { icone: "imprimante", couleurIcone: rouge, libelle: "Impression", valeur: t.erreur, couleurValeur: rouge, detail: t.document || undefined, detailFort: true };
+      }
+      return {
+        icone: "imprimante",
+        libelle: t.document || "Document",
+        valeur: "Imprimé",
+        couleurValeur: v(a.valeurCouleur),
+      };
+    }
+    case "miseAJour":
+      return {
+        libelle: "Mise à jour",
+        valeur: "Redémarrer",
+        couleurValeur: v(a.valeurCouleur),
+        action: { type: "lien", url: "ms-settings:windowsupdate" },
+        detail: "Windows doit redémarrer pour finir.",
+        boutonDetail: "Plus tard",
+      };
     case "internet": {
       const i = { connecte: true, nom: null, ...(alerte.donnees as Partial<{ connecte: boolean; nom: string | null }>) };
       return i.connecte

@@ -41,6 +41,8 @@ import {
   IconeDossier,
   IconeFermer,
   IconeFichier,
+  IconeImprimante,
+  IconeMiseAJour,
   IconeNote,
   IconeOeil,
   IconeWifi,
@@ -725,13 +727,17 @@ export function EtagereEtendu({ cfg, S, d }: Ctx) {
     <div style={{ position: "absolute", left: marge, top: marge * 0.9, width: largeur - 2 * marge, height: hauteur - marge * 1.6, fontSize: t, color: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 * S, height: ligne, fontWeight: 600 }}>
         <IconeDossier taille={t * 1.3} couleur="#64a8ff" />
-        <span style={{ flex: 1 }}>Étagère · {d.etagere.length}</span>
-        <button {...boutonIle(() => void backend.copierFichiers(d.etagere))} style={{ color: "#64a8ff", fontSize: t * 0.9, fontWeight: 600 }}>
-          Tout copier
-        </button>
-        <button {...boutonIle(() => void backend.etagereRetirer(null))} style={{ color: gris, fontSize: t * 0.9, fontWeight: 600, marginLeft: 10 * S }}>
-          Vider
-        </button>
+        <span style={{ flex: 1 }}>Étagère{d.etagere.length > 0 ? ` · ${d.etagere.length}` : ""}</span>
+        {d.etagere.length > 0 && (
+          <>
+            <button {...boutonIle(() => void backend.copierFichiers(d.etagere))} style={{ color: "#64a8ff", fontSize: t * 0.9, fontWeight: 600 }}>
+              Tout copier
+            </button>
+            <button {...boutonIle(() => void backend.etagereRetirer(null))} style={{ color: gris, fontSize: t * 0.9, fontWeight: 600, marginLeft: 10 * S }}>
+              Vider
+            </button>
+          </>
+        )}
       </div>
       {visibles.map((chemin) => (
         <div key={chemin} style={{ display: "flex", alignItems: "center", gap: 8 * S, height: ligne }}>
@@ -755,6 +761,13 @@ export function EtagereEtendu({ cfg, S, d }: Ctx) {
         </div>
       ))}
       {d.etagere.length > visibles.length && <div style={{ color: gris, fontSize: t * 0.9 }}>et {d.etagere.length - visibles.length} autre(s)…</div>}
+      {d.etagere.length === 0 && (
+        <div style={{ color: gris, fontSize: t, lineHeight: 1.4, marginTop: 10 * S }}>
+          Glisse des fichiers ici pour les garder sous la main.
+          <br />
+          Ils restent où ils sont : l'île garde seulement le chemin.
+        </div>
+      )}
     </div>
   );
 }
@@ -827,6 +840,184 @@ export function EcouteEtendu({ cfg, S, etat }: Ctx) {
       <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.55, color: v(cfg.media.etendu.artiste.couleur), fontWeight: 400 })}>
         Le son du PC, quelques secondes
       </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Impression en cours
+// ---------------------------------------------------------------------------
+
+const pagesTexte = (t: { pagesImprimees: number; pagesTotal: number }) =>
+  t.pagesTotal > 0 ? `${Math.min(t.pagesImprimees + 1, t.pagesTotal)}/${t.pagesTotal}` : "…";
+
+export function ImpressionCompact({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  const t = d.impressions[0];
+  const erreur = Boolean(t?.erreur);
+  return (
+    <>
+      <motion.div
+        style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2, width: ti, height: ti }}
+        animate={{ opacity: erreur ? 1 : [1, 0.55, 1] }}
+        transition={{ duration: 1.6, repeat: Infinity }}
+      >
+        <IconeImprimante taille={ti} couleur={erreur ? v(cfg.alerte.batterieFaibleCouleur) : "#ffffff"} />
+      </motion.div>
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S) / 2,
+          fontVariantNumeric: "tabular-nums",
+          color: erreur ? v(cfg.alerte.batterieFaibleCouleur) : "#ffffff",
+          left: undefined,
+        })}
+      >
+        {t ? pagesTexte(t) : ""}
+      </div>
+    </>
+  );
+}
+
+export function ImpressionMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeImprimante taille={ti} couleur="#ffffff" style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+export function ImpressionEtendu({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const t = d.impressions[0];
+  const gauche = (v(c.etenduBoutonXPt)[0] ?? 0) * S;
+  const diam = v(c.etenduBoutonDiametrePt) * S;
+  const y = v(c.etenduBoutonYPt) * S;
+  const largeur = v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) * S;
+  const autres = d.impressions.length - 1;
+  const gris = v(cfg.media.etendu.artiste.couleur);
+  return (
+    <>
+      <IconeImprimante taille={diam * 0.8} couleur="#ffffff" style={{ position: "absolute", left: gauche + diam * 0.1, top: y + diam * 0.1 }} />
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.08, color: "#ffffff", width: largeur - gauche * 2 - diam * 1.25, overflow: "hidden", textOverflow: "ellipsis" })}>
+        {t?.document || "Document"}
+      </div>
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.55, color: t?.erreur ? v(cfg.alerte.batterieFaibleCouleur) : gris, fontWeight: 400 })}>
+        {t?.erreur ?? (t && t.pagesTotal > 0 ? `Page ${pagesTexte(t).replace("/", " sur ")}` : "Impression…")}
+        {t ? ` · ${t.imprimante}` : ""}
+        {autres > 0 ? ` · ${autres} autre${autres > 1 ? "s" : ""}` : ""}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Appel entrant (Teams, WhatsApp, Discord…)
+// ---------------------------------------------------------------------------
+
+const VERT_APPEL = "#30d158";
+const ROUGE_APPEL = "#ff453a";
+
+/** Fin de la carte d'appel (le pont retire l'activité). */
+export function finirAppelEntrant() {
+  window.dispatchEvent(new CustomEvent("ile-appel-entrant-fin"));
+}
+
+export function AppelEntrantCompact({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return (
+    <>
+      <motion.div
+        style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2, width: ti, height: ti }}
+        animate={{ rotate: [0, -14, 14, -14, 0] }}
+        transition={{ duration: 0.7, repeat: Infinity, repeatDelay: 0.6 }}
+      >
+        <IconeTelephone taille={ti} couleur={VERT_APPEL} />
+      </motion.div>
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S * 0.82) / 2,
+          color: VERT_APPEL,
+          left: undefined,
+          fontSize: v(c.compactTexte.taillePt) * S * 0.82,
+          maxWidth: 70 * S,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        })}
+      >
+        {d.appelEntrant?.nom.split(" ")[0] ?? "Appel"}
+      </div>
+    </>
+  );
+}
+
+export function AppelEntrantMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeTelephone taille={ti} couleur={VERT_APPEL} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+/** Comme sur iPhone : nom de l'appelant, puis Refuser (rouge) et Répondre (vert). */
+export function AppelEntrantEtendu({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const a = d.appelEntrant ?? { nom: "Appel", application: "" };
+  const diam = v(c.etenduBoutonDiametrePt) * S;
+  const y = v(c.etenduBoutonYPt) * S;
+  const gauche = (v(c.etenduBoutonXPt)[0] ?? 0) * S;
+  const largeur = v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) * S;
+  const gris = v(cfg.media.etendu.artiste.couleur);
+  const teams = /teams/i.test(a.application);
+  const repondre = (accepter: boolean) => {
+    void backend.appelEntrantRepondre(a.application, accepter).catch(() => undefined);
+    finirAppelEntrant();
+  };
+  const initiale = a.nom.trim().charAt(0).toUpperCase() || "?";
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          left: gauche,
+          top: y,
+          width: diam,
+          height: diam,
+          borderRadius: diam,
+          background: "linear-gradient(180deg, #8e8e93, #636366)",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 600,
+          fontSize: diam * 0.45,
+        }}
+      >
+        {initiale}
+      </div>
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.08, color: gris, fontWeight: 400 })}>
+        {a.application}
+      </div>
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.52, color: "#ffffff", maxWidth: largeur - gauche - diam * 4.6, overflow: "hidden", textOverflow: "ellipsis" })}>
+        {a.nom}
+      </div>
+      <button
+        {...boutonIle(() => repondre(false))}
+        title={teams ? "Refuser" : "Ignorer"}
+        style={{ position: "absolute", right: gauche + diam * 1.3, top: y, width: diam, height: diam, borderRadius: diam, background: ROUGE_APPEL }}
+      >
+        <IconeTelephone taille={diam * 0.5} couleur="#ffffff" style={{ transform: "rotate(135deg)" }} />
+      </button>
+      <button
+        {...boutonIle(() => repondre(true))}
+        title="Répondre"
+        style={{ position: "absolute", right: gauche, top: y, width: diam, height: diam, borderRadius: diam, background: VERT_APPEL }}
+      >
+        <IconeTelephone taille={diam * 0.5} couleur="#ffffff" />
+      </button>
     </>
   );
 }
@@ -989,6 +1180,10 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeOeil taille={ti} couleur={couleurIcone} />;
       case "note":
         return <IconeNote taille={ti} couleur={couleurIcone} />;
+      case "imprimante":
+        return <IconeImprimante taille={ti} couleur={couleurIcone} />;
+      case "miseAJour":
+        return <IconeMiseAJour taille={ti} couleur={couleurIcone} />;
       default:
         return null;
     }
@@ -1080,6 +1275,22 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
           })}
         >
           {spec.detail}
+        </div>
+      )}
+      {spec.detail && spec.boutonDetail && (
+        // « Plus tard » : le clic n'est PAS arrêté, il atteint l'île, qui ferme l'alerte.
+        <div
+          role="button"
+          style={texte(a.texte, S, {
+            right: v(a.texteXPt) * S,
+            top: haut(baselineDetail(cfg), a.texte, S),
+            color: v(cfg.media.etendu.artiste.couleur),
+            pointerEvents: "auto",
+            cursor: "pointer",
+            left: undefined,
+          })}
+        >
+          {spec.boutonDetail}
         </div>
       )}
       {spec.batterie && (

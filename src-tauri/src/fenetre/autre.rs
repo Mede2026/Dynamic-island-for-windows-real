@@ -18,11 +18,10 @@ pub fn bouton_gauche_enfonce() -> Option<bool> {
     None
 }
 
+pub fn remettre_devant(_fen: &WebviewWindow) {}
+
 pub fn plein_ecran_actif(_fen: &WebviewWindow) -> bool {
     false
 }
-
-/// Hors Windows : on garde set_ignore_cursor_events.
-pub const REGION_DISPONIBLE: bool = false;
 
 pub fn definir_region(_fen: &WebviewWindow, _r: Option<(i32, i32, i32, i32)>) {}

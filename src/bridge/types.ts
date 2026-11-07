@@ -148,6 +148,12 @@ export interface EvenementsBackend {
   etagere: string[];
   /** « Quelle est cette chanson ? » : écoute, recherche, résultat. */
   reconnaissance: Reconnaissance;
+  /** Impressions en cours et travail tout juste fini. */
+  impression: { enCours: TravailImpression[]; fini: TravailImpression | null };
+  /** Windows Update attend un redémarrage. */
+  "redemarrage-requis": boolean;
+  /** Menu de l'icône ou Ctrl+Alt+E : ouvrir l'étagère. */
+  "ouvrir-etagere": null;
   /** Connexion Internet perdue / retrouvée. */
   internet: { connecte: boolean; nom: string | null };
   /** Panneau de réglages → île : valeurs modifiées en direct. */
@@ -204,6 +210,15 @@ export interface Reconnaissance {
   lien: string | null;
 }
 
+export interface TravailImpression {
+  id: number;
+  document: string;
+  imprimante: string;
+  pagesImprimees: number;
+  pagesTotal: number;
+  erreur: string | null;
+}
+
 export interface Parametres {
   /** Taille de l'île : DIP par point iPhone (ISLAND_SCALE). */
   taille: number;
@@ -242,4 +257,6 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "etagere",
   "internet",
   "reconnaissance",
+  "impression",
+  "redemarrage-requis",
 ];

@@ -26,13 +26,36 @@ mod win {
     use std::sync::{Mutex, OnceLock};
     use tauri::Emitter;
     use windows::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
-    use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CAPITAL, VK_NUMLOCK};
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY, VK_CAPITAL, VK_NUMLOCK};
     use windows::Win32::UI::WindowsAndMessaging::{
         CallNextHookEx, DispatchMessageW, GetMessageW, SetWindowsHookExW, TranslateMessage, HC_ACTION, KBDLLHOOKSTRUCT,
         MSG, WH_KEYBOARD_LL, WM_KEYUP, WM_SYSKEYUP,
     };
 
     static ENVOI: OnceLock<Mutex<Sender<Verrouillage>>> = OnceLock::new();
+
+    /// État (activé ?) d'une touche à bascule, lu dans le fil de l'app au premier plan.
+    fn etat_reel(vk: VIRTUAL_KEY) -> Option<bool> {
+        use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+        use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+        unsafe {
+            let premier_plan = GetForegroundWindow();
+            if premier_plan.is_invalid() {
+                return None;
+            }
+            let fil = GetWindowThreadProcessId(premier_plan, None);
+            let moi = GetCurrentThreadId();
+            if fil == 0 || fil == moi {
+                return Some(GetKeyState(vk.0 as i32) & 1 != 0);
+            }
+            if !AttachThreadInput(moi, fil, true).as_bool() {
+                return None;
+            }
+            let etat = GetKeyState(vk.0 as i32) & 1 != 0;
+            let _ = AttachThreadInput(moi, fil, false);
+            Some(etat)
+        }
+    }
 
     unsafe extern "system" fn crochet(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         if code == HC_ACTION as i32 {
@@ -72,15 +95,41 @@ mod win {
         std::thread::Builder::new()
             .name("ile-verrouillage-envoi".into())
             .spawn(move || {
+                // Dernier état connu de chaque touche : repli si l'état réel est illisible.
+                let mut maj = unsafe { GetKeyState(VK_CAPITAL.0 as i32) } & 1 != 0;
+                let mut num = unsafe { GetKeyState(VK_NUMLOCK.0 as i32) } & 1 != 0;
                 for v in reception {
-                    let _ = app.emit(EVENEMENT, v);
+                    // L'état lu dans le crochet peut être en retard (il dépend du fil qui le lit) :
+                    // on relit l'état VRAI, celui de l'app au premier plan.
+                    std::thread::sleep(std::time::Duration::from_millis(40));
+                    let vk = if v.touche == "majuscules" {
+                        VK_CAPITAL
+                    } else {
+                        VK_NUMLOCK
+                    };
+                    let precedent = if v.touche == "majuscules" { maj } else { num };
+                    let actif = etat_reel(vk).unwrap_or(!precedent);
+                    if v.touche == "majuscules" {
+                        maj = actif;
+                    } else {
+                        num = actif;
+                    }
+                    let _ = app.emit(
+                        EVENEMENT,
+                        Verrouillage {
+                            touche: v.touche,
+                            actif,
+                        },
+                    );
                 }
             })
             .ok();
         std::thread::Builder::new()
             .name("ile-verrouillage".into())
             .spawn(|| unsafe {
-                let Ok(_crochet) = SetWindowsHookExW(WH_KEYBOARD_LL, Some(crochet), None, 0) else {
+                use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+                let module = GetModuleHandleW(None).ok().map(|m| m.into());
+                let Ok(_crochet) = SetWindowsHookExW(WH_KEYBOARD_LL, Some(crochet), module, 0) else {
                     return journal!("clavier", "crochet clavier impossible");
                 };
                 journal!("clavier", "prêt (Verr. Maj, Verr. Num)");

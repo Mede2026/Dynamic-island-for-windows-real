@@ -51,6 +51,8 @@ const ALERTES: [string, string][] = [
   ["telechargementTermine", "Téléchargement terminé"],
   ["internet", "Connexion Internet perdue / retrouvée"],
   ["chanson", "Chanson reconnue (Ctrl+Alt+S)"],
+  ["impression", "Impression terminée"],
+  ["miseAJour", "Mise à jour : redémarrage requis"],
 ];
 
 const BOUCLES: Record<string, NomScenario[]> = {
@@ -136,7 +138,6 @@ export function Panneau() {
   const [ecrans, setEcrans] = useState<InfoEcran[]>([]);
   const [auto, setAuto] = useState(false);
   const [cacher, setCacher] = useState(false);
-  const [clicsRegion, setClicsRegion] = useState(false);
   const [taille, setTaille] = useState(1);
   const [prefs, setPrefs] = useState<Preferences>({});
   const [message, setMessage] = useState("");
@@ -150,7 +151,6 @@ export function Panneau() {
       if (!p) return;
       setTaille(p.taille);
       setCacher(p.cacherEnPleinEcran);
-      setClicsRegion(p.clicsRegion);
       setPrefs((p.affichage ?? {}) as Preferences);
     });
   }, []);
@@ -334,15 +334,7 @@ export function Panneau() {
         <Case coche={prefs.notificationMinuteur ?? true} changer={(v) => changerPrefs({ notificationMinuteur: v })}>
           Notification Windows à la fin du minuteur (bouton « Répéter »)
         </Case>
-        <Case
-          coche={clicsRegion}
-          changer={(v) => {
-            setClicsRegion(v);
-            void backend.definirClicsRegion(v);
-          }}
-        >
-          Clics « région » (expérimental, peut-être plus fluide ; si un rectangle clair apparaît, décoche ; au prochain démarrage)
-        </Case>
+        
       </Section>
 
       <Section titre="Tester (s'arrête en fermant ce panneau)">

@@ -100,7 +100,8 @@ pub async fn recherche_rapide(terme: String) -> Result<Option<Resultat>, String>
 /// Ouvre une adresse web dans le navigateur par défaut.
 #[tauri::command]
 pub fn ouvrir_lien(lien: String) -> Result<(), String> {
-    if !(lien.starts_with("https://") || lien.starts_with("http://")) {
+    // Pages web, et pages des Paramètres de Windows (« ms-settings:windowsupdate »).
+    if !(lien.starts_with("https://") || lien.starts_with("http://") || lien.starts_with("ms-settings:")) {
         return Err("adresse refusée".into());
     }
     #[cfg(windows)]

@@ -5,14 +5,18 @@
 //!  - envoie un événement au front-end à chaque changement ;
 //!  - a une version Windows (`#[cfg(windows)]`) et un repli vide pour les autres systèmes.
 
+pub mod appel_entrant;
 pub mod batterie;
 pub mod bluetooth;
 pub mod clavier;
 pub mod confidentialite;
 pub mod ecrire;
+pub mod historique;
+pub mod impression;
 pub mod internet;
 pub mod luminosite;
 pub mod micro;
+pub mod mise_a_jour;
 pub mod ne_pas_deranger;
 pub mod niveau_audio;
 pub mod notifications;
@@ -38,6 +42,8 @@ pub fn demarrer(app: &AppHandle) {
     bluetooth::demarrer(app.clone());
     telechargements::demarrer(app.clone());
     internet::demarrer(app.clone());
+    impression::demarrer(app.clone());
+    mise_a_jour::demarrer(app.clone());
 }
 
 #[tauri::command]

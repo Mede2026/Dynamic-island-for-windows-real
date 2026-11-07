@@ -13,6 +13,7 @@ import { demarrerPont, ecranCourant } from "./bridge/pont";
 import { jouer, type NomScenario } from "./demo/scenarios";
 import { Lanceur } from "./lanceur/Lanceur";
 import { Recherche } from "./recherche/Recherche";
+import { Historique } from "./historique/Historique";
 import { Panneau } from "./panneau/Panneau";
 import { Ile } from "./rendu/Ile";
 import { IslandMachine } from "./state/islandMachine";
@@ -36,6 +37,7 @@ export default function App() {
   if (parametres.has("panneau")) return <Panneau />;
   if (parametres.has("lanceur")) return <Lanceur />;
   if (parametres.has("recherche")) return <Recherche />;
+  if (parametres.has("historique")) return <Historique />;
   return <AppIle demo={parametres.has("demo")} />;
 }
 

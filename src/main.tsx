@@ -30,3 +30,16 @@ void Promise.race([chargement, delaiMax]).then(() => {
     </StrictMode>,
   );
 });
+
+// Pas de menu « clic droit » du navigateur (Actualiser, Imprimer…) : ce n'est pas une page web.
+// Dans un champ de texte, on le garde (couper / copier / coller).
+document.addEventListener("contextmenu", (e) => {
+  const cible = e.target as HTMLElement | null;
+  if (!cible?.closest("input, textarea")) e.preventDefault();
+});
+// Pas de raccourcis du navigateur (actualiser, imprimer, rechercher, zoom).
+document.addEventListener("keydown", (e) => {
+  const touche = e.key.toLowerCase();
+  if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && ["r", "p", "f", "g", "u", "s", "+", "-", "=", "0"].includes(touche))) e.preventDefault();
+});
+

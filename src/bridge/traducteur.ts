@@ -6,7 +6,7 @@
  */
 
 import type { Evenement } from "../state/islandMachine";
-import type { AppareilBluetooth, EtatTelechargements, LecteurUsb, Reconnaissance, Verrouillage } from "./types";
+import type { AppareilBluetooth, EtatTelechargements, LecteurUsb, Reconnaissance, TravailImpression, Verrouillage } from "./types";
 import type { Appel, EtatBatterie, EtatMedia, EtatMinuteur, EtatNePasDeranger, EtatVolume, Notification } from "./types";
 import type { PressePapiers } from "./donnees";
 
@@ -26,6 +26,22 @@ function musiqueActive(m: EtatMedia): boolean {
 const ID_TELECHARGEMENT = "telechargement";
 const ID_ETAGERE = "etagere";
 const ID_ECOUTE = "ecoute";
+const ID_IMPRESSION = "impression";
+export const ID_APPEL_ENTRANT = "appelEntrant";
+
+const MOTS_APPEL = /appel entrant|appel (vocal|vidéo|video) entrant|incoming (voice |video )?call|vous appelle|t'appelle|is calling|calling you|appel de groupe entrant/i;
+
+/** Notification d'appel qui sonne → nom de l'appelant et app, sinon null. */
+export function appelEntrant(n: Notification): { nom: string; application: string } | null {
+  const texte = n.textes.join(" ");
+  if (!MOTS_APPEL.test(texte)) return null;
+  // Le nom : le premier texte qui n'est pas la phrase « appel entrant ».
+  const nom =
+    n.textes.find((t) => t.trim() && !MOTS_APPEL.test(t))?.trim() ??
+    texte.replace(MOTS_APPEL, "").replace(/[:\-–—]/g, " ").trim() ??
+    "";
+  return { nom: nom || n.application || "Appel", application: n.application || "Appel" };
+}
 
 /**
  * Code de vérification dans une notification (« Votre code : 482 913 », « 123456 is your
@@ -39,6 +55,7 @@ export function codeVerification(texte: string): string | null {
 
 export class Traducteur {
   private telechargement = false;
+  private impressionActive = false;
   private etagerePleine = false;
   private musique = false;
   private minuteur = false;
@@ -125,10 +142,23 @@ export class Traducteur {
     return [];
   }
 
+  impression(i: { enCours: TravailImpression[]; fini: TravailImpression | null }): Evenement[] {
+    const evs: Evenement[] = [];
+    const actif = i.enCours.length > 0;
+    if (actif && !this.impressionActive) evs.push({ type: "ACTIVITE_DEBUT", activite: { id: ID_IMPRESSION, type: "impression" } });
+    if (!actif && this.impressionActive) evs.push({ type: "ACTIVITE_FIN", id: ID_IMPRESSION });
+    this.impressionActive = actif;
+    if (i.fini) evs.push({ type: "ALERTE", alerte: { type: "impression", donnees: i.fini } });
+    return evs;
+  }
+
   notification(n: Notification): Evenement[] {
     // L'outil de capture envoie une notification à chaque capture : l'alerte « Capture »
     // (avec miniature) s'affiche déjà, on ne la double pas.
     if (/capture|snipping|screen ?clip/i.test(n.application)) return [];
+    // Appel qui sonne (Teams, WhatsApp, Discord…) : carte d'appel, pas une notification.
+    const appel = appelEntrant(n);
+    if (appel) return [{ type: "ACTIVITE_DEBUT", activite: { id: ID_APPEL_ENTRANT, type: "appelEntrant", donnees: appel } }, { type: "CLIC_LONG" }];
     // Notification Windows de l'île elle-même (« Minuteur terminé ») : l'île l'affiche déjà.
     if (/^dynamic island$/i.test(n.application.trim())) return [];
     // App Horloge de Windows : la fin d'un minuteur devient la VRAIE alerte « Minuteur

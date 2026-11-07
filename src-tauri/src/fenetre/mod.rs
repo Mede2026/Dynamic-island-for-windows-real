@@ -299,7 +299,10 @@ pub fn initialiser(app: &AppHandle, clics_classiques: bool) -> Result<(), String
     let fen = fenetre(app).ok_or("fenêtre introuvable")?;
     plateforme::appliquer_styles(&fen);
     let etat = app.state::<EtatFenetre>();
-    let region = plateforme::REGION_DISPONIBLE && !clics_classiques;
+    // Le mode « région » (expérimental) dessinait un rectangle clair sur certains PC : il
+    // n'est plus proposé ; toujours le mode classique.
+    let _ = clics_classiques;
+    let region = false;
     etat.mode_region.store(region, Ordering::Relaxed);
     journal!(
         "fenetre",
@@ -389,6 +392,12 @@ fn lancer_fil_lent(app: AppHandle) {
         .spawn(move || loop {
             std::thread::sleep(INTERVALLE_LENT);
             let etat = app.state::<EtatFenetre>();
+
+            // 0. Toujours au premier plan : d'autres fenêtres « toujours visibles » (lecteurs
+            // vidéo, outils) peuvent passer devant ; on se remet devant, sans prendre le focus.
+            if let Some(fen) = fenetre(&app) {
+                plateforme::remettre_devant(&fen);
+            }
 
             // 1. Configuration des écrans.
             let ecrans = lister_ecrans(&app);

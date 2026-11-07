@@ -13,12 +13,12 @@ import type { IslandMachine } from "../state/islandMachine";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { backend, dansTauri, ecouter } from "./backend";
 import { cleChanson, lireLrc } from "./paroles";
-import { majDonnees } from "./donnees";
+import { donnees, majDonnees } from "./donnees";
 import { recevoirNiveau } from "../rendu/onde";
 import type { EtatMedia, EtatMinuteur } from "./types";
 import { appIgnoree, definirPreferences, definirSurcharges, preferencesActuelles, type Preferences } from "../config/store";
 import { jouer, nettoyerTests, SCENARIOS, type NomScenario } from "../demo/scenarios";
-import { Traducteur } from "./traducteur";
+import { appelEntrant, ID_APPEL_ENTRANT, Traducteur } from "./traducteur";
 import { NOMS_EVENEMENTS, type InfoFenetre } from "./types";
 
 const STYLE = "color:#0a84ff;font-weight:bold";
@@ -68,8 +68,10 @@ export function demarrerPont(machine: IslandMachine): () => void {
     majDonnees({ paroles: null });
     if (!m.titre || preferencesActuelles().paroles === false) return;
     const dureeS = m.dureeMs > 0 ? Math.round(m.dureeMs / 1000) : null;
+    // Apple Music met « Artiste — Album » dans le champ artiste : on sépare.
+    const [artiste = m.artiste, albumDansArtiste] = m.artiste.split(/\s+[—–]\s+/);
     void backend
-      .parolesChercher(m.artiste, m.titre, m.album, dureeS)
+      .parolesChercher(artiste.trim(), m.titre, m.album || albumDansArtiste?.trim() || "", dureeS)
       .then((p) => {
         if (chansonParoles !== cle || !p?.synchronisees) return;
         majDonnees({ paroles: { cle, lignes: lireLrc(p.synchronisees) } });
@@ -157,24 +159,61 @@ export function demarrerPont(machine: IslandMachine): () => void {
       envoyer(traducteur.telechargements(t));
     }),
   );
-  const etagere = (liste: string[]) => {
-    majDonnees({ etagere: liste });
-    envoyer(traducteur.etagere(liste));
-  };
+  // Étagère : visible seulement quand on glisse des fichiers sur l'île, ou à la demande
+  // (menu de l'icône, Ctrl+Alt+E) ; elle se referme toute seule (pas tant que la souris est dessus).
+  const etagere = (liste: string[]) => majDonnees({ etagere: liste });
   arrets.push(ecouter("etagere", etagere));
   void backend.etagereLire().then((l) => l && etagere(l));
-  // Fichiers glissés sur l'île → l'étagère.
+  let fermetureEtagere: ReturnType<typeof setTimeout> | null = null;
+  const etagereOuverte = () => machine.etat.activites.some((a) => a.id === "etagere");
+  const fermerEtagere = () => {
+    fermetureEtagere = null;
+    if (!etagereOuverte()) return;
+    if (machine.etat.survol) {
+      fermetureEtagere = setTimeout(fermerEtagere, 800);
+      return;
+    }
+    machine.envoyer({ type: "ACTIVITE_FIN", id: "etagere" });
+  };
+  const ouvrirEtagere = (dureeMs: number) => {
+    if (fermetureEtagere) clearTimeout(fermetureEtagere);
+    if (!etagereOuverte()) {
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "etagere", type: "etagere" } });
+      machine.envoyer({ type: "CLIC_LONG" });
+    }
+    fermetureEtagere = setTimeout(fermerEtagere, dureeMs);
+  };
+  arrets.push(ecouter("ouvrir-etagere", () => ouvrirEtagere(8000)));
   if (dansTauri()) {
     arrets.push(
       getCurrentWebview().onDragDropEvent((e) => {
-        if (e.payload.type === "drop" && e.payload.paths.length > 0) void backend.etagereAjouter(e.payload.paths);
+        const t = e.payload.type;
+        if (t === "enter") ouvrirEtagere(60_000);
+        else if (t === "leave") {
+          if (fermetureEtagere) clearTimeout(fermetureEtagere);
+          fermetureEtagere = setTimeout(fermerEtagere, 600);
+        } else if (t === "drop") {
+          if (e.payload.paths.length > 0) void backend.etagereAjouter(e.payload.paths);
+          ouvrirEtagere(5000);
+        }
       }),
     );
   }
+  // L'horloge au survol ne reste jamais à côté d'une autre activité (ni dans la bulle).
+  arrets.push(
+    Promise.resolve(
+      machine.abonner((e) => {
+        if (e.activites.length > 1 && e.activites.some((a) => a.id === "horloge")) {
+          queueMicrotask(() => machine.envoyer({ type: "ACTIVITE_FIN", id: "horloge" }));
+        }
+      }),
+    ),
+  );
   arrets.push(
     ecouter("appel", (a) => {
       majDonnees({ appel: a.actif ? { application: a.application ?? "Appel", debutMs: Date.now(), muet: false } : null });
       if (a.actif) void backend.microMuet(null).then((m) => majDonnees({ appel: { application: a.application ?? "Appel", debutMs: Date.now(), muet: Boolean(m) } }));
+      if (a.actif) terminerAppelEntrant(); // l'appel a commencé
       envoyer(traducteur.appel(a));
     }),
   );
@@ -208,11 +247,54 @@ export function demarrerPont(machine: IslandMachine): () => void {
     }),
   );
   arrets.push(ecouter("ne-pas-deranger", (n) => envoyer(traducteur.nePasDerangerEtat(n))));
+  // Appel qui sonne : carte d'appel 30 s au plus (ou jusqu'à Répondre / Refuser, ou
+  // jusqu'à ce que l'appel commence vraiment : micro utilisé).
+  let finAppelEntrant: ReturnType<typeof setTimeout> | null = null;
+  const terminerAppelEntrant = () => {
+    if (finAppelEntrant) clearTimeout(finAppelEntrant);
+    finAppelEntrant = null;
+    if (!donnees().appelEntrant) return;
+    majDonnees({ appelEntrant: null });
+    machine.envoyer({ type: "ACTIVITE_FIN", id: ID_APPEL_ENTRANT });
+  };
+  window.addEventListener("ile-appel-entrant-fin", terminerAppelEntrant);
+  arrets.push(Promise.resolve(() => window.removeEventListener("ile-appel-entrant-fin", terminerAppelEntrant)));
   arrets.push(
     ecouter("notification", (n) => {
-      if (!appIgnoree(n.application)) envoyer(traducteur.notification(n));
+      if (appIgnoree(n.application)) return;
+      // L'app de musique annonce chaque chanson par une notification : l'île la montre déjà.
+      const m = donnees().media;
+      const texte = n.textes.join(" ").toLowerCase();
+      if (m?.titre && texte.includes(m.titre.toLowerCase())) return;
+      if (/apple music|spotify|deezer|tidal|amazon music|youtube music/i.test(n.application)) return;
+      const appel = appelEntrant(n);
+      if (appel) {
+        majDonnees({ appelEntrant: appel });
+        if (finAppelEntrant) clearTimeout(finAppelEntrant);
+        finAppelEntrant = setTimeout(terminerAppelEntrant, 30_000);
+      }
+      envoyer(traducteur.notification(n));
     }),
   );
+  arrets.push(
+    ecouter("impression", (i) => {
+      majDonnees({ impressions: i.enCours });
+      envoyer(traducteur.impression(i));
+    }),
+  );
+  // Windows Update attend un redémarrage : alerte, puis rappel toutes les 4 h (« Plus tard »).
+  let redemarrageRequis = false;
+  const rappelerMiseAJour = () => {
+    if (redemarrageRequis) envoyer([{ type: "ALERTE", alerte: { type: "miseAJour", dureeFacteur: 3 } }]);
+  };
+  arrets.push(
+    ecouter("redemarrage-requis", (requis) => {
+      redemarrageRequis = requis;
+      rappelerMiseAJour();
+    }),
+  );
+  const rappels = setInterval(rappelerMiseAJour, 4 * 3600_000);
+  arrets.push(Promise.resolve(() => clearInterval(rappels)));
   arrets.push(
     ecouter("survol", (s) => {
       envoyer(traducteur.survol(s));

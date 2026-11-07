@@ -30,6 +30,31 @@ pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
 const LABEL_LANCEUR: &str = "lanceur";
 /// Cacher / afficher l'île.
 pub const RACCOURCI_CACHER: &str = "ctrl+alt+h";
+/// Étagère (fichiers gardés sous la main).
+pub const RACCOURCI_ETAGERE: &str = "ctrl+alt+e";
+
+/// Historique du presse-papiers.
+pub const RACCOURCI_HISTORIQUE: &str = "ctrl+alt+v";
+pub const LABEL_HISTORIQUE: &str = "historique";
+
+/// Ctrl+Alt+V : les 10 derniers textes copiés, ou ferme la fenêtre.
+pub fn basculer_historique(app: &AppHandle) {
+    if let Some(f) = app.get_webview_window(LABEL_HISTORIQUE) {
+        let _ = f.close();
+        return;
+    }
+    let r = WebviewWindowBuilder::new(app, LABEL_HISTORIQUE, WebviewUrl::App("index.html?historique".into()))
+        .title("Presse-papiers — Dynamic Island")
+        .inner_size(440.0, 460.0)
+        .resizable(false)
+        .always_on_top(true)
+        .center()
+        .build();
+    if let Err(e) = r {
+        journal!("plateau", "historique impossible à ouvrir : {e}");
+    }
+}
+
 /// « Quelle est cette chanson ? »
 pub const RACCOURCI_CHANSON: &str = "ctrl+alt+s";
 /// Recherche rapide (définition / résumé Wikipédia).
@@ -58,12 +83,14 @@ pub fn basculer_recherche(app: &AppHandle) {
 /// essaie un raccourci de secours et le note dans le journal — sans jamais bloquer le démarrage.
 pub fn enregistrer_raccourcis(app: &AppHandle) {
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
-    let essais: [(&str, &[&str]); 5] = [
+    let essais: [(&str, &[&str]); 7] = [
         ("réglages", &[RACCOURCI_PANNEAU, "ctrl+alt+shift+d"]),
         ("lanceur", &[RACCOURCI_LANCEUR, "ctrl+alt+shift+m"]),
         ("cacher", &[RACCOURCI_CACHER, "ctrl+alt+shift+h"]),
         ("recherche", &[RACCOURCI_RECHERCHE, "ctrl+alt+shift+space"]),
         ("chanson", &[RACCOURCI_CHANSON, "ctrl+alt+shift+s"]),
+        ("historique", &[RACCOURCI_HISTORIQUE, "ctrl+alt+shift+v"]),
+        ("étagère", &[RACCOURCI_ETAGERE, "ctrl+alt+shift+e"]),
     ];
     for (nom, raccourcis) in essais {
         let ok = raccourcis.iter().find(|r| match app.global_shortcut().register(**r) {
@@ -161,6 +188,10 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     };
     if est(RACCOURCI_LANCEUR) || est("ctrl+alt+shift+m") {
         basculer_lanceur(app);
+    } else if est(RACCOURCI_ETAGERE) || est("ctrl+alt+shift+e") {
+        let _ = app.emit("ouvrir-etagere", ());
+    } else if est(RACCOURCI_HISTORIQUE) || est("ctrl+alt+shift+v") {
+        basculer_historique(app);
     } else if est(RACCOURCI_CHANSON) || est("ctrl+alt+shift+s") {
         crate::chanson::lancer(app);
     } else if est(RACCOURCI_RECHERCHE) || est("ctrl+alt+shift+space") {
@@ -182,6 +213,14 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         true,
         None::<&str>,
     )?;
+    let historique = MenuItem::with_id(
+        app,
+        "historique",
+        "Presse-papiers récent (Ctrl+Alt+V)",
+        true,
+        None::<&str>,
+    )?;
+    let etagere = MenuItem::with_id(app, "etagere", "Étagère (Ctrl+Alt+E)", true, None::<&str>)?;
     let cacher_ile = MenuItem::with_id(
         app,
         "cacher-ile",
@@ -258,6 +297,8 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
             &reglages,
             &lanceur,
             &chanson,
+            &historique,
+            &etagere,
             &cacher_ile,
             &arreter,
             &PredefinedMenuItem::separator(app)?,
@@ -280,6 +321,10 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
             "reglages" => ouvrir_panneau(app),
             "lanceur" => basculer_lanceur(app),
             "chanson" => crate::chanson::lancer(app),
+            "historique" => basculer_historique(app),
+            "etagere" => {
+                let _ = app.emit("ouvrir-etagere", ());
+            }
             "cacher-ile" => {
                 fenetre::basculer_cachee(app);
             }

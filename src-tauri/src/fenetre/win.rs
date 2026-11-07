@@ -24,9 +24,6 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::journal;
 
-/// Clics traversants par région de fenêtre disponibles sous Windows.
-pub const REGION_DISPONIBLE: bool = true;
-
 /// Limite la fenêtre à un rectangle (px physiques, relatif à la fenêtre). Hors de ce rectangle,
 /// la fenêtre n'existe pas pour Windows : rien n'y est dessiné et les clics passent aux
 /// applications en dessous. Contrairement à WS_EX_LAYERED (basculé par set_ignore_cursor_events),
@@ -42,6 +39,25 @@ pub fn definir_region(fen: &WebviewWindow, r: Option<(i32, i32, i32, i32)>) {
         if SetWindowRgn(hwnd, Some(rgn), true) == 0 {
             journal!("fenetre", "SetWindowRgn a échoué");
         }
+    }
+}
+
+/// Remet l'île au-dessus des autres fenêtres « toujours visibles », sans l'activer.
+pub fn remettre_devant(fen: &WebviewWindow) {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOOWNERZORDER, SWP_NOSIZE,
+    };
+    let Ok(hwnd) = fen.hwnd() else { return };
+    unsafe {
+        let _ = SetWindowPos(
+            hwnd,
+            Some(HWND_TOPMOST),
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER,
+        );
     }
 }
 

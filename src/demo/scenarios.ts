@@ -111,6 +111,11 @@ export const SCENARIOS = {
   code: "Notification avec un code à copier",
   ecoute: "Quelle est cette chanson ? (écoute)",
   chansonTrouvee: "Chanson reconnue",
+  appelEntrant: "Appel entrant (Teams)",
+  impression: "Impression en cours",
+  finImpression: "Impression terminée",
+  miseAJour: "Mise à jour : redémarrage requis",
+  notification: "Notification (titre + message)",
   finHorloge: "Fin de l'horloge",
 } as const;
 
@@ -216,6 +221,26 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
         type: "ALERTE",
         alerte: { type: "notification", donnees: { id: 1, application: "Desjardins", textes: ["Votre code de vérification est 482913"], code: "482913" }, dureeFacteur: 2.5 },
       });
+      break;
+    case "appelEntrant":
+      majDonnees({ appelEntrant: { nom: "Marie Tremblay", application: "Microsoft Teams" } });
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "appelEntrant", type: "appelEntrant" } });
+      machine.envoyer({ type: "CLIC_LONG" });
+      break;
+    case "impression":
+      majDonnees({ impressions: [{ id: 1, document: "Devoir de sciences.pdf", imprimante: "HP DeskJet", pagesImprimees: 1, pagesTotal: 4, erreur: null }] });
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "impression", type: "impression" } });
+      break;
+    case "finImpression":
+      majDonnees({ impressions: [] });
+      machine.envoyer({ type: "ACTIVITE_FIN", id: "impression" });
+      machine.envoyer({ type: "ALERTE", alerte: { type: "impression", donnees: { id: 1, document: "Devoir de sciences.pdf", imprimante: "HP DeskJet", pagesImprimees: 4, pagesTotal: 4, erreur: null } } });
+      break;
+    case "miseAJour":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "miseAJour", dureeFacteur: 3 } });
+      break;
+    case "notification":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "notification", donnees: { id: 9, application: "Messages", textes: ["Papa", "On soupe à 18 h, tu ramènes du pain ?"] } } });
       break;
     case "ecoute":
       machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "ecoute", type: "ecoute", donnees: { etape: "ecoute" } } });
