@@ -381,3 +381,14 @@ export function IconeOeil({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Note de musique (chanson introuvable). */
+export function IconeNote({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path d="M9 17.5V5.8l10-2.3v11.7" fill="none" stroke={couleur} strokeWidth="2" strokeLinejoin="round" />
+      <ellipse cx="6.6" cy="17.6" rx="2.9" ry="2.4" fill={couleur} />
+      <ellipse cx="16.6" cy="15.3" rx="2.9" ry="2.4" fill={couleur} />
+    </svg>
+  );
+}

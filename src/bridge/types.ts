@@ -146,6 +146,8 @@ export interface EvenementsBackend {
   telechargements: EtatTelechargements;
   /** Fichiers de l'étagère (chemins). */
   etagere: string[];
+  /** « Quelle est cette chanson ? » : écoute, recherche, résultat. */
+  reconnaissance: Reconnaissance;
   /** Connexion Internet perdue / retrouvée. */
   internet: { connecte: boolean; nom: string | null };
   /** Panneau de réglages → île : valeurs modifiées en direct. */
@@ -194,6 +196,14 @@ export interface EtatTelechargements {
   termine: [string, string] | null;
 }
 
+export interface Reconnaissance {
+  etape: "ecoute" | "recherche" | "trouvee" | "introuvable" | "erreur";
+  titre: string | null;
+  artiste: string | null;
+  pochette: string | null;
+  lien: string | null;
+}
+
 export interface Parametres {
   /** Taille de l'île : DIP par point iPhone (ISLAND_SCALE). */
   taille: number;
@@ -231,4 +241,5 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "telechargements",
   "etagere",
   "internet",
+  "reconnaissance",
 ];

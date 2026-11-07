@@ -30,6 +30,8 @@ pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
 const LABEL_LANCEUR: &str = "lanceur";
 /// Cacher / afficher l'île.
 pub const RACCOURCI_CACHER: &str = "ctrl+alt+h";
+/// « Quelle est cette chanson ? »
+pub const RACCOURCI_CHANSON: &str = "ctrl+alt+s";
 /// Recherche rapide (définition / résumé Wikipédia).
 pub const RACCOURCI_RECHERCHE: &str = "ctrl+alt+space";
 const LABEL_RECHERCHE: &str = "recherche";
@@ -56,11 +58,12 @@ pub fn basculer_recherche(app: &AppHandle) {
 /// essaie un raccourci de secours et le note dans le journal — sans jamais bloquer le démarrage.
 pub fn enregistrer_raccourcis(app: &AppHandle) {
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
-    let essais: [(&str, &[&str]); 4] = [
+    let essais: [(&str, &[&str]); 5] = [
         ("réglages", &[RACCOURCI_PANNEAU, "ctrl+alt+shift+d"]),
         ("lanceur", &[RACCOURCI_LANCEUR, "ctrl+alt+shift+m"]),
         ("cacher", &[RACCOURCI_CACHER, "ctrl+alt+shift+h"]),
         ("recherche", &[RACCOURCI_RECHERCHE, "ctrl+alt+shift+space"]),
+        ("chanson", &[RACCOURCI_CHANSON, "ctrl+alt+shift+s"]),
     ];
     for (nom, raccourcis) in essais {
         let ok = raccourcis.iter().find(|r| match app.global_shortcut().register(**r) {
@@ -158,6 +161,8 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     };
     if est(RACCOURCI_LANCEUR) || est("ctrl+alt+shift+m") {
         basculer_lanceur(app);
+    } else if est(RACCOURCI_CHANSON) || est("ctrl+alt+shift+s") {
+        crate::chanson::lancer(app);
     } else if est(RACCOURCI_RECHERCHE) || est("ctrl+alt+shift+space") {
         basculer_recherche(app);
     } else if est(RACCOURCI_CACHER) || est("ctrl+alt+shift+h") {
@@ -170,6 +175,13 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
 pub fn installer(app: &AppHandle) -> tauri::Result<()> {
     let reglages = MenuItem::with_id(app, "reglages", "Réglages (Ctrl+Alt+D)", true, None::<&str>)?;
     let lanceur = MenuItem::with_id(app, "lanceur", "Lancer un minuteur (Ctrl+Alt+M)", true, None::<&str>)?;
+    let chanson = MenuItem::with_id(
+        app,
+        "chanson",
+        "Quelle est cette chanson ? (Ctrl+Alt+S)",
+        true,
+        None::<&str>,
+    )?;
     let cacher_ile = MenuItem::with_id(
         app,
         "cacher-ile",
@@ -245,6 +257,7 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         &[
             &reglages,
             &lanceur,
+            &chanson,
             &cacher_ile,
             &arreter,
             &PredefinedMenuItem::separator(app)?,
@@ -266,6 +279,7 @@ pub fn installer(app: &AppHandle) -> tauri::Result<()> {
         .on_menu_event(move |app, ev| match ev.id().as_ref() {
             "reglages" => ouvrir_panneau(app),
             "lanceur" => basculer_lanceur(app),
+            "chanson" => crate::chanson::lancer(app),
             "cacher-ile" => {
                 fenetre::basculer_cachee(app);
             }

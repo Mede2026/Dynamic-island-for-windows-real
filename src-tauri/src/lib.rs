@@ -10,6 +10,7 @@
 
 use tauri::Manager;
 
+pub mod chanson;
 pub mod demarrage;
 pub mod etagere;
 pub mod evenements;
@@ -89,6 +90,7 @@ pub fn run() {
             systeme::systeme_ne_pas_deranger,
             systeme::notifications_etat,
             paroles::paroles_chercher,
+            chanson::chanson_reconnaitre,
             systeme::ecrire::copier_texte,
             systeme::ecrire::copier_fichiers,
             systeme::ecrire::ouvrir_fichier,

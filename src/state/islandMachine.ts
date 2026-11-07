@@ -23,7 +23,7 @@ import { islandConfig, type EtatIle, type NomTransition } from "../island.config
 // ---------------------------------------------------------------------------
 
 /** Activités longues (affichées en compact / split / étendu). */
-export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge" | "telechargement" | "etagere";
+export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge" | "telechargement" | "etagere" | "ecoute";
 
 /** Alertes brèves (affichées puis retour automatique). */
 export type TypeAlerte =
@@ -41,7 +41,8 @@ export type TypeAlerte =
   | "bluetooth"
   | "telechargementTermine"
   | "internet"
-  | "pause";
+  | "pause"
+  | "chanson";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.
@@ -54,6 +55,7 @@ export const PRIORITES: Record<TypeActivite, number> = {
   musique: 2,
   minuteur: 1,
   telechargement: 1,
+  ecoute: 2.5, // « Quelle est cette chanson ? » : demandé à l'instant, passe devant la musique
   etagere: 0.5, // fichiers gardés sous la main : discret, cède la place au reste
   horloge: 0, // horloge au survol de l'île au repos : cède la place à tout le reste
 };

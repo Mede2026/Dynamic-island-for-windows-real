@@ -6,7 +6,7 @@
  */
 
 import type { Evenement } from "../state/islandMachine";
-import type { AppareilBluetooth, EtatTelechargements, LecteurUsb, Verrouillage } from "./types";
+import type { AppareilBluetooth, EtatTelechargements, LecteurUsb, Reconnaissance, Verrouillage } from "./types";
 import type { Appel, EtatBatterie, EtatMedia, EtatMinuteur, EtatNePasDeranger, EtatVolume, Notification } from "./types";
 import type { PressePapiers } from "./donnees";
 
@@ -25,6 +25,7 @@ function musiqueActive(m: EtatMedia): boolean {
 
 const ID_TELECHARGEMENT = "telechargement";
 const ID_ETAGERE = "etagere";
+const ID_ECOUTE = "ecoute";
 
 /**
  * Code de vérification dans une notification (« Votre code : 482 913 », « 123456 is your
@@ -159,6 +160,15 @@ export class Traducteur {
 
   bluetooth(b: AppareilBluetooth): Evenement[] {
     return [{ type: "ALERTE", alerte: { type: "bluetooth", donnees: b } }];
+  }
+
+  reconnaissance(r: Reconnaissance): Evenement[] {
+    if (r.etape === "ecoute") return [{ type: "ACTIVITE_DEBUT", activite: { id: ID_ECOUTE, type: "ecoute", donnees: r } }];
+    if (r.etape === "recherche") return [{ type: "ACTIVITE_MAJ", id: ID_ECOUTE, donnees: r }];
+    return [
+      { type: "ACTIVITE_FIN", id: ID_ECOUTE },
+      { type: "ALERTE", alerte: { type: "chanson", donnees: r, dureeFacteur: r.etape === "trouvee" ? 2.5 : 1 } },
+    ];
   }
 
   internet(i: { connecte: boolean; nom: string | null }): Evenement[] {

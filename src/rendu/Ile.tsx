@@ -32,6 +32,9 @@ import {
   EtagereEtendu,
   EtagereMinimal,
   TelechargementCompact,
+  EcouteCompact,
+  EcouteEtendu,
+  EcouteMinimal,
   TelechargementEtendu,
   TelechargementMinimal,
   HorlogeEtendu,
@@ -595,11 +598,11 @@ function choisirContenu(ctx: Ctx): ReactNode {
     case "repos":
       return null;
     case "compact":
-      return type === "telechargement" ? <TelechargementCompact {...ctx} /> : type === "etagere" ? <EtagereCompact {...ctx} /> : type === "horloge" ? <HorlogeCompact {...ctx} /> : type === "appel" ? <AppelCompact {...ctx} /> : type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
+      return type === "ecoute" ? <EcouteCompact {...ctx} /> : type === "telechargement" ? <TelechargementCompact {...ctx} /> : type === "etagere" ? <EtagereCompact {...ctx} /> : type === "horloge" ? <HorlogeCompact {...ctx} /> : type === "appel" ? <AppelCompact {...ctx} /> : type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
     case "split":
-      return type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
+      return type === "ecoute" ? <EcouteMinimal {...ctx} /> : type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
     case "etendu":
-      return type === "telechargement" ? <TelechargementEtendu {...ctx} /> : type === "etagere" ? <EtagereEtendu {...ctx} /> : type === "horloge" ? <HorlogeEtendu {...ctx} /> : type === "appel" ? <AppelEtendu {...ctx} /> : type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
+      return type === "ecoute" ? <EcouteEtendu {...ctx} /> : type === "telechargement" ? <TelechargementEtendu {...ctx} /> : type === "etagere" ? <EtagereEtendu {...ctx} /> : type === "horloge" ? <HorlogeEtendu {...ctx} /> : type === "appel" ? <AppelEtendu {...ctx} /> : type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
     case "alerte":
       return e.alerte ? <AlerteContenu {...ctx} alerte={e.alerte} /> : null;
   }
@@ -611,12 +614,12 @@ function choisirBulle(ctx: Ctx): ReactNode {
   const type = typeDe(etat, etat.bulleId);
   const diam = v(cfg.bulle.diametrePt) * S;
   // Les contenus « minimal » sont placés comme dans l'île ; on les recentre dans la bulle.
-  const decalage = type === "minuteur" || type === "appel" || type === "horloge" || type === "telechargement" || type === "etagere"
+  const decalage = type === "minuteur" || type === "appel" || type === "horloge" || type === "telechargement" || type === "etagere" || type === "ecoute"
     ? diam / 2 - (v(cfg.minuteur.compactIconeXPt) + v(cfg.minuteur.compactIconeTaillePt) / 2) * S
     : diam / 2 - (v(cfg.media.compact.pochetteXPt) + v(cfg.media.compact.pochetteTaillePt) / 2) * S;
   return (
     <div style={{ position: "absolute", left: decalage, top: 0, width: diam, height: diam }}>
-      {type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
+      {type === "ecoute" ? <EcouteMinimal {...ctx} /> : type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
     </div>
   );
 }

@@ -41,6 +41,7 @@ import {
   IconeDossier,
   IconeFermer,
   IconeFichier,
+  IconeNote,
   IconeOeil,
   IconeWifi,
   IconeTelechargement,
@@ -759,6 +760,78 @@ export function EtagereEtendu({ cfg, S, d }: Ctx) {
 }
 
 // ---------------------------------------------------------------------------
+// « Quelle est cette chanson ? » : l'île écoute
+// ---------------------------------------------------------------------------
+
+/** Ondes qui s'élargissent depuis une note (écoute en cours). */
+function IconeEcoute({ taille, style }: { taille: number; style?: CSSProperties }) {
+  return (
+    <div style={{ position: "absolute", width: taille, height: taille, ...style }}>
+      {[0, 0.5, 1].map((retard) => (
+        <motion.div
+          key={retard}
+          style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `${taille * 0.08}px solid ${BLEU}` }}
+          initial={{ scale: 0.35, opacity: 0.9 }}
+          animate={{ scale: 1.05, opacity: 0 }}
+          transition={{ duration: 1.5, repeat: Infinity, delay: retard, ease: "easeOut" }}
+        />
+      ))}
+      <IconeNote taille={taille * 0.5} couleur={BLEU} style={{ position: "absolute", left: taille * 0.25, top: taille * 0.25 }} />
+    </div>
+  );
+}
+
+function texteEcoute(etat: Ctx["etat"]) {
+  const r = etat.activites.find((a) => a.type === "ecoute")?.donnees as { etape?: string } | undefined;
+  return r?.etape === "recherche" ? "Recherche…" : "J'écoute…";
+}
+
+export function EcouteCompact({ cfg, S, etat }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return (
+    <>
+      <IconeEcoute taille={ti} style={{ left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S * 0.82) / 2,
+          color: BLEU,
+          left: undefined,
+          fontSize: v(c.compactTexte.taillePt) * S * 0.82,
+        })}
+      >
+        {texteEcoute(etat)}
+      </div>
+    </>
+  );
+}
+
+export function EcouteMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeEcoute taille={ti} style={{ left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+export function EcouteEtendu({ cfg, S, etat }: Ctx) {
+  const c = cfg.minuteur;
+  const gauche = (v(c.etenduBoutonXPt)[0] ?? 0) * S;
+  const diam = v(c.etenduBoutonDiametrePt) * S;
+  const y = v(c.etenduBoutonYPt) * S;
+  return (
+    <>
+      <IconeEcoute taille={diam} style={{ left: gauche, top: y }} />
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.08, color: "#ffffff" })}>{texteEcoute(etat)}</div>
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: y + diam * 0.55, color: v(cfg.media.etendu.artiste.couleur), fontWeight: 400 })}>
+        Le son du PC, quelques secondes
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Horloge au survol (île au repos) : heure à droite, cadran à gauche
 // ---------------------------------------------------------------------------
 
@@ -853,7 +926,8 @@ function BoutonAction({ action, style, children }: { action: NonNullable<ReturnT
       onClick={(e) => {
         e.stopPropagation();
         if (action.type === "copier") void backend.copierTexte(action.texte).then(() => setFait(true));
-        else void backend.ouvrirFichier(action.chemin);
+        else if (action.type === "ouvrir") void backend.ouvrirFichier(action.chemin);
+        else void backend.ouvrirLien(action.url);
       }}
     >
       {fait ? "Copié" : children}
@@ -913,6 +987,8 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeWifi taille={ti} couleur={couleurIcone} coupe />;
       case "oeil":
         return <IconeOeil taille={ti} couleur={couleurIcone} />;
+      case "note":
+        return <IconeNote taille={ti} couleur={couleurIcone} />;
       default:
         return null;
     }
@@ -930,6 +1006,22 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
   return (
     <>
       {icone && <div style={{ position: "absolute", left: v(a.texteXPt) * S, top: (h - ti) / 2, width: ti, height: ti }}>{icone}</div>}
+      {spec.pochetteUrl && (
+        <img
+          src={spec.pochetteUrl}
+          alt=""
+          decoding="async"
+          style={{
+            position: "absolute",
+            left: v(cfg.media.compact.pochetteXPt) * S,
+            top: (h - hauteurMiniature(cfg) * S) / 2,
+            width: hauteurMiniature(cfg) * S,
+            height: hauteurMiniature(cfg) * S,
+            objectFit: "cover",
+            borderRadius: v(cfg.media.compact.pochetteRayonPt) * S,
+          }}
+        />
+      )}
       {spec.miniature && (
         <img
           src={`data:image/png;base64,${spec.miniature}`}

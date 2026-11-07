@@ -50,6 +50,7 @@ const ALERTES: [string, string][] = [
   ["verrouillage", "Verr. Maj / Verr. Num"],
   ["telechargementTermine", "Téléchargement terminé"],
   ["internet", "Connexion Internet perdue / retrouvée"],
+  ["chanson", "Chanson reconnue (Ctrl+Alt+S)"],
 ];
 
 const BOUCLES: Record<string, NomScenario[]> = {

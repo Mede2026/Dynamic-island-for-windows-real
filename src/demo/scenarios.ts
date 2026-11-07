@@ -109,6 +109,8 @@ export const SCENARIOS = {
   finTelechargement: "Téléchargement terminé",
   etagere: "Étagère (3 fichiers)",
   code: "Notification avec un code à copier",
+  ecoute: "Quelle est cette chanson ? (écoute)",
+  chansonTrouvee: "Chanson reconnue",
   finHorloge: "Fin de l'horloge",
 } as const;
 
@@ -213,6 +215,20 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       machine.envoyer({
         type: "ALERTE",
         alerte: { type: "notification", donnees: { id: 1, application: "Desjardins", textes: ["Votre code de vérification est 482913"], code: "482913" }, dureeFacteur: 2.5 },
+      });
+      break;
+    case "ecoute":
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "ecoute", type: "ecoute", donnees: { etape: "ecoute" } } });
+      break;
+    case "chansonTrouvee":
+      machine.envoyer({ type: "ACTIVITE_FIN", id: "ecoute" });
+      machine.envoyer({
+        type: "ALERTE",
+        alerte: {
+          type: "chanson",
+          donnees: { etape: "trouvee", titre: "Pedro", artiste: "Jaxomy, Agatino Romero & Raffaella Carrà", pochette: pochetteFactice() ? `data:image/png;base64,${pochetteFactice()!.pngBase64}` : null, lien: null },
+          dureeFacteur: 2.5,
+        },
       });
       break;
     case "horloge":

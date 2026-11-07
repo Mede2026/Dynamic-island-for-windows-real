@@ -44,6 +44,7 @@ pub fn arguments_du_lien(lien: &str) -> Vec<String> {
         ["minuteur" | "timer", duree] => a(&["--minuteur", duree]),
         ["minuteur" | "timer"] | ["lanceur" | "launcher"] => a(&["--lanceur"]),
         ["reglages" | "settings"] => a(&["--reglages"]),
+        ["chanson" | "shazam" | "song"] => a(&["--chanson"]),
         _ => Vec::new(),
     }
 }
@@ -77,6 +78,10 @@ pub fn executer(app: &AppHandle, args: &[String], deuxieme_instance: bool) {
     }
     if args.iter().any(|a| a == "--reglages") {
         plateau::ouvrir_panneau(app);
+        ordre = true;
+    }
+    if args.iter().any(|a| a == "--chanson") {
+        crate::chanson::lancer(app);
         ordre = true;
     }
     if minuteur::ordre_depuis_arguments(&args).is_some() {
@@ -290,6 +295,7 @@ unsafe fn creer_jump_list(exe: &str) -> windows::core::Result<()> {
         )?;
     }
     ajouter("Lanceur de minuteur…", "--lanceur")?;
+    ajouter("Quelle est cette chanson ?", "--chanson")?;
     ajouter("Réglages de l'île", "--reglages")?;
 
     journal!("integration", "menu de l'icône : tâches prêtes");

@@ -17,6 +17,7 @@ import type {
   EtatVolume,
   LecteurUsb,
   Notification,
+  Reconnaissance,
   Verrouillage,
 } from "../bridge/types";
 import type { PressePapiers } from "../bridge/donnees";
@@ -44,7 +45,8 @@ export type NomIcone =
   | "telechargement"
   | "wifi"
   | "wifiCoupe"
-  | "oeil";
+  | "oeil"
+  | "note";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -58,6 +60,8 @@ const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
 export interface SpecAlerte {
   /** À gauche : miniature (capture d'écran), PNG base64. */
   miniature?: string;
+  /** À gauche : image carrée depuis une adresse (pochette d'une chanson reconnue). */
+  pochetteUrl?: string;
   /** À gauche : icône et/ou libellé. */
   icone?: NomIcone;
   couleurIcone?: string;
@@ -73,7 +77,7 @@ export interface SpecAlerte {
   valeurReference?: string;
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
   /** La valeur est un bouton : copier un code, ouvrir un fichier téléchargé. */
-  action?: { type: "copier"; texte: string } | { type: "ouvrir"; chemin: string };
+  action?: { type: "copier"; texte: string } | { type: "ouvrir"; chemin: string } | { type: "lien"; url: string };
 }
 
 /** Largeur d'un texte (pt) : (texte, taille pt, graisse, chiffres à chasse fixe) → largeur pt. */
@@ -197,6 +201,30 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
       // Code de vérification : à droite, en vert, un clic le copie.
       if (n.code) return { ...spec, valeur: n.code, couleurValeur: v(a.valeurCouleur), action: { type: "copier", texte: n.code } };
       return spec;
+    }
+    case "chanson": {
+      const r = { etape: "erreur", titre: null, artiste: null, pochette: null, lien: null, ...(alerte.donnees as Partial<Reconnaissance>) } as Reconnaissance;
+      const gris = v(cfg.media.etendu.artiste.couleur);
+      if (r.etape !== "trouvee") {
+        return {
+          icone: "note",
+          couleurIcone: gris,
+          libelle: "Chanson",
+          valeur: r.etape === "introuvable" ? "Introuvable" : "Pas de connexion",
+          couleurValeur: gris,
+        };
+      }
+      // Pochette à gauche, « Trouvée » à droite (clic : la page de la chanson), titre et
+      // artiste sur la 2e ligne, sous la caméra.
+      return {
+        pochetteUrl: r.pochette ?? undefined,
+        icone: r.pochette ? undefined : "note",
+        valeur: "Trouvée",
+        couleurValeur: v(a.valeurCouleur),
+        detail: [r.titre, r.artiste].filter(Boolean).join(" — ") || "Chanson",
+        detailFort: true,
+        action: r.lien ? { type: "lien", url: r.lien } : undefined,
+      };
     }
     case "internet": {
       const i = { connecte: true, nom: null, ...(alerte.donnees as Partial<{ connecte: boolean; nom: string | null }>) };
@@ -332,7 +360,9 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
   const largeurMax = v(cfg.formes.etendu.taille.pt.largeur);
   const coteMax = (largeurMax - v(cfg.zoneCamera.largeurPt)) / 2;
 
-  const debutGauche = spec.miniature
+  const debutGauche = spec.pochetteUrl
+    ? v(cfg.media.compact.pochetteXPt) + hauteurMiniature(cfg)
+    : spec.miniature
     ? v(cfg.media.compact.pochetteXPt) + largeurMiniature(cfg)
     : v(a.texteXPt) + (spec.icone ? tailleIcone(cfg) + (spec.libelle ? ECART_ICONE_PT : 0) : 0);
   const libelle = spec.libelle ? mesurer(spec.libelle, t, g) : 0;

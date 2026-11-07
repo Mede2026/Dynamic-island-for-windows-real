@@ -134,6 +134,7 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(ecouter("usb", (u) => envoyer(traducteur.usb(u))));
   arrets.push(ecouter("bluetooth", (b) => envoyer(traducteur.bluetooth(b))));
   arrets.push(ecouter("internet", (i) => envoyer(traducteur.internet(i))));
+  arrets.push(ecouter("reconnaissance", (r) => envoyer(traducteur.reconnaissance(r))));
   // Rappels de pause : minutes passées devant l'écran (clavier ou souris utilisés dans la
   // dernière minute) ; 5 minutes d'absence remettent le compteur à zéro.
   let minutesActives = 0;
