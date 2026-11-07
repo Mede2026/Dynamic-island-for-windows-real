@@ -48,6 +48,21 @@ jobs:
       - run: npm ci
       - run: cargo test --manifest-path src-tauri/Cargo.toml
       - run: npx tauri build
+      - name: Essai de démarrage (l'île doit tourner 20 s sans planter)
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path src-tauri/target/release/dynamic-island.exe).Path
+          $p = Start-Process $exe -PassThru
+          Start-Sleep -Seconds 20
+          $journal = "$env:APPDATA\com.mederic.dynamicisland\journal.txt"
+          Write-Host "----- journal.txt -----"
+          if (Test-Path $journal) { Get-Content $journal } else { Write-Host "(pas de journal)" }
+          Write-Host "-----------------------"
+          $plantage = (Test-Path $journal) -and (Select-String -Path $journal -Pattern "Plantage" -Quiet)
+          if ($p.HasExited) { Write-Host "PLANTAGE : l'île s'est fermée (code $($p.ExitCode))"; exit 1 }
+          Stop-Process -Id $p.Id -Force
+          if ($plantage) { Write-Host "PLANTAGE signalé dans le journal"; exit 1 }
+          Write-Host "OK : l'île tourne encore après 20 s"
       - uses: actions/upload-artifact@v6
         with:
           name: installateur-windows
