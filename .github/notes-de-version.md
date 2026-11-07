@@ -9,7 +9,7 @@ Every size, corner curve, spring and delay measured on a real iPhone 16 Pro (iOS
 | `Dynamic.Island_…_x64-setup.exe` | **Most people** — double-click and install |
 | `Dynamic.Island_…_x64_en-US.msi` | Same app, Windows Installer package (for IT / managed PCs) |
 
-Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn you because the app isn't signed: click **More info → Run anyway**.
+Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn you because the app isn't signed: click **More info → Run anyway**. Already installed? The island offers the update itself (« Installer »).
 
 ### What's inside
 
@@ -20,21 +20,6 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 - 🧰 Right-click the island: shelf, recently copied, quick search & calculator, capture, settings
 - Updates itself, starts with Windows, every display scale
 
----|---|
-| `Dynamic.Island_…_x64-setup.exe` | **Most people** — double-click and install |
-| `Dynamic.Island_…_x64_en-US.msi` | Same app, Windows Installer package (for IT / managed PCs) |
-
-Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn you because the app isn't signed: click **More info → Run anyway**.
-
-### What's inside
-
-- 🎵 Music with album art and a waveform that follows the real sound, full player on long press
-- ⏱️ Timer (also from the Windows Clock app, a shortcut or `--minuteur 5m`), split mode with the bubble
-- 📞 Calls (Teams, Discord, Zoom…) with mic mute
-- 🔋 Charger, battery 20 %, volume, brightness, clipboard, screenshot thumbnail, notifications, Do Not Disturb
-- 🟢🟠 Camera / microphone dot, like on iOS
-- Size, speed and alerts customizable (Ctrl + Alt + D), starts with Windows
-
 ---
 
-🇫🇷 **En français :** installe le fichier `…-setup.exe`, puis lance **Dynamic Island** depuis le menu Démarrer. Si Windows SmartScreen affiche un avertissement : **Informations complémentaires → Exécuter quand même**.
+🇫🇷 **En français :** installe le fichier `…-setup.exe`, puis lance **Dynamic Island** depuis le menu Démarrer. Si Windows SmartScreen affiche un avertissement : **Informations complémentaires → Exécuter quand même**. Déjà installée ? L'île propose elle-même la mise à jour (« Installer »).
