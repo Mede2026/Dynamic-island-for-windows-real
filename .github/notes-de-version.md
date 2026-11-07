@@ -18,7 +18,7 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 - 🎤 Lyrics on **two lines** (no more « … ») and better sync, plus a « late / early » slider in Settings → Music
 - 🔤 Text from image (OCR): one clean animation, no more double alert
 - Right-click menu: **Update**, **Hide the island**, **Quit**
-- Fixes: unlock padlock opens to the right side, long alert titles no longer cut off
+- Fixes: unlock padlock opens to the right side, long alert titles no longer cut off — a long notification title now goes under the camera on its own line, with the message below
 
 ### What's inside
 

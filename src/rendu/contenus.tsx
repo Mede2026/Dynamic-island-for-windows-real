@@ -1640,11 +1640,25 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
           {spec.valeur}
         </BoutonAction>
       )}
-      {spec.detail && (
+      {spec.detailTitre && (
         <div
           style={texte(a.texte, S, {
             left: v(a.texteXPt) * S,
             top: haut(baselineDetail(cfg), a.texte, S),
+            maxWidth: (largeurAlerte(spec, cfg, mesureConfig(cfg)) - 2 * v(a.texteXPt)) * S,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            paddingBottom: 2 * S,
+          })}
+        >
+          {spec.detailTitre}
+        </div>
+      )}
+      {spec.detail && (
+        <div
+          style={texte(a.texte, S, {
+            left: v(a.texteXPt) * S,
+            top: haut(baselineDetail(cfg, spec.detailTitre ? 1 : 0), a.texte, S),
             maxWidth: (largeurAlerte(spec, cfg, mesureConfig(cfg)) - 2 * v(a.texteXPt)) * S,
             color: spec.detailFort ? blanc : v(cfg.media.etendu.artiste.couleur),
             fontWeight: spec.detailFort ? v(a.texte.graisse) : 400,
@@ -1662,7 +1676,7 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
           role="button"
           style={texte(a.texte, S, {
             right: v(a.texteXPt) * S,
-            top: haut(baselineDetail(cfg), a.texte, S),
+            top: haut(baselineDetail(cfg, spec.detailTitre ? 1 : 0), a.texte, S),
             color: v(cfg.media.etendu.artiste.couleur),
             pointerEvents: "auto",
             cursor: "pointer",

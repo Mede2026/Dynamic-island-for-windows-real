@@ -87,6 +87,8 @@ export interface SpecAlerte {
   detail?: string;
   /** Détail en blanc et gras (nom d'appareil déplacé sous la caméra) plutôt qu'en gris. */
   detailFort?: boolean;
+  /** Titre trop long pour la gauche de la caméra : en gras SOUS la caméra, le détail en dessous (3 lignes). */
+  detailTitre?: string;
   /** Texte servant à mesurer la valeur (ex. « 100 % ») pour une largeur stable. */
   valeurReference?: string;
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
@@ -174,7 +176,13 @@ export function specAlerte(alerte: Alerte, cfg: IslandConfig, mesurer: Mesureur 
   if (spec.icone && v(cfg.alerte.texteXPt) + largeurLibelle + v(cfg.zoneCamera.margePt) <= coteMax) {
     return { ...spec, icone: undefined };
   }
-  if (spec.detail) return spec; // 2e ligne déjà prise : le titre sera abrégé
+  // 2e ligne déjà prise (message d'une notification) : le titre passe dessous la caméra,
+  // en gras, et le message sur une 3e ligne — rien n'est coupé.
+  if (spec.detail) {
+    // Rangée du haut vide ? Une petite cloche grise à gauche de la caméra.
+    const haut = spec.valeur ? { icone: undefined } : { icone: spec.icone ?? ("cloche" as const), couleurIcone: spec.couleurIcone ?? v(cfg.media.etendu.artiste.couleur) };
+    return { ...spec, ...haut, libelle: undefined, detailTitre: spec.libelle };
+  }
   return { ...spec, libelle: undefined, detail: spec.libelle, detailFort: true };
 }
 
@@ -541,13 +549,14 @@ export function hauteurAlerte(spec: SpecAlerte, cfg: IslandConfig): number {
   const h = v(cfg.formes.alerte.taille.pt.hauteur);
   if (spec.apercu) return cadreApercu(spec.apercu, cfg).ileHauteur;
   if (!spec.detail) return h;
-  // Ligne sous la caméra + même marge en bas que la marge gauche du texte.
-  return h + v(cfg.alerte.texte.taillePt) * 1.25 + v(cfg.alerte.texteXPt) * 0.6;
+  // Ligne(s) sous la caméra + même marge en bas que la marge gauche du texte.
+  const lignes = spec.detailTitre ? 2 : 1;
+  return h + v(cfg.alerte.texte.taillePt) * 1.25 * lignes + v(cfg.alerte.texteXPt) * 0.6;
 }
 
 /** Ligne de base du détail (pt depuis le haut de l'île). */
-export function baselineDetail(cfg: IslandConfig): number {
-  return v(cfg.zoneCamera.hauteurPt) + v(cfg.alerte.texte.taillePt) * 0.95;
+export function baselineDetail(cfg: IslandConfig, ligne = 0): number {
+  return v(cfg.zoneCamera.hauteurPt) + v(cfg.alerte.texte.taillePt) * (0.95 + 1.25 * ligne);
 }
 
 /** Proportions (largeur / hauteur) d'un PNG en base64, lues dans son en-tête ; 16:9 sinon. */
