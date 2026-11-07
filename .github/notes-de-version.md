@@ -13,7 +13,7 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 ### New in this version
 
-- 📐 **Bigger search**: 600 pt wide, larger text, rows and icons; easier-to-grab drag handle
+- 📐 **Bigger search, same proportions as the Mac**: the measured pill, rows, icons, text and card are scaled up together to 600 pt wide; the results card shows about 5½ rows like on the Mac
 - 🔍 **New search, modeled on the Mac**: the island turns into a glass **pill** (« Rechercher ou demander des infos ») with a separate **results card** underneath — apps (Start menu + Microsoft Store, with their icons), **your files** (Windows search index, never system folders), Windows Settings pages, calculator & converter, recently copied, Wikipedia / dictionary, web
 - ✨ **Ask Claude**: type a question → « — Demander à Claude ». Add your Anthropic API key in Settings → Claude (stored in the Windows Credential Manager). Model: Claude Sonnet 5.5, medium effort
 - ↕️ **Drag handle**: pull the bottom of any tool card (search, note, copied, timer) to make it bigger — free size, remembered per tool
