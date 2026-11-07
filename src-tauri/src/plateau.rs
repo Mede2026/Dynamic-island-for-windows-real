@@ -27,28 +27,20 @@ pub fn reinitialiser(app: &AppHandle) {
 pub const RACCOURCI_PANNEAU: &str = "ctrl+alt+d";
 /// Lanceur rapide (minuteur…).
 pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
-const LABEL_LANCEUR: &str = "lanceur";
 /// Cacher / afficher l'île.
 pub const RACCOURCI_CACHER: &str = "ctrl+alt+h";
 /// Note rapide.
 pub const RACCOURCI_NOTE: &str = "ctrl+alt+n";
-const LABEL_NOTE: &str = "note";
 
-/// Ctrl+Alt+N : petite fenêtre de note (enregistrée au fil de la frappe), ou la ferme.
+/// Outils ouverts DANS l'île (plus de fenêtres) : « minuteur », « copies », « note », « recherche ».
+/// L'île ouvre l'outil, ou le referme s'il est déjà ouvert.
+pub fn ouvrir_outil(app: &AppHandle, outil: &str) {
+    let _ = app.emit("ouvrir-outil", outil.to_string());
+}
+
+/// Ctrl+Alt+N : la note, dans l'île.
 pub fn basculer_note(app: &AppHandle) {
-    if let Some(f) = app.get_webview_window(LABEL_NOTE) {
-        let _ = f.close();
-        return;
-    }
-    let r = WebviewWindowBuilder::new(app, LABEL_NOTE, WebviewUrl::App("index.html?note".into()))
-        .title("Note — Dynamic Island")
-        .inner_size(380.0, 420.0)
-        .always_on_top(true)
-        .center()
-        .build();
-    if let Err(e) = r {
-        journal!("plateau", "note impossible à ouvrir : {e}");
-    }
+    ouvrir_outil(app, "note");
 }
 
 /// Étagère (fichiers sous la main).
@@ -56,50 +48,16 @@ pub const RACCOURCI_ETAGERE: &str = "ctrl+alt+e";
 
 /// Historique du presse-papiers.
 pub const RACCOURCI_HISTORIQUE: &str = "ctrl+alt+v";
-pub const LABEL_HISTORIQUE: &str = "historique";
 
-/// Ctrl+Alt+V : les 10 derniers textes copiés, ou ferme la fenêtre.
+/// Ctrl+Alt+V : les 10 derniers textes copiés, dans l'île.
 pub fn basculer_historique(app: &AppHandle) {
-    if let Some(f) = app.get_webview_window(LABEL_HISTORIQUE) {
-        let _ = f.close();
-        return;
-    }
-    let r = WebviewWindowBuilder::new(app, LABEL_HISTORIQUE, WebviewUrl::App("index.html?historique".into()))
-        .title("Presse-papiers — Dynamic Island")
-        .inner_size(440.0, 460.0)
-        .resizable(false)
-        .always_on_top(true)
-        .center()
-        .build();
-    if let Err(e) = r {
-        journal!("plateau", "historique impossible à ouvrir : {e}");
-    }
+    ouvrir_outil(app, "copies");
 }
 
 /// « Quelle est cette chanson ? »
 pub const RACCOURCI_CHANSON: &str = "ctrl+alt+s";
 /// Recherche rapide (définition / résumé Wikipédia).
 pub const RACCOURCI_RECHERCHE: &str = "ctrl+alt+space";
-const LABEL_RECHERCHE: &str = "recherche";
-
-/// Ctrl+Alt+Espace : petite fenêtre de recherche, ou la ferme.
-pub fn basculer_recherche(app: &AppHandle) {
-    if let Some(f) = app.get_webview_window(LABEL_RECHERCHE) {
-        let _ = f.close();
-        return;
-    }
-    let r = WebviewWindowBuilder::new(app, LABEL_RECHERCHE, WebviewUrl::App("index.html?recherche".into()))
-        .title("Recherche — Dynamic Island")
-        .inner_size(460.0, 360.0)
-        .resizable(false)
-        .always_on_top(true)
-        .center()
-        .build();
-    if let Err(e) = r {
-        journal!("plateau", "recherche impossible à ouvrir : {e}");
-    }
-}
-
 /// Enregistre les raccourcis un par un ; en cas de refus (déjà pris par un autre programme),
 /// essaie un raccourci de secours et le note dans le journal — sans jamais bloquer le démarrage.
 pub fn enregistrer_raccourcis(app: &AppHandle) {
@@ -132,32 +90,14 @@ pub fn enregistrer_raccourcis(app: &AppHandle) {
     }
 }
 
-/// Ctrl+Alt+M : petit panneau « Minuteur » (durées prêtes, durée libre), ou le ferme.
+/// Ctrl+Alt+M : le minuteur rapide, dans l'île.
 pub fn basculer_lanceur(app: &AppHandle) {
-    if let Some(f) = app.get_webview_window(LABEL_LANCEUR) {
-        let _ = f.close();
-        return;
-    }
-    ouvrir_lanceur(app);
+    ouvrir_outil(app, "minuteur");
 }
 
-/// Ouvre le lanceur de minuteur (ou le ramène devant s'il est déjà ouvert).
+/// Ouvre le minuteur rapide dans l'île (icône épinglée, `--lanceur`).
 pub fn ouvrir_lanceur(app: &AppHandle) {
-    if let Some(f) = app.get_webview_window(LABEL_LANCEUR) {
-        let _ = f.show();
-        let _ = f.set_focus();
-        return;
-    }
-    let r = WebviewWindowBuilder::new(app, LABEL_LANCEUR, WebviewUrl::App("index.html?lanceur".into()))
-        .title("Lancer — Dynamic Island")
-        .inner_size(380.0, 250.0)
-        .resizable(false)
-        .always_on_top(true)
-        .center()
-        .build();
-    if let Err(e) = r {
-        journal!("plateau", "lanceur impossible à ouvrir : {e}");
-    }
+    ouvrir_outil(app, "minuteur");
 }
 const LABEL_PANNEAU: &str = "reglages";
 
@@ -219,7 +159,7 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     } else if est(RACCOURCI_CHANSON) || est("ctrl+alt+shift+s") {
         crate::chanson::lancer(app);
     } else if est(RACCOURCI_RECHERCHE) || est("ctrl+alt+shift+space") {
-        basculer_recherche(app);
+        ouvrir_outil(app, "recherche");
     } else if est(RACCOURCI_CACHER) || est("ctrl+alt+shift+h") {
         fenetre::basculer_cachee(app);
     } else {
@@ -270,7 +210,7 @@ fn gerer_menu_ile(app: &AppHandle, id: &str) {
         }
         "ile:historique" => basculer_historique(app),
         "ile:note" => basculer_note(app),
-        "ile:recherche" => basculer_recherche(app),
+        "ile:recherche" => ouvrir_outil(app, "recherche"),
         "ile:cacher" => {
             fenetre::basculer_cachee(app);
         }

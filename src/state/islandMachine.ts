@@ -23,7 +23,7 @@ import { islandConfig, type EtatIle, type NomTransition } from "../island.config
 // ---------------------------------------------------------------------------
 
 /** Activités longues (affichées en compact / split / étendu). */
-export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge" | "telechargement" | "etagere" | "ecoute" | "impression" | "appelEntrant" | "enregistrement" | "menu" | "chrono";
+export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge" | "telechargement" | "etagere" | "ecoute" | "impression" | "appelEntrant" | "enregistrement" | "menu" | "chrono" | "outil";
 
 /** Alertes brèves (affichées puis retour automatique). */
 export type TypeAlerte =
@@ -72,6 +72,7 @@ export const PRIORITES: Record<TypeActivite, number> = {
   enregistrement: 2.8, // enregistrement de l'écran : bien visible, comme sur iPhone
   appelEntrant: 4, // appel qui sonne : devant tout, comme sur iPhone
   menu: 5,
+  outil: 5, // recherche, minuteur, copiés, note : ouverts DANS l'île, à la demande
   chrono: 1.5, // menu ouvert par un clic droit : demandé à l'instant
   ecoute: 2.5, // « Quelle est cette chanson ? » : demandé à l'instant, passe devant la musique
   etagere: 3.5, // ouverte seulement à la demande (fichiers glissés, Ctrl+Alt+E) : devant
@@ -331,7 +332,8 @@ export function reduire(etat: EtatMachine, ev: Evenement, durees: Durees): Resul
       e = { ...e, minuteries };
       if (ev.nom === "alerte") {
         e = stabiliser(etat, { ...e, alerte: null }, effets);
-      } else if (ev.nom === "fermetureEtendu" && e.mode === "etendu" && !e.survol) {
+      } else if (ev.nom === "fermetureEtendu" && e.mode === "etendu" && !e.survol && !e.activites.some((a) => a.type === "outil")) {
+        // (un outil ouvert dans l'île — note, recherche… — ne se ferme pas tout seul pendant qu'on tape)
         e = stabiliser(etat, { ...e, etendueId: null }, effets);
       }
       break;

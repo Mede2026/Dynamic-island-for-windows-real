@@ -536,6 +536,19 @@ pub fn fenetre_ecouter_clic_exterieur(app: AppHandle, actif: bool) {
     etat.zones_changees.notify_all();
 }
 
+/// Recherche dans l'île : l'île accepte le clavier (`actif`) ou redevient « sans focus ».
+#[tauri::command]
+pub async fn fenetre_clavier(app: AppHandle, actif: bool) {
+    clavier(&app, actif);
+}
+
+/// L'île prend le clavier (outil ouvert dedans) ou le rend à l'app d'avant.
+pub fn clavier(app: &AppHandle, actif: bool) {
+    if let Some(f) = fenetre(app) {
+        plateforme::clavier(&f, actif);
+    }
+}
+
 #[tauri::command]
 pub fn fenetre_cacher_en_plein_ecran(app: AppHandle, actif: bool) {
     app.state::<EtatFenetre>()

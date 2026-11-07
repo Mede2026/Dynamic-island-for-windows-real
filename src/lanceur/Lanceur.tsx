@@ -14,7 +14,7 @@ import { islandConfig } from "../island.config";
 const DUREES_MIN = [1, 3, 5, 10, 15, 20, 25, 30, 45, 60];
 const ORANGE = islandConfig.minuteur.couleur ?? "#ff8c2b";
 
-function fermer() {
+function fermerFenetre() {
   if (dansTauri()) void getCurrentWindow().close();
 }
 
@@ -70,14 +70,15 @@ const s = {
   } satisfies CSSProperties,
 };
 
-export function Lanceur() {
+/** `dansIle` : affiché dans l'île (fond transparent, sans titre) au lieu d'une fenêtre. */
+export function Lanceur({ fermer = fermerFenetre, dansIle = false }: { fermer?: () => void; dansIle?: boolean } = {}) {
   const [saisie, setSaisie] = useState("");
   const [minuteur, setMinuteur] = useState<EtatMinuteur | null>(null);
   const [erreur, setErreur] = useState("");
   const champ = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    document.body.style.background = "#1c1c1e";
+    if (!dansIle) document.body.style.background = "#1c1c1e";
     champ.current?.focus();
     void backend.minuteur().then((m) => m && setMinuteur(m));
     const touche = (e: KeyboardEvent) => e.key === "Escape" && fermer();
@@ -96,8 +97,8 @@ export function Lanceur() {
   const enCours = minuteur && (minuteur.statut === "enCours" || minuteur.statut === "pause");
 
   return (
-    <div style={s.page}>
-      <p style={s.titre}>Minuteur</p>
+    <div style={dansIle ? { ...s.page, height: "100%", padding: 0, background: "transparent" } : s.page}>
+      {!dansIle && <p style={s.titre}>Minuteur</p>}
       {enCours ? (
         <div style={{ marginBottom: 14 }}>
           <p style={{ fontSize: 34, fontWeight: 300, margin: "0 0 10px", color: ORANGE, fontVariantNumeric: "tabular-nums" }}>
@@ -138,6 +139,7 @@ export function Lanceur() {
             setErreur("");
           }}
           placeholder="Autre durée : 7, 2:30, 1h15…"
+          onPointerDown={(e) => e.stopPropagation()}
           style={{ flex: 1, minWidth: 0, borderRadius: 999, border: 0, padding: "10px 14px", background: "#2c2c2e", color: "#fff", font: "inherit" }}
         />
         <button type="submit" style={s.principal}>
@@ -145,7 +147,7 @@ export function Lanceur() {
         </button>
       </form>
       {erreur && <p style={{ color: "#ff453a", margin: "8px 0 0", fontSize: 12 }}>{erreur}</p>}
-      <p style={{ color: "#636366", fontSize: 11, margin: "12px 0 0" }}>Entrée pour démarrer · Échap pour fermer · Ctrl+Alt+M</p>
+      {!dansIle && <p style={{ color: "#636366", fontSize: 11, margin: "12px 0 0" }}>Entrée pour démarrer · Échap pour fermer · Ctrl+Alt+M</p>}
     </div>
   );
 }

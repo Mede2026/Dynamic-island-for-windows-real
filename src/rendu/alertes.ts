@@ -72,6 +72,8 @@ const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
 export interface SpecAlerte {
   /** À gauche : miniature (capture d'écran), PNG base64. */
   miniature?: string;
+  /** Capture d'écran en grand sous la caméra : l'île prend la forme de l'image (PNG base64). */
+  apercu?: string;
   /** À gauche : image carrée depuis une adresse (pochette d'une chanson reconnue). */
   pochetteUrl?: string;
   /** À gauche : icône et/ou libellé. */
@@ -161,12 +163,18 @@ export function mesureConfig(cfg: IslandConfig): Mesureur {
  */
 export function specAlerte(alerte: Alerte, cfg: IslandConfig, mesurer: Mesureur = mesureConfig(cfg)): SpecAlerte {
   const spec = specBrute(alerte, cfg);
-  if (!spec.libelle || spec.detail || spec.miniature) return spec;
+  if (!spec.libelle || spec.miniature || spec.apercu) return spec;
   const t = v(cfg.alerte.texte.taillePt);
   const coteMax = (v(cfg.formes.etendu.taille.pt.largeur) - v(cfg.zoneCamera.largeurPt)) / 2;
   const debut = v(cfg.alerte.texteXPt) + (spec.icone ? tailleIcone(cfg) + ECART_ICONE_PT : 0);
-  const besoin = debut + mesurer(spec.libelle, t, v(cfg.alerte.texte.graisse)) + v(cfg.zoneCamera.margePt);
+  const largeurLibelle = mesurer(spec.libelle, t, v(cfg.alerte.texte.graisse));
+  const besoin = debut + largeurLibelle + v(cfg.zoneCamera.margePt);
   if (besoin <= coteMax) return spec;
+  // Sans l'icône, le titre tient ? On retire l'icône plutôt que de couper le texte.
+  if (spec.icone && v(cfg.alerte.texteXPt) + largeurLibelle + v(cfg.zoneCamera.margePt) <= coteMax) {
+    return { ...spec, icone: undefined };
+  }
+  if (spec.detail) return spec; // 2e ligne déjà prise : le titre sera abrégé
   return { ...spec, libelle: undefined, detail: spec.libelle, detailFort: true };
 }
 
@@ -288,6 +296,8 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
     }
     case "nouvelleVersion": {
       const n = { version: "", url: "", ...(alerte.donnees as Partial<{ version: string; url: string }>) };
+      // Vérifié depuis le menu et rien de neuf : « À jour ».
+      if (!n.url) return { libelle: "Dynamic Island", valeur: "À jour", couleurValeur: v(a.valeurCouleur) };
       return {
         icone: "miseAJour",
         couleurIcone: v(a.valeurCouleur),
@@ -397,7 +407,9 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
     }
     case "capture": {
       const p = { miniature: null, ...(alerte.donnees as Partial<PressePapiers>) };
-      return p.miniature ? { miniature: p.miniature, valeur: "Capture" } : { icone: "pressePapiers", valeur: "Capture" };
+      return p.miniature
+        ? { apercu: p.miniature, icone: "pressePapiers", libelle: "Capture", valeur: "Copiée", couleurValeur: v(a.valeurCouleur) }
+        : { icone: "pressePapiers", valeur: "Capture" };
     }
     case "luminosite": {
       const n = typeof alerte.donnees === "number" ? alerte.donnees : 50;
@@ -514,7 +526,7 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
   // Place réelle de chaque côté = moitié de l'île moins la caméra (+2 pt : arrondis de rendu,
   // pris sur l'écart de 18,9 pt avant la caméra).
   // Notification sur deux lignes : l'île prend toute la largeur → toute la place du côté.
-  const cote = spec.detail ? coteMax : Math.max(gauche, droite);
+  const cote = spec.apercu ? (cadreApercu(spec.apercu, cfg).ile - v(cfg.zoneCamera.largeurPt)) / 2 : spec.detail ? coteMax : Math.max(gauche, droite);
   return {
     gauche,
     droite,
@@ -527,6 +539,7 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
 /** Hauteur de l'alerte : une ligne (mesurée) ou deux lignes (texte sous la caméra). */
 export function hauteurAlerte(spec: SpecAlerte, cfg: IslandConfig): number {
   const h = v(cfg.formes.alerte.taille.pt.hauteur);
+  if (spec.apercu) return cadreApercu(spec.apercu, cfg).ileHauteur;
   if (!spec.detail) return h;
   // Ligne sous la caméra + même marge en bas que la marge gauche du texte.
   return h + v(cfg.alerte.texte.taillePt) * 1.25 + v(cfg.alerte.texteXPt) * 0.6;
@@ -537,7 +550,43 @@ export function baselineDetail(cfg: IslandConfig): number {
   return v(cfg.zoneCamera.hauteurPt) + v(cfg.alerte.texte.taillePt) * 0.95;
 }
 
+/** Proportions (largeur / hauteur) d'un PNG en base64, lues dans son en-tête ; 16:9 sinon. */
+export function proportionsPng(base64: string): number {
+  try {
+    const octets = atob(base64.slice(0, 44));
+    const lire = (i: number) => ((octets.charCodeAt(i) << 24) | (octets.charCodeAt(i + 1) << 16) | (octets.charCodeAt(i + 2) << 8) | octets.charCodeAt(i + 3)) >>> 0;
+    const l = lire(16);
+    const h = lire(20);
+    if (octets.slice(12, 16) === "IHDR" && l > 0 && h > 0) return l / h;
+  } catch {
+    /* pas un PNG */
+  }
+  return 16 / 9;
+}
+
+/**
+ * Cadre de la capture en grand (pt) : sous la rangée de la caméra, aussi large que possible,
+ * jamais plus haut que la forme « outil ». L'île suit la forme de l'image (large, carrée, en hauteur).
+ */
+export function cadreApercu(base64: string, cfg: IslandConfig): { x: number; y: number; largeur: number; hauteur: number; ile: number; ileHauteur: number } {
+  const ratio = Math.min(4, Math.max(0.4, proportionsPng(base64)));
+  const marge = v(cfg.alerte.texteXPt);
+  const y = v(cfg.formes.alerte.taille.pt.hauteur);
+  const largeurMax = v(cfg.formes.etendu.taille.pt.largeur) - 2 * marge;
+  const hauteurMax = v(cfg.formesContenu.outil.taille.pt.hauteur) - y - marge;
+  let largeur = largeurMax;
+  let hauteur = largeur / ratio;
+  if (hauteur > hauteurMax) {
+    hauteur = hauteurMax;
+    largeur = hauteur * ratio;
+  }
+  // Image en hauteur : l'île rétrécit autour (sans devenir plus étroite que la rangée du haut).
+  const ile = Math.max(largeur + 2 * marge, v(cfg.formes.alerte.taille.pt.largeur));
+  return { x: (ile - largeur) / 2, y, largeur, hauteur, ile, ileHauteur: y + hauteur + marge };
+}
+
 export function largeurAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesureur): number {
+  if (spec.apercu) return cadreApercu(spec.apercu, cfg).ile;
   if (spec.detail) return v(cfg.formes.etendu.taille.pt.largeur); // texte sur toute la largeur
   const c = cotesAlerte(spec, cfg, mesurer);
   const camera = v(cfg.zoneCamera.largeurPt);

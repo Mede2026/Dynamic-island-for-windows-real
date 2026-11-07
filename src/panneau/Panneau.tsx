@@ -453,6 +453,15 @@ export function Panneau() {
           >
             Paroles en direct sous la caméra pendant la musique (LRCLIB)
           </Case>
+          <Curseur
+            libelle="Paroles en retard ou en avance ?"
+            min={-3000}
+            max={3000}
+            pas={100}
+            valeur={prefs.decalageParolesMs ?? 0}
+            texte={(prefs.decalageParolesMs ?? 0) === 0 ? "Synchronisées" : `${(prefs.decalageParolesMs ?? 0) > 0 ? "+" : ""}${((prefs.decalageParolesMs ?? 0) / 1000).toFixed(1)} s plus tôt`}
+            changer={(v) => changerPrefs({ decalageParolesMs: v })}
+          />
           <p style={c.note}>
             Les paroles viennent de LRCLIB (gratuit) ; seuls le titre,
             l'artiste, l'album et la durée sont envoyés. « Quelle est cette

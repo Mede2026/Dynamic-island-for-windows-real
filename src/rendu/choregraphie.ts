@@ -67,6 +67,9 @@ function typePrincipal(e: EtatMachine) {
   return e.activites.find((a) => a.id === e.principaleId)?.type ?? null;
 }
 
+/** Hauteur d'une ligne de paroles (× taille du texte). */
+export const LIGNE_PAROLES = 1.22;
+
 /**
  * Paroles affichées sous la caméra ? (musique en lecture, en compact, paroles trouvées,
  * préférence activée). L'île est alors aussi large qu'une alerte et a une 2e ligne.
@@ -93,17 +96,19 @@ export function geometrieCible(e: EtatMachine, cfg: IslandConfig): Geometrie {
       // Musique et minuteur ont du contenu des deux côtés (capture « 14m »).
       const g = base(cfg.formesContenu.compactDeuxCotes);
       if (!parolesVisibles(e)) return g;
-      // Paroles : largeur de l'alerte mesurée, ligne de texte sous la caméra.
+      // Paroles : largeur de l'alerte mesurée, DEUX lignes de texte sous la caméra
+      // (une ligne de chanson longue n'est plus coupée par « … »).
       return {
         ...g,
         largeur: v(cfg.formes.alerte.taille.pt.largeur),
-        hauteur: g.hauteur + v(cfg.alerte.texte.taillePt) * 1.25 + v(cfg.alerte.texteXPt) * 0.6,
+        hauteur: g.hauteur + v(cfg.alerte.texte.taillePt) * (1.25 + LIGNE_PAROLES) + v(cfg.alerte.texteXPt) * 0.6,
       };
     }
     case "split":
       return base(cfg.formes.split, true);
     case "etendu":
       // Minuteur et appel : vue étendue basse (mesurée sur le minuteur, V4729).
+      if (typePrincipal(e) === "outil") return base(cfg.formesContenu.outil);
       return base(["musique", "etagere", "menu"].includes(typePrincipal(e) ?? "") ? cfg.formes.etendu : cfg.formesContenu.etenduMinuteur);
     case "alerte": {
       // Largeur selon le contenu, rangé de part et d'autre de la caméra (alertes.ts).

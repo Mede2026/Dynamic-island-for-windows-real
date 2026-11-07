@@ -52,11 +52,11 @@ pub fn dib_vers_bmp(dib: &[u8]) -> Option<Vec<u8>> {
     Some(bmp)
 }
 
-/// Image BMP → miniature PNG en base64 (200 px au plus).
+/// Image BMP → miniature PNG en base64 (640 px au plus : nette en grand dans l'île).
 pub fn miniature(octets_bmp: &[u8]) -> Option<String> {
     use base64::Engine;
     let img = image::load_from_memory_with_format(octets_bmp, image::ImageFormat::Bmp).ok()?;
-    let petite = img.thumbnail(200, 200);
+    let petite = img.thumbnail(640, 640);
     let mut png = Vec::new();
     petite
         .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)

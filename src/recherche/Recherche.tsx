@@ -48,7 +48,13 @@ const s = {
   lien: { border: 0, background: "none", color: "#64a8ff", font: "inherit", padding: 0, cursor: "pointer" } satisfies CSSProperties,
 };
 
+/** Fenêtre séparée (ancienne façon) : garde la mise en page de page. */
 export function Recherche() {
+  return <ContenuRecherche fermer={() => dansTauri() && void getCurrentWindow().close()} />;
+}
+
+/** Contenu de la recherche. `dansIle` : affiché dans l'île (fond transparent) au lieu d'une fenêtre. */
+export function ContenuRecherche({ fermer, dansIle = false }: { fermer: () => void; dansIle?: boolean }) {
   const [terme, setTerme] = useState("");
   const [etat, setEtat] = useState<"attente" | "recherche" | "rien" | "erreur">("attente");
   const [resultat, setResultat] = useState<Resultat | null>(null);
@@ -68,7 +74,7 @@ export function Recherche() {
       })
       .catch(() => undefined);
     const echap = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && dansTauri()) void getCurrentWindow().close();
+      if (e.key === "Escape") fermer();
     };
     window.addEventListener("keydown", echap);
     return () => window.removeEventListener("keydown", echap);
@@ -118,8 +124,9 @@ export function Recherche() {
     }
   };
 
+  const page: CSSProperties = dansIle ? { ...s.page, height: "100%", background: "transparent", padding: 0, gap: 10 } : s.page;
   return (
-    <div style={s.page}>
+    <div style={page}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -131,7 +138,8 @@ export function Recherche() {
           value={terme}
           onChange={(e) => setTerme(e.target.value)}
           placeholder="Un mot, une personne, un lieu…"
-          style={{ ...s.champ, width: "100%", boxSizing: "border-box" }}
+          onPointerDown={(e) => e.stopPropagation()}
+          style={{ ...s.champ, width: "100%", boxSizing: "border-box", ...(dansIle ? { background: "#2c2c2e" } : {}) }}
         />
       </form>
       <div style={s.carte}>

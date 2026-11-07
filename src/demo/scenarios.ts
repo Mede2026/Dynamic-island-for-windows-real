@@ -47,6 +47,30 @@ function mediaFactice(): EtatMedia {
   };
 }
 
+/** Fausse capture d'écran 16:9 (bureau avec deux fenêtres), PNG base64. */
+function captureFactice(): string | null {
+  if (typeof document === "undefined") return null;
+  const c = document.createElement("canvas");
+  c.width = 640;
+  c.height = 360;
+  const g = c.getContext("2d");
+  if (!g) return null;
+  const fond = g.createLinearGradient(0, 0, 640, 360);
+  fond.addColorStop(0, "#1e3c72");
+  fond.addColorStop(1, "#6a3093");
+  g.fillStyle = fond;
+  g.fillRect(0, 0, 640, 360);
+  g.fillStyle = "#f2f2f7";
+  g.fillRect(60, 50, 300, 200);
+  g.fillStyle = "#2c2c2e";
+  g.fillRect(300, 120, 280, 180);
+  g.fillStyle = "#0a84ff";
+  g.fillRect(60, 50, 300, 24);
+  g.fillStyle = "rgba(0,0,0,.5)";
+  g.fillRect(0, 336, 640, 24);
+  return c.toDataURL("image/png").split(",")[1] ?? null;
+}
+
 function minuteurFactice(): EtatMinuteur {
   const duree = 15 * 60_000;
   return { statut: "enCours", dureeMs: duree, restantMs: duree - 6_000, finAMs: Date.now() + duree - 6_000 };
@@ -105,6 +129,10 @@ export const SCENARIOS = {
   bluetoothOff: "Souris Bluetooth déconnectée",
   horloge: "Horloge (survol de l'île au repos)",
   paroles: "Paroles en direct (avec la musique)",
+  outilRecherche: "Recherche dans l'île",
+  outilMinuteur: "Minuteur rapide dans l'île",
+  outilCopies: "Copiés récemment dans l'île",
+  outilNote: "Note dans l'île",
   telechargement: "Téléchargement en cours",
   finTelechargement: "Téléchargement terminé",
   etagere: "Étagère (3 fichiers)",
@@ -120,6 +148,7 @@ export const SCENARIOS = {
   menu: "Menu de l'île (clic droit)",
   chrono: "Chronomètre (avec un tour)",
   vpn: "VPN connecté",
+  nouvelleVersionDemo: "Nouvelle version de l'île",
   compteARebours: "Compte à rebours",
   enregistrement: "Enregistrement de l'écran",
   sortieAudio: "Écouteurs branchés",
@@ -179,8 +208,20 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       machine.envoyer({ type: "ALERTE", alerte: { type: "luminosite", donnees: 62 } });
       break;
     case "capture": {
-      const p = pochetteFactice();
-      machine.envoyer({ type: "ALERTE", alerte: { type: "capture", donnees: { type: "capture", apercu: "", miniature: p?.pngBase64 ?? null } } });
+      machine.envoyer({ type: "ALERTE", alerte: { type: "capture", donnees: { type: "capture", apercu: "", miniature: captureFactice() } } });
+      break;
+    }
+    case "outilRecherche":
+    case "outilMinuteur":
+    case "outilCopies":
+    case "outilNote": {
+      const outil = { outilRecherche: "recherche", outilMinuteur: "minuteur", outilCopies: "copies", outilNote: "note" }[nom];
+      if (dansTauri()) {
+        window.dispatchEvent(new CustomEvent("ile-outil", { detail: outil }));
+      } else {
+        machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "outil", type: "outil", donnees: { outil } } });
+        machine.envoyer({ type: "CLIC_LONG" });
+      }
       break;
     }
     case "appel":
@@ -207,7 +248,11 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       majDonnees({ confidentialite: { camera: false, micro: false } });
       break;
     case "paroles": {
-      if (!donnees().media) jouer(machine, "musique");
+      // Musique de test si rien ne joue vraiment (sinon les paroles n'ont nulle part où s'afficher).
+      if (donnees().media?.statut !== "lecture") jouer(machine, "musique");
+      if (!machine.etat.activites.some((a) => a.type === "musique")) {
+        machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "musique", type: "musique", donnees: donnees().media } });
+      }
       const m = donnees().media!;
       const t0 = positionActuelle(m);
       const textes = ["Sous le ciel de Boucherville", "Les baguettes frappent la caisse claire", "On descend le sous-bois à Charlevoix", "Et la musique ne s'arrête jamais"];
@@ -256,6 +301,9 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
     case "chrono":
       majDonnees({ chrono: { cumulMs: 0, debutMs: Date.now() - 83_400, tours: [41_200] } });
       machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "chrono", type: "chrono" } });
+      break;
+    case "nouvelleVersionDemo":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: { version: "v0.1.12", url: "" } } });
       break;
     case "vpn":
       machine.envoyer({ type: "ALERTE", alerte: { type: "vpn", donnees: { connecte: true, nom: "ProtonVPN" } } });

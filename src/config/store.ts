@@ -29,6 +29,8 @@ export interface Preferences {
   appsIgnorees?: string[];
   /** Paroles synchronisées sous la caméra pendant la musique (activé par défaut). */
   paroles?: boolean;
+  /** Décalage des paroles (ms) : positif = les paroles arrivent plus tôt. */
+  decalageParolesMs?: number;
   /** Remplacer l'indicateur de volume / luminosité de Windows par l'île (lu par le backend). */
   remplacerOsd?: boolean;
   /** Comptes à rebours (« Examen de sciences » le 2026-11-12) : rappel chaque jour. */

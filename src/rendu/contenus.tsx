@@ -15,15 +15,16 @@ import {
   hauteurMiniature,
   largeurAlerte,
   largeurMiniature,
+  cadreApercu,
   mesureConfig,
   specAlerte,
   tailleIcone,
 } from "./alertes";
 import type { Alerte, EtatMachine } from "../state/islandMachine";
-import { v } from "../config/store";
+import { preferencesActuelles, v } from "../config/store";
 import { Onde } from "./onde";
 import { animate, AnimatePresence, motion } from "framer-motion";
-import { geometrieCible, parolesVisibles } from "./choregraphie";
+import { geometrieCible, LIGNE_PAROLES, parolesVisibles } from "./choregraphie";
 import { indiceLigne } from "../bridge/paroles";
 import { basculerMusiqueDeTest, estMusiqueDeTest } from "../demo/scenarios";
 import {
@@ -95,7 +96,7 @@ export function definirTypographie(cfg: IslandConfig) {
   cfgTypo = cfg;
 }
 
-function texte(t: Texte, S: number, extra: CSSProperties = {}): CSSProperties {
+export function texte(t: Texte, S: number, extra: CSSProperties = {}): CSSProperties {
   return {
     position: "absolute",
     letterSpacing: cfgTypo ? suivi(cfgTypo, v(t.taillePt) * S) : undefined,
@@ -194,7 +195,7 @@ export function MusiqueCompact({ cfg, S, d, etat }: Ctx) {
 }
 
 /** Avance (ms) : la ligne apparaît un peu avant d'être chantée, comme dans les apps de musique. */
-const AVANCE_PAROLES_MS = 250;
+const AVANCE_PAROLES_MS = 400;
 
 /** Ligne de paroles en cours, sous la caméra ; chaque nouvelle ligne arrive floue puis nette. */
 function LigneParolesIle({ cfg, S, d, largeur }: { cfg: IslandConfig; S: number; d: Donnees; largeur: number }) {
@@ -204,7 +205,7 @@ function LigneParolesIle({ cfg, S, d, largeur }: { cfg: IslandConfig; S: number;
     if (!lignes) return;
     const maj = () => {
       const m = donnees().media;
-      if (m) setI(indiceLigne(lignes, positionActuelle(m) + AVANCE_PAROLES_MS));
+      if (m) setI(indiceLigne(lignes, positionActuelle(m) + AVANCE_PAROLES_MS + (preferencesActuelles().decalageParolesMs ?? 0)));
     };
     maj();
     const id = setInterval(maj, 120);
@@ -214,7 +215,7 @@ function LigneParolesIle({ cfg, S, d, largeur }: { cfg: IslandConfig; S: number;
   const marge = v(a.texteXPt) * S;
   const ligne = i >= 0 ? (lignes?.[i]?.texte ?? "") : "";
   return (
-    <div style={{ position: "absolute", left: marge, width: largeur - 2 * marge, top: haut(baselineDetail(cfg), a.texte, S), height: v(a.texte.taillePt) * S * 1.4 }}>
+    <div style={{ position: "absolute", left: marge, width: largeur - 2 * marge, top: haut(baselineDetail(cfg), a.texte, S), height: v(a.texte.taillePt) * S * LIGNE_PAROLES * 2 }}>
       <AnimatePresence initial={false}>
         <motion.div
           key={i}
@@ -224,14 +225,19 @@ function LigneParolesIle({ cfg, S, d, largeur }: { cfg: IslandConfig; S: number;
           transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
           style={texte(a.texte, S, {
             left: 0,
+            top: 0,
             width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             textAlign: "center",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            paddingBottom: 2 * S,
+            whiteSpace: "normal",
+            lineHeight: LIGNE_PAROLES,
           })}
         >
-          {ligne || "♪"}
+          {/* Deux lignes au plus ; une ligne courte reste centrée dans la place des deux. */}
+          <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}>{ligne || "♪"}</span>
         </motion.div>
       </AnimatePresence>
     </div>
@@ -1146,12 +1152,19 @@ const BOUTONS_MENU: { action: string; texte: string; icone: (t: number, c: strin
   { action: "reglages", texte: "Réglages", icone: (t, c) => <IconeReglages taille={t} couleur={c} />, couleur: "#98989f" },
 ];
 
+const OUTIL_DU_MENU: Record<string, string> = { lanceur: "minuteur", historique: "copies", note: "note", recherche: "recherche" };
+
 function lancerAction(action: string) {
   if (action === "etagere") window.dispatchEvent(new CustomEvent("ile-ouvrir-etagere"));
   else if (action === "capture") void backend.ouvrirLien("ms-screenclip:");
   else if (action === "ocr") window.dispatchEvent(new CustomEvent("ile-ocr"));
   else if (action === "chrono") window.dispatchEvent(new CustomEvent("ile-chrono", { detail: "demarrer" }));
-  else void backend.ileAction(action);
+  else if (action in OUTIL_DU_MENU) {
+    // Outil ouvert DANS l'île : le menu se referme, l'outil prend sa place.
+    fermerMenuIle();
+    window.dispatchEvent(new CustomEvent("ile-outil", { detail: OUTIL_DU_MENU[action] }));
+    return;
+  } else void backend.ileAction(action);
   if (action !== "etagere") fermerMenuIle();
 }
 
@@ -1160,9 +1173,9 @@ export function MenuEtendu({ cfg, S }: Ctx) {
   const hauteur = v(cfg.formes.etendu.taille.pt.hauteur) * S;
   const marge = 18 * S;
   const cellule = (largeur - 2 * marge) / 5;
-  const rond = 42 * S;
+  const rond = 38 * S;
   return (
-    <div style={{ position: "absolute", left: marge, top: marge * 0.9, width: largeur - 2 * marge, height: hauteur - 2 * marge, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", rowGap: 10 * S }}>
+    <div style={{ position: "absolute", left: marge, top: marge * 0.7, width: largeur - 2 * marge, height: hauteur - 1.4 * marge, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", alignContent: "start", rowGap: 7 * S }}>
       {BOUTONS_MENU.map((b) => (
         <button
           key={b.action}
@@ -1185,6 +1198,28 @@ export function MenuEtendu({ cfg, S }: Ctx) {
           {b.texte}
         </button>
       ))}
+      <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "center", gap: 8 * S, marginTop: 2 * S }}>
+        {(
+          [
+            ["maj", "Mise à jour"],
+            ["cacher", "Cacher l'île"],
+            ["quitter", "Quitter"],
+          ] as const
+        ).map(([action, texte]) => (
+          <button
+            key={action}
+            {...boutonIle(() => {
+              fermerMenuIle();
+              if (action === "maj") window.dispatchEvent(new CustomEvent("ile-maj"));
+              else if (action === "quitter") void backend.quitter();
+              else void backend.ileAction(action);
+            })}
+            style={{ padding: `${5 * S}px ${12 * S}px`, borderRadius: 99, background: "#2c2c2e", color: action === "quitter" ? "#ff453a" : "#fff", fontSize: 11.5 * S, fontWeight: 500 }}
+          >
+            {texte}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1557,6 +1592,26 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
           }}
         />
       )}
+      {spec.apercu &&
+        (() => {
+          const c = cadreApercu(spec.apercu, cfg);
+          return (
+            <img
+              src={`data:image/png;base64,${spec.apercu}`}
+              alt=""
+              decoding="async"
+              style={{
+                position: "absolute",
+                left: c.x * S,
+                top: c.y * S,
+                width: c.largeur * S,
+                height: c.hauteur * S,
+                objectFit: "cover",
+                borderRadius: v(cfg.media.compact.pochetteRayonPt) * 1.6 * S,
+              }}
+            />
+          );
+        })()}
       {spec.libelle && <div style={ligne({ left: xLibelle, maxWidth: cotes.libelleMax * S })}>{spec.libelle}</div>}
       {spec.valeur && !spec.action && (
         <div

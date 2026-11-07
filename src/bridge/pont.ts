@@ -13,11 +13,11 @@ import type { IslandMachine } from "../state/islandMachine";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { backend, dansTauri, ecouter } from "./backend";
 import { cleChanson, lireLrc } from "./paroles";
-import { donnees, majDonnees } from "./donnees";
+import { donnees, majDonnees, positionActuelle } from "./donnees";
 import { recevoirNiveau } from "../rendu/onde";
 import type { EtatMedia, EtatMinuteur } from "./types";
 import { appIgnoree, definirPreferences, definirSurcharges, preferencesActuelles, type Preferences } from "../config/store";
-import { jouer, nettoyerTests, SCENARIOS, type NomScenario } from "../demo/scenarios";
+import { estMusiqueDeTest, jouer, nettoyerTests, SCENARIOS, type NomScenario } from "../demo/scenarios";
 import { appelEntrant, ID_APPEL_ENTRANT, Traducteur } from "./traducteur";
 import { NOMS_EVENEMENTS, type InfoFenetre } from "./types";
 
@@ -104,7 +104,19 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(
     ecouter("media", (m) => {
       // App ignorée (réglages) : l'île fait comme si rien ne jouait.
+      // Test « Paroles » / « Musique » en cours (réglages → Tester) : Windows qui dit « rien ne
+      // joue » n'efface pas la musique de test.
+      if (estMusiqueDeTest() && m.statut !== "lecture") return;
       const ignoree = appIgnoree(m.sourceActive);
+      // Certaines apps renvoient une position « en retard » (pas remise à jour) avec une
+      // heure toute neuve : l'île reculerait et les paroles prendraient du retard sur la
+      // musique. Même chanson, en lecture, petit recul (< 3 s) → on garde notre horloge.
+      const avant = donnees().media;
+      if (avant && m.statut === "lecture" && avant.statut === "lecture" && avant.titre === m.titre && avant.artiste === m.artiste) {
+        const estime = positionActuelle(avant);
+        const recu = positionActuelle(m);
+        if (recu < estime && estime - recu < 3000) m = { ...m, positionMs: estime, positionMajAMs: Date.now() };
+      }
       majDonnees({ media: m });
       suivreParoles(m);
       envoyer(traducteur.media(ignoree ? { ...m, sourceActive: null } : m));
@@ -129,7 +141,18 @@ export function demarrerPont(machine: IslandMachine): () => void {
       envoyer(traducteur.volume(v));
     }),
   );
-  arrets.push(ecouter("presse-papiers", (p) => envoyer(traducteur.pressePapiers(p))));
+  // Texte d'une image (OCR) : la capture lue puis le texte recopié ne font PAS leur propre
+  // alerte « Capture » / « Texte copié » — une seule animation, celle du résultat.
+  let ocrDemandeA = 0;
+  let pressePapiersMuetJusqua = 0;
+  const ocrEnAttente = () => Date.now() - ocrDemandeA <= 90_000;
+  arrets.push(
+    ecouter("presse-papiers", (p) => {
+      // Copie faite depuis un outil de l'île (résultat de calcul…) : pas d'alerte par-dessus.
+      if (ocrEnAttente() || Date.now() < pressePapiersMuetJusqua || machine.etat.activites.some((a) => a.id === "outil")) return;
+      envoyer(traducteur.pressePapiers(p));
+    }),
+  );
   arrets.push(ecouter("niveau-audio", (n) => recevoirNiveau(n)));
   arrets.push(ecouter("luminosite", (n) => envoyer(traducteur.luminosite(n))));
   arrets.push(ecouter("verrouillage", (v) => envoyer(traducteur.verrouillage(v))));
@@ -224,6 +247,51 @@ export function demarrerPont(machine: IslandMachine): () => void {
       }),
     ),
   );
+  // Outils DANS l'île (recherche, minuteur, copiés, note) : raccourcis, menu du clic droit.
+  // L'île prend le clavier tant que l'outil est ouvert ; Échap, un clic à côté ou la vue
+  // étendue refermée le ferment, et le clavier revient à l'app d'avant.
+  const outilOuvert = () => machine.etat.activites.find((a) => a.id === "outil");
+  let outilVuOuvert = false;
+  let outilClavier = false;
+  const fermerOutilIle = () => {
+    if (outilOuvert()) machine.envoyer({ type: "ACTIVITE_FIN", id: "outil" });
+  };
+  const ouvrirOutil = (nom: string) => {
+    const ouvert = outilOuvert();
+    if (ouvert && (ouvert.donnees as { outil?: string } | undefined)?.outil === nom) return fermerOutilIle();
+    if (menuOuvert()) machine.envoyer({ type: "ACTIVITE_FIN", id: "menu" });
+    outilVuOuvert = false;
+    machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "outil", type: "outil", donnees: { outil: nom } } });
+    machine.envoyer({ type: "CLIC_LONG" });
+  };
+  const surOutil = (e: Event) => ouvrirOutil(String((e as CustomEvent<string>).detail));
+  window.addEventListener("ile-outil", surOutil);
+  window.addEventListener("ile-outil-fermer", fermerOutilIle);
+  arrets.push(
+    Promise.resolve(() => {
+      window.removeEventListener("ile-outil", surOutil);
+      window.removeEventListener("ile-outil-fermer", fermerOutilIle);
+    }),
+  );
+  arrets.push(ecouter("ouvrir-outil", (nom) => ouvrirOutil(nom)));
+  arrets.push(
+    Promise.resolve(
+      machine.abonner((e) => {
+        const outil = e.activites.some((a) => a.id === "outil");
+        // Une alerte passe par-dessus sans fermer l'outil (il revient après).
+        const visible = outil && (e.mode === "etendu" || (e.mode === "alerte" && outilVuOuvert));
+        if (outil && e.mode === "etendu") outilVuOuvert = true;
+        else if (outil && outilVuOuvert && e.mode !== "alerte") {
+          outilVuOuvert = false;
+          queueMicrotask(() => machine.envoyer({ type: "ACTIVITE_FIN", id: "outil" }));
+        } else if (!outil) outilVuOuvert = false;
+        if (visible !== outilClavier) {
+          outilClavier = visible;
+          if (dansTauri()) void backend.ileClavier(visible).catch(() => undefined);
+        }
+      }),
+    ),
+  );
   // Quelque chose est traîné près de l'île (bouton gauche enfoncé) : l'étagère s'ouvre en
   // grand pour recevoir des fichiers ; elle se referme si on ne lâche rien.
   arrets.push(ecouter("glisser-proche", () => ouvrirEtagere(4000)));
@@ -303,6 +371,15 @@ export function demarrerPont(machine: IslandMachine): () => void {
   );
   arrets.push(ecouter("sortie-audio", (s) => envoyer([{ type: "ALERTE", alerte: { type: "sortieAudio", donnees: s } }])));
   arrets.push(ecouter("micro-muet", (m) => envoyer([{ type: "ALERTE", alerte: { type: "micro", donnees: m } }])));
+  // Menu de l'île → « Mise à jour » : vérifier maintenant.
+  const verifierMaj = () => {
+    void backend
+      .verifierMaj()
+      .then((n) => envoyer([{ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: n ?? { version: "", url: "" }, dureeFacteur: n ? 3 : 1 } }]))
+      .catch(() => envoyer([{ type: "ALERTE", alerte: { type: "internet", donnees: { connecte: false, nom: null } } }]));
+  };
+  window.addEventListener("ile-maj", verifierMaj);
+  arrets.push(Promise.resolve(() => window.removeEventListener("ile-maj", verifierMaj)));
   arrets.push(ecouter("nouvelle-version", (n) => envoyer([{ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: n, dureeFacteur: 3 } }])));
   arrets.push(ecouter("vpn", (n) => envoyer([{ type: "ALERTE", alerte: { type: "vpn", donnees: n } }])));
 
@@ -330,7 +407,6 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(Promise.resolve(() => window.removeEventListener("ile-chrono", actionChrono)));
 
   // Texte d'une image : la capture (Win+Maj+S) qui suit est lue par l'OCR de Windows.
-  let ocrDemandeA = 0;
   const lancerOcr = () => {
     ocrDemandeA = Date.now();
     void backend.ouvrirLien("ms-screenclip:");
@@ -339,10 +415,12 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(Promise.resolve(() => window.removeEventListener("ile-ocr", lancerOcr)));
   arrets.push(
     ecouter("presse-papiers", (p) => {
-      if (Date.now() - ocrDemandeA > 90_000 || (p.type !== "capture" && p.type !== "image")) return;
+      if (!ocrEnAttente() || (p.type !== "capture" && p.type !== "image")) return;
       ocrDemandeA = 0;
+      pressePapiersMuetJusqua = Date.now() + 4000; // le texte trouvé est recopié : pas d'alerte en plus
       void backend
         .ocrPressePapiers()
+        .finally(() => (pressePapiersMuetJusqua = Date.now() + 1500))
         .then((t) => envoyer([{ type: "ALERTE", alerte: { type: "texteImage", donnees: { ok: true, nombre: t.split(/\s+/).filter(Boolean).length } } }]))
         .catch(() => envoyer([{ type: "ALERTE", alerte: { type: "texteImage", donnees: { ok: false } } }]));
     }),

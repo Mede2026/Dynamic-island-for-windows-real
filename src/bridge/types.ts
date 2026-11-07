@@ -162,6 +162,8 @@ export interface EvenementsBackend {
   "redemarrage-requis": boolean;
   /** Menu de l'icône ou Ctrl+Alt+E : ouvrir l'étagère. */
   "ouvrir-etagere": null;
+  /** Ouvrir un outil DANS l'île : « recherche », « minuteur », « copies », « note ». */
+  "ouvrir-outil": string;
   /** Bouton gauche enfoncé et curseur amené près de l'île (glisser-déposer probable). */
   "glisser-proche": null;
   /** Nouvelle version de l'île disponible sur GitHub. */

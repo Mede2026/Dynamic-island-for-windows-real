@@ -102,6 +102,51 @@ pub fn appliquer_styles(fen: &WebviewWindow) {
     );
 }
 
+/// Vrai pendant que l'île accepte le clavier (recherche dans l'île).
+static CLAVIER: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Fenêtre qui avait la main avant que l'île prenne le clavier (pour la lui rendre).
+static AVANT: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
+
+/// L'île accepte (ou non) le clavier : on retire WS_EX_NOACTIVATE et on la met au premier plan
+/// le temps de taper, puis tout est remis (elle ne vole plus le focus).
+pub fn clavier(fen: &WebviewWindow, actif: bool) {
+    use std::sync::atomic::Ordering;
+    use windows::Win32::UI::Input::KeyboardAndMouse::SetFocus;
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, SetForegroundWindow};
+    let Ok(hwnd) = fen.hwnd() else { return };
+    let avant = CLAVIER.swap(actif, Ordering::SeqCst);
+    if actif == avant && !actif {
+        return; // déjà rendu
+    }
+    unsafe {
+        let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        let nouveau = if actif {
+            ex & !(WS_EX_NOACTIVATE.0 as isize)
+        } else {
+            ex | WS_EX_NOACTIVATE.0 as isize
+        };
+        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, nouveau);
+        let devant = GetForegroundWindow();
+        if actif {
+            if devant != hwnd && !devant.0.is_null() {
+                AVANT.store(devant.0 as isize, Ordering::SeqCst);
+            }
+            let _ = SetForegroundWindow(hwnd);
+            let _ = SetFocus(Some(hwnd));
+        } else if devant == hwnd || devant.0.is_null() {
+            // Rendre la main à l'app d'avant (seulement si l'île l'a encore).
+            let precedente = AVANT.swap(0, Ordering::SeqCst);
+            if precedente != 0 {
+                let _ = SetForegroundWindow(HWND(precedente as *mut core::ffi::c_void));
+            }
+        }
+    }
+    if actif {
+        let _ = fen.set_focus();
+    }
+}
+
 /// Pour envoyer les événements de session (verrouillage) depuis la sous-classe.
 static APP: std::sync::OnceLock<AppHandle> = std::sync::OnceLock::new();
 
@@ -124,7 +169,7 @@ unsafe extern "system" fn sous_classe(
     _id: usize,
     _donnees: usize,
 ) -> LRESULT {
-    if msg == WM_MOUSEACTIVATE {
+    if msg == WM_MOUSEACTIVATE && !CLAVIER.load(std::sync::atomic::Ordering::SeqCst) {
         return LRESULT(MA_NOACTIVATE as isize);
     }
     const WM_WTSSESSION_CHANGE: u32 = 0x02B1;

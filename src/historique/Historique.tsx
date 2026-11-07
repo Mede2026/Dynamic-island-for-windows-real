@@ -44,7 +44,16 @@ const s = {
   gris: { color: "#98989f" } satisfies CSSProperties,
 };
 
-export function Historique() {
+const fermerFenetre = () => {
+  if (dansTauri()) void getCurrentWindow().close();
+};
+
+/** `dansIle` : affiché dans l'île (fond transparent, sans titre) au lieu d'une fenêtre. */
+export function Historique({ fermer = fermerFenetre, dansIle = false }: { fermer?: () => void; dansIle?: boolean } = {}) {
+  const coller = (i: number) => {
+    fermer();
+    void backend.historiqueColler(i);
+  };
   const [textes, setTextes] = useState<string[]>([]);
   const [choix, setChoix] = useState(0);
 
@@ -54,19 +63,19 @@ export function Historique() {
 
   useEffect(() => {
     const touche = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && dansTauri()) void getCurrentWindow().close();
+      if (e.key === "Escape") fermer();
       if (e.key === "ArrowDown") setChoix((c) => Math.min(c + 1, textes.length - 1));
       if (e.key === "ArrowUp") setChoix((c) => Math.max(c - 1, 0));
-      if (e.key === "Enter" && textes.length > 0) void backend.historiqueColler(choix);
+      if (e.key === "Enter" && textes.length > 0) coller(choix);
     };
     window.addEventListener("keydown", touche);
     return () => window.removeEventListener("keydown", touche);
   }, [textes, choix]);
 
   return (
-    <div style={s.page}>
-      <div style={s.entete}>
-        <span style={{ flex: 1 }}>Copiés récemment</span>
+    <div style={dansIle ? { ...s.page, height: "100%", padding: 0, background: "transparent" } : s.page}>
+      <div style={{ ...s.entete, ...(dansIle ? { position: "absolute", right: 0, top: -30 } : {}) }}>
+        {!dansIle && <span style={{ flex: 1 }}>Copiés récemment</span>}
         {textes.length > 0 && (
           <button
             onClick={() => {
@@ -84,7 +93,7 @@ export function Historique() {
         {textes.map((t, i) => (
           <button
             key={i}
-            onClick={() => void backend.historiqueColler(i)}
+            onClick={() => coller(i)}
             onMouseEnter={() => setChoix(i)}
             style={{ ...s.element, outline: i === choix ? "2px solid #0a84ff" : "none" }}
           >
@@ -92,7 +101,7 @@ export function Historique() {
           </button>
         ))}
       </div>
-      <div style={{ ...s.gris, fontSize: 12 }}>Entrée ou clic : coller · ↑ ↓ : choisir · Échap : fermer</div>
+      {!dansIle && <div style={{ ...s.gris, fontSize: 12 }}>Entrée ou clic : coller · ↑ ↓ : choisir · Échap : fermer</div>}
     </div>
   );
 }

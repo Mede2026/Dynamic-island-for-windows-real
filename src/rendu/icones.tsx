@@ -418,7 +418,8 @@ export function IconeMiseAJour({ taille, couleur, style }: P) {
 export function IconeCadenas({ taille, couleur, style, ouvert = 0 }: P & { ouvert?: number }) {
   return (
     <svg width={taille} height={taille} viewBox="0 0 24 24" style={{ overflow: "visible", ...style }} aria-hidden="true">
-      <g transform={`translate(${3 * ouvert} ${-3.2 * ouvert}) rotate(${-28 * ouvert} 16 10.5)`}>
+      {/* Comme sur iPhone : l'anse se soulève et s'ouvre vers la DROITE (la patte gauche reste en place). */}
+      <g transform={`translate(${4.2 * ouvert} ${-2.6 * ouvert}) rotate(${-14 * ouvert} 8 10.5)`}>
         <path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9" fill="none" stroke={couleur} strokeWidth="2.3" strokeLinecap="round" />
       </g>
       <rect x="5" y="10.2" width="14" height="10.6" rx="2.6" fill={couleur} />

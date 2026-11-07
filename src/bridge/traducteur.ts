@@ -184,7 +184,7 @@ export class Traducteur {
 
   pressePapiers(p: PressePapiers): Evenement[] {
     // Win+Maj+S : alerte « Capture d'écran » avec sa miniature.
-    if (p.type === "capture") return [{ type: "ALERTE", alerte: { type: "capture", donnees: p } }];
+    if (p.type === "capture") return [{ type: "ALERTE", alerte: { type: "capture", donnees: p, dureeFacteur: 1.6 } }];
     return [{ type: "ALERTE", alerte: { type: "pressePapiers", donnees: p } }];
   }
 

@@ -20,6 +20,12 @@ pub fn bouton_gauche_enfonce() -> Option<bool> {
 
 pub fn remettre_devant(_fen: &WebviewWindow) {}
 
+pub fn clavier(fen: &WebviewWindow, actif: bool) {
+    if actif {
+        let _ = fen.set_focus();
+    }
+}
+
 pub fn suivre_session(_fen: &WebviewWindow, _app: &tauri::AppHandle) {}
 
 pub fn plein_ecran_actif(_fen: &WebviewWindow) -> bool {

@@ -9,14 +9,19 @@ import { dansTauri } from "../bridge/backend";
 
 const CLE = "ile-note";
 
-export function Note() {
+const fermerFenetre = () => {
+  if (dansTauri()) void getCurrentWindow().close();
+};
+
+/** `dansIle` : affichée dans l'île (fond transparent, sans titre) au lieu d'une fenêtre. */
+export function Note({ fermer = fermerFenetre, dansIle = false }: { fermer?: () => void; dansIle?: boolean } = {}) {
   const [texte, setTexte] = useState(() => localStorage.getItem(CLE) ?? "");
   useEffect(() => {
     localStorage.setItem(CLE, texte);
   }, [texte]);
   useEffect(() => {
     const echap = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && dansTauri()) void getCurrentWindow().close();
+      if (e.key === "Escape") fermer();
     };
     window.addEventListener("keydown", echap);
     return () => window.removeEventListener("keydown", echap);
@@ -24,10 +29,10 @@ export function Note() {
   return (
     <div
       style={{
-        height: "100vh",
+        height: dansIle ? "100%" : "100vh",
         boxSizing: "border-box",
-        padding: 14,
-        background: "#1c1c1e",
+        padding: dansIle ? 0 : 14,
+        background: dansIle ? "transparent" : "#1c1c1e",
         color: "#fff",
         fontFamily: "'Inter Variable', 'Segoe UI', sans-serif",
         display: "flex",
@@ -36,14 +41,15 @@ export function Note() {
         colorScheme: "dark",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", fontWeight: 650, fontSize: 16 }}>
-        <span style={{ flex: 1, color: "#ffd60a" }}>Note</span>
+      <div style={{ display: "flex", alignItems: "center", fontWeight: 650, fontSize: 16, ...(dansIle ? { position: "absolute", right: 0, top: -28 } : {}) }}>
+        {!dansIle && <span style={{ flex: 1, color: "#ffd60a" }}>Note</span>}
         <span style={{ color: "#98989f", fontSize: 12, fontWeight: 400 }}>{texte.length} caractères · enregistrée</span>
       </div>
       <textarea
         autoFocus
         value={texte}
         onChange={(e) => setTexte(e.target.value)}
+        onPointerDown={(e) => e.stopPropagation()}
         placeholder="Écris ici… (enregistré automatiquement)"
         style={{
           flex: 1,

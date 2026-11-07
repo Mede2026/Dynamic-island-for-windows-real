@@ -99,6 +99,7 @@ pub fn run() {
             etagere::etagere_coller,
             plateau::ile_menu,
             plateau::ile_action,
+            fenetre::fenetre_clavier,
             mise_a_jour_app::app_verifier_maj,
             mise_a_jour_app::app_installer_maj,
             systeme::appel_entrant::appel_entrant_repondre,

@@ -48,10 +48,12 @@ The island sits at the top-center of your screen, like on an iPhone, and reacts 
 - 📶 Internet lost / back, Wi-Fi weak, 🌙 Do Not Disturb, 🖥️ Windows Update restart, 🔓 **unlock padlock**.
 - 🟢🟠 **Camera / microphone dot** — same rule as iOS.
 
-### 🧰 Tools (right-click the island)
+### 🧰 Tools (right-click the island) — they open **inside the island**, no windows
 - 📂 **Shelf**: drag files onto the island to keep them at hand; open, copy, paste in Explorer.
-- 📋 **Recently copied** (Ctrl + Alt + V): the last 10 texts, kept in memory only.
-- 🔍 **Quick search** (Ctrl + Alt + Space): Wikipedia summary, or a calculator (« 15 % of 80 »).
+- 📋 **Recently copied** (Ctrl + Alt + V): the last 10 texts, kept in memory only — click to paste.
+- 🔍 **Quick search** (Ctrl + Alt + Space): Wikipedia / Wiktionary, a calculator (« 15 % of 80 ») and a converter (« 20 usd in cad »).
+- ⏱️ **Quick timer** (Ctrl + Alt + M) and 📝 **Note** (Ctrl + Alt + N).
+- 📸 **Screenshots** show up large in the island, shaped like your capture.
 - 🕒 **Clock** when the mouse passes over the idle island; 👁️ break reminders (20-20-20).
 
 ### 🪟 Built into Windows
@@ -202,7 +204,7 @@ ont été **mesurés** image par image sur des vidéos d'un vrai iPhone 16 Pro (
 - **Musique** : pochette, onde qui suit le vrai son, **paroles en direct**, **reconnaissance de chanson** (Ctrl + Alt + S).
 - **Activités** : minuteurs (aussi depuis l'Horloge), **appels** (couper le micro, appel entrant), **téléphone relié**, téléchargements, impression, enregistrement d'écran, mode **split** avec la bulle.
 - **Alertes** : chargeur, batterie, économie d'énergie, volume et luminosité (à la place des fenêtres de Windows), presse-papiers, capture, notifications (bouton **Copier le code**), Bluetooth, sortie audio, micro, clé USB, écran externe, bureau virtuel, Verr. Maj, Internet, Wi-Fi faible, mise à jour Windows, **cadenas au déverrouillage**.
-- **Outils** (clic droit sur l'île) : étagère à fichiers, textes copiés récemment, recherche rapide et calculatrice, horloge au survol, rappels de pause.
+- **Outils** (clic droit sur l'île), ouverts **dans l'île** : étagère à fichiers, textes copiés récemment, recherche rapide et calculatrice, minuteur rapide, note, horloge au survol, rappels de pause.
 - **Réglages** : Ctrl + Alt + D (onglets). L'île se **met à jour toute seule**.
 - **Installer** : page [**Releases**](https://github.com/Mede2026/Dynamic-island-for-windows-real/releases/latest) → fichier `…-setup.exe`.
 

@@ -36,15 +36,13 @@ pub fn historique_copier(indice: usize) -> Result<(), String> {
     super::ecrire::copier_texte(texte)
 }
 
-/// Recopie le texte, ferme la fenêtre de l'historique et le colle (Ctrl+V) dans l'app
+/// Recopie le texte, rend la main à l'app d'avant et le colle (Ctrl+V) dans l'app
 /// qui avait la main, comme Windows + V.
 #[tauri::command]
 pub async fn historique_coller(app: tauri::AppHandle, indice: usize) -> Result<(), String> {
-    use tauri::Manager;
     historique_copier(indice)?;
-    if let Some(f) = app.get_webview_window(crate::plateau::LABEL_HISTORIQUE) {
-        let _ = f.close();
-    }
+    // L'île rend la main (et le clavier) à l'app d'avant, puis Ctrl+V y colle le texte.
+    crate::fenetre::clavier(&app, false);
     #[cfg(windows)]
     std::thread::spawn(|| {
         use windows::Win32::UI::Input::KeyboardAndMouse::{

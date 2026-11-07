@@ -95,6 +95,8 @@ export const backend = {
   ocrPressePapiers: () => invoke<string>("ocr_presse_papiers"),
   tauxDeChange: (de: string, vers: string) => invoke<number>("taux_de_change", { de, vers }),
   ileAction: (action: string) => invoke<void>("ile_action", { action }),
+  /** L'île prend le clavier (outil ouvert dedans) ou le rend à l'app d'avant. */
+  ileClavier: (actif: boolean) => invoke<void>("fenetre_clavier", { actif }),
   appelEntrantRepondre: (application: string, accepter: boolean) => invoke<void>("appel_entrant_repondre", { application, accepter }),
   historiqueLire: () => invoke<string[]>("historique_lire"),
   historiqueCopier: (indice: number) => invoke<void>("historique_copier", { indice }),
