@@ -1169,13 +1169,13 @@ function lancerAction(action: string) {
 }
 
 export function MenuEtendu({ cfg, S }: Ctx) {
-  const largeur = v(cfg.formes.etendu.taille.pt.largeur) * S;
-  const hauteur = v(cfg.formes.etendu.taille.pt.hauteur) * S;
+  const largeur = v(cfg.formesContenu.menu.taille.pt.largeur) * S;
+  const hauteur = v(cfg.formesContenu.menu.taille.pt.hauteur) * S;
   const marge = 18 * S;
   const cellule = (largeur - 2 * marge) / 5;
   const rond = 38 * S;
   return (
-    <div style={{ position: "absolute", left: marge, top: marge * 0.7, width: largeur - 2 * marge, height: hauteur - 1.4 * marge, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", alignContent: "start", rowGap: 7 * S }}>
+    <div style={{ position: "absolute", left: marge, top: marge * 1.05, width: largeur - 2 * marge, height: hauteur - 1.6 * marge, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", alignContent: "start", rowGap: 7 * S }}>
       {BOUTONS_MENU.map((b) => (
         <button
           key={b.action}

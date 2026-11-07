@@ -124,6 +124,8 @@ export interface IslandConfig {
     etenduMinuteur: FormeEtat;
     /** Outils ouverts dans l'île (recherche, minuteur, copiés, note) : plus haute que l'étendu. */
     outil: FormeEtat;
+    /** Menu du clic droit : juste assez haut pour ses 2 rangées et ses 3 pastilles. */
+    menu: FormeEtat;
   };
 
   ressorts: Record<NomTransition, RessortForme>;
@@ -352,6 +354,7 @@ export const islandConfig: IslandConfig = {
   formesContenu: {
     compactDeuxCotes: forme(197.5, 36.81, 23.96, 2.722), // capture « 14m » fournie (largeur), hauteur/coins = compact
     etenduMinuteur: forme(374.21, 88.33, 62.96, 3.084), //   V4729 img 1099–1200
+    menu: forme(374.24, 188, 58, 3.119), //                    pas d'équivalent iPhone : largeur et coins de l'étendu
     outil: forme(374.24, 286, 58, 3.119), //                  pas d'équivalent iPhone : largeur et coins de l'étendu
   },
 
