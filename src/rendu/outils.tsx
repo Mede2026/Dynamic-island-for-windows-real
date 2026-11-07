@@ -32,15 +32,15 @@ export type NomOutil = "recherche" | "minuteur" | "copies" | "note" | "ventilate
 const OUTILS: Record<NomOutil, { titre: string; couleur: string; hauteur: number }> = {
   recherche: { titre: "Recherche", couleur: "#ffd60a", hauteur: 0 },
   minuteur: { titre: "Minuteur", couleur: "#ff8c2b", hauteur: 176 },
-  copies: { titre: "Copiés récemment", couleur: "#bf5af2", hauteur: 268 },
-  note: { titre: "Note", couleur: "#ffd60a", hauteur: 250 },
-  ventilateurs: { titre: "Ventilateurs", couleur: "#64d2ff", hauteur: 224 },
+  copies: { titre: "Copiés récemment", couleur: "#bf5af2", hauteur: 320 },
+  note: { titre: "Note", couleur: "#ffd60a", hauteur: 320 },
+  ventilateurs: { titre: "Ventilateurs", couleur: "#64d2ff", hauteur: 236 },
 };
 
 /** Mesures (pt) relevées sur les vidéos de la recherche du Mac (rapportées à 374 pt de large). */
-export const PILULE = { hauteurPt: 58, hauteurDeuxLignesPt: 68, ecartCartePt: 8, rayonCartePt: 22 };
-export const CARTE_MIN_PT = 110;
-export const CARTE_MAX_PT = 470;
+export const PILULE = { hauteurPt: 60, hauteurDeuxLignesPt: 78, ecartCartePt: 9, rayonCartePt: 26 };
+export const CARTE_MIN_PT = 120;
+export const CARTE_MAX_PT = 580;
 
 export function estOutil(x: unknown): x is NomOutil {
   return typeof x === "string" && x in OUTILS;
@@ -121,9 +121,9 @@ function PiluleTitre({ nom }: { nom: NomOutil }) {
     ventilateurs: <IconeVentilo taille={18} couleur={couleur} />,
   };
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 10, padding: "0 20px 0 22px" }}>
+    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 10, padding: "0 24px 0 26px" }}>
       {icone[nom]}
-      <span style={{ fontSize: 15, fontWeight: 500, flex: 1 }}>{titre}</span>
+      <span style={{ fontSize: 18, fontWeight: 500, flex: 1 }}>{titre}</span>
       {nom === "ventilateurs" ? <TemperaturePilule /> : <span style={{ fontSize: 12, color: "rgba(255,255,255,.45)" }}>Échap</span>}
     </div>
   );
@@ -197,7 +197,7 @@ export function CarteOutil({ cfg, S, etat, gauche, haut }: { cfg: IslandConfig; 
       }}
     >
       <div style={{ position: "absolute", left: 0, top: 0, width: largeur, height: hauteur, zoom: S, color: "#fff" }}>
-        <div style={{ position: "absolute", inset: nom === "recherche" ? 0 : "14px 16px 18px", ...(nom === "recherche" ? {} : { display: "flex", flexDirection: "column" }) }}>
+        <div style={{ position: "absolute", inset: nom === "recherche" ? 0 : "16px 20px 24px", ...(nom === "recherche" ? {} : { display: "flex", flexDirection: "column" }) }}>
           {contenu}
         </div>
         {/* Poignée : on la tire pour agrandir (taille libre) ; double-clic = taille de départ. */}
@@ -229,9 +229,9 @@ export function CarteOutil({ cfg, S, etat, gauche, haut }: { cfg: IslandConfig; 
             localStorage.removeItem(cleHauteur(nom));
             setTiree(null);
           }}
-          style={{ position: "absolute", left: "50%", bottom: 0, width: 64, height: 14, marginLeft: -32, cursor: "ns-resize", display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{ position: "absolute", left: "50%", bottom: 0, width: 120, height: 22, marginLeft: -60, cursor: "ns-resize", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          <div style={{ width: glissement ? 44 : 36, height: 5, borderRadius: 3, background: glissement ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.42)", transition: "all .15s" }} />
+          <div style={{ width: glissement ? 56 : 44, height: 5, borderRadius: 3, background: glissement ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.42)", transition: "all .15s" }} />
         </div>
       </div>
     </motion.div>

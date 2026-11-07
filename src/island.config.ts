@@ -355,7 +355,7 @@ export const islandConfig: IslandConfig = {
     compactDeuxCotes: forme(197.5, 36.81, 23.96, 2.722), // capture « 14m » fournie (largeur), hauteur/coins = compact
     etenduMinuteur: forme(374.21, 88.33, 62.96, 3.084), //   V4729 img 1099–1200
     menu: forme(374.24, 188, 58, 3.119), //                    pas d'équivalent iPhone : largeur et coins de l'étendu
-    outil: forme(374.24, 58, 29, 2.0), //                     pilule de la recherche du Mac (vidéos fournies) : 58 pt de haut, bouts ronds //                  pas d'équivalent iPhone : largeur et coins de l'étendu
+    outil: forme(600, 60, 30, 2.0), //                     pilule de la recherche du Mac (vidéos fournies) : 58 pt de haut, bouts ronds //                  pas d'équivalent iPhone : largeur et coins de l'étendu
   },
 
   ressorts: {

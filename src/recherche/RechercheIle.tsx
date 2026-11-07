@@ -89,13 +89,13 @@ export function carteRechercheVisible(e: Etat = etat): boolean {
 
 /** Hauteur naturelle de la carte (pt), avant que l'utilisateur la tire à la main. */
 export function hauteurAutoRecherche(e: Etat = etat): number {
-  if (e.vue === "chat") return 330;
-  if (e.vue === "wiki") return 300;
+  if (e.vue === "chat") return 400;
+  if (e.vue === "wiki") return 360;
   return Math.min(Math.max(e.lignes.length, 1), 6) * LIGNE_PT + 2 * MARGE_PT + 8;
 }
 
-export const LIGNE_PT = 44;
-const MARGE_PT = 9;
+export const LIGNE_PT = 52;
+const MARGE_PT = 10;
 
 // ---------------------------------------------------------------------------
 // Recherche
@@ -316,7 +316,7 @@ export function PiluleRecherche({ hauteur }: { hauteur: number }) {
   const deux = piluleDeuxLignes(s);
   const chat = s.vue === "chat";
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", padding: "0 20px 0 22px", gap: 12 }}>
+    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", padding: "0 24px 0 26px", gap: 14 }}>
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", height: hauteur }}>
         <input
           ref={champ}
@@ -328,11 +328,11 @@ export function PiluleRecherche({ hauteur }: { hauteur: number }) {
           onPointerDown={(e) => e.stopPropagation()}
           readOnly={chat}
           spellCheck={false}
-          style={{ background: "none", border: 0, outline: "none", color: "#fff", fontSize: 15, fontWeight: 400, letterSpacing: -0.1, padding: 0, width: "100%" }}
+          style={{ background: "none", border: 0, outline: "none", color: "#fff", fontSize: 18, fontWeight: 400, letterSpacing: -0.15, padding: 0, width: "100%" }}
         />
-        {deux && <div style={{ color: "rgba(255,255,255,.62)", fontSize: 15, marginTop: 3, whiteSpace: "nowrap" }}>— Demander à Claude</div>}
+        {deux && <div style={{ color: "rgba(255,255,255,.62)", fontSize: 17, marginTop: 4, whiteSpace: "nowrap" }}>— Demander à Claude</div>}
       </div>
-      <IconeEtincelle taille={18} couleur={deux || chat ? "#fff" : "rgba(255,255,255,.55)"} />
+      <IconeEtincelle taille={22} couleur={deux || chat ? "#fff" : "rgba(255,255,255,.55)"} />
     </div>
   );
 }
@@ -358,9 +358,9 @@ export function CarteRecherche() {
             height: LIGNE_PT,
             display: "flex",
             alignItems: "center",
-            gap: 11,
-            padding: "0 10px",
-            borderRadius: 11,
+            gap: 13,
+            padding: "0 12px",
+            borderRadius: 12,
             background: i === s.choix ? "rgba(255,255,255,.13)" : "transparent",
             boxShadow: i === s.choix ? "inset 0 0.5px 0 rgba(255,255,255,.12)" : "none",
             cursor: "default",
@@ -368,13 +368,13 @@ export function CarteRecherche() {
         >
           <IconeLigne icone={l.icone} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.titre}</div>
-            {l.sous && <div style={{ fontSize: 11, color: GRIS, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>{l.sous}</div>}
+            <div style={{ fontSize: 15, fontWeight: 500, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.titre}</div>
+            {l.sous && <div style={{ fontSize: 12.5, color: GRIS, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>{l.sous}</div>}
           </div>
           {i === s.choix && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-              <span style={{ fontSize: 11, color: GRIS }}>{l.indice}</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,.75)", background: "rgba(255,255,255,.16)", borderRadius: 4, padding: "1px 5px" }}>↵</span>
+              <span style={{ fontSize: 12.5, color: GRIS }}>{l.indice}</span>
+              <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.75)", background: "rgba(255,255,255,.16)", borderRadius: 4, padding: "1px 5px" }}>↵</span>
             </div>
           )}
         </div>
@@ -384,7 +384,7 @@ export function CarteRecherche() {
 }
 
 function IconeLigne({ icone }: { icone: Icone }) {
-  const T = 26;
+  const T = 32;
   const [png, setPng] = useState<string | null>(null);
   const cle = icone.genre === "image" ? icone.cle : "";
   useEffect(() => {
@@ -400,7 +400,7 @@ function IconeLigne({ icone }: { icone: Icone }) {
   }, [cle]);
   if (icone.genre === "glyphe") {
     return (
-      <div style={{ width: T, height: T, borderRadius: 7, background: icone.fond, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.35)" }}>
+      <div style={{ width: T, height: T, borderRadius: 8, background: icone.fond, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.35)" }}>
         {icone.dessin(T * 0.58)}
       </div>
     );
@@ -417,14 +417,14 @@ function VueWiki() {
   const s = useRecherche();
   const w = s.wiki;
   return (
-    <div className="defile-ile" style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px 18px", fontSize: 13, lineHeight: 1.45, color: "#fff" }}>
+    <div className="defile-ile" style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "18px 22px", fontSize: 15, lineHeight: 1.47, color: "#fff" }}>
       {s.wikiEtat === "recherche" && <p style={{ color: GRIS, margin: 0 }}>Recherche…</p>}
       {s.wikiEtat === "rien" && <p style={{ color: GRIS, margin: 0 }}>Rien trouvé sur Wikipédia.</p>}
       {s.wikiEtat === "erreur" && <p style={{ color: GRIS, margin: 0 }}>Pas de connexion à Wikipédia.</p>}
       {w && (
         <>
           {w.image && <img src={w.image} alt="" style={{ float: "right", width: 76, height: 76, objectFit: "cover", borderRadius: 12, marginLeft: 12 }} />}
-          <div style={{ fontSize: 17, fontWeight: 650, marginBottom: 2 }}>{w.titre}</div>
+          <div style={{ fontSize: 20, fontWeight: 650, marginBottom: 2 }}>{w.titre}</div>
           {w.description && <div style={{ color: GRIS, marginBottom: 8 }}>{w.description}</div>}
           <p style={{ margin: "0 0 10px", whiteSpace: "pre-line" }}>{w.resume}</p>
           {w.lien && (
@@ -454,7 +454,7 @@ function VueChat() {
     <div
       title={titre}
       onClick={agir}
-      style={{ width: 26, height: 26, borderRadius: 13, background: "rgba(255,255,255,.13)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, cursor: "default", flexShrink: 0 }}
+      style={{ width: 30, height: 30, borderRadius: 15, background: "rgba(255,255,255,.13)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, cursor: "default", flexShrink: 0 }}
     >
       {contenu}
     </div>
@@ -468,11 +468,11 @@ function VueChat() {
       <div ref={fil} className="defile-ile" style={{ flex: 1, overflowY: "auto", padding: "6px 18px 10px", display: "flex", flexDirection: "column", gap: 12 }}>
         {s.chat.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} style={{ alignSelf: "flex-end", maxWidth: "78%", background: "rgba(255,255,255,.16)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.18)", borderRadius: 14, padding: "6px 11px", fontSize: 12, color: "#fff" }}>
+            <div key={i} style={{ alignSelf: "flex-end", maxWidth: "78%", background: "rgba(255,255,255,.16)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.18)", borderRadius: 16, padding: "7px 13px", fontSize: 14, color: "#fff" }}>
               {m.content}
             </div>
           ) : (
-            <div key={i} style={{ fontSize: 13, lineHeight: 1.47, color: "#fff", whiteSpace: "pre-wrap", userSelect: "text" }}>
+            <div key={i} style={{ fontSize: 15, lineHeight: 1.5, color: "#fff", whiteSpace: "pre-wrap", userSelect: "text" }}>
               {m.content.replace(/\*\*(.+?)\*\*/g, "$1")}
             </div>
           ),
@@ -501,7 +501,7 @@ function VueChat() {
           }}
           onPointerDown={(e) => e.stopPropagation()}
           placeholder="Demander à Claude"
-          style={{ flex: 1, minWidth: 0, background: "rgba(255,255,255,.12)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.14)", border: 0, outline: "none", borderRadius: 15, padding: "7px 12px", color: "#fff", fontSize: 12 }}
+          style={{ flex: 1, minWidth: 0, background: "rgba(255,255,255,.12)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.14)", border: 0, outline: "none", borderRadius: 17, padding: "9px 14px", color: "#fff", fontSize: 14 }}
         />
         {rond(<IconeEtincelle taille={13} couleur="#fff" />, () => {
           void demanderClaude(suite);
