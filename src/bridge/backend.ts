@@ -80,6 +80,8 @@ export const backend = {
   /** Couper / rétablir le micro (appel en cours). `null` = lire l'état. */
   microMuet: (muet: boolean | null) => invoke<boolean>("micro_muet", { muet }),
   /** L'île demande le niveau sonore réel (onde de la musique). */
+  rechercheRapide: (terme: string) => invoke<unknown>("recherche_rapide", { terme }),
+  ouvrirLien: (lien: string) => invoke<void>("ouvrir_lien", { lien }),
   parolesChercher: (artiste: string, titre: string, album: string, dureeS: number | null) =>
     invoke<{ synchronisees: string | null; instrumental: boolean } | null>("paroles_chercher", { artiste, titre, album, dureeS }),
   niveauAudio: (actif: boolean) => invoke<void>("audio_niveau_actif", { actif }),

@@ -3,6 +3,7 @@
  *  - (défaut)   : l'île (fenêtre transparente « ile ») ;
  *  - ?panneau   : le panneau de réglages (fenêtre « reglages », Ctrl+Alt+D) ;
  *  - ?lanceur   : le lanceur rapide de minuteur (fenêtre « lanceur », Ctrl+Alt+M) ;
+ *  - ?recherche : la recherche rapide Wikipédia (fenêtre « recherche », Ctrl+Alt+Espace) ;
  *  - ?demo      : l'île dans un navigateur, sans backend (fond clair, scénarios factices).
  */
 
@@ -11,6 +12,7 @@ import { backend } from "./bridge/backend";
 import { demarrerPont, ecranCourant } from "./bridge/pont";
 import { jouer, type NomScenario } from "./demo/scenarios";
 import { Lanceur } from "./lanceur/Lanceur";
+import { Recherche } from "./recherche/Recherche";
 import { Panneau } from "./panneau/Panneau";
 import { Ile } from "./rendu/Ile";
 import { IslandMachine } from "./state/islandMachine";
@@ -33,6 +35,7 @@ const parametres = new URLSearchParams(window.location.search);
 export default function App() {
   if (parametres.has("panneau")) return <Panneau />;
   if (parametres.has("lanceur")) return <Lanceur />;
+  if (parametres.has("recherche")) return <Recherche />;
   return <AppIle demo={parametres.has("demo")} />;
 }
 

@@ -21,6 +21,7 @@ pub mod minuteur;
 pub mod parametres;
 pub mod paroles;
 pub mod plateau;
+pub mod recherche;
 pub mod systeme;
 pub mod web;
 
@@ -81,6 +82,8 @@ pub fn run() {
             systeme::systeme_ne_pas_deranger,
             systeme::notifications_etat,
             paroles::paroles_chercher,
+            recherche::recherche_rapide,
+            recherche::ouvrir_lien,
             minuteur::minuteur_demarrer,
             minuteur::minuteur_pause,
             minuteur::minuteur_reprendre,

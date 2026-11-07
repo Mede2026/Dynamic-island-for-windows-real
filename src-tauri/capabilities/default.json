@@ -2,6 +2,6 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Permissions de l'île, du panneau de réglages et du lanceur",
-  "windows": ["ile", "reglages", "lanceur"],
+  "windows": ["ile", "reglages", "lanceur", "recherche"],
   "permissions": ["core:default", "core:event:allow-emit-to", "core:window:allow-close"]
 }

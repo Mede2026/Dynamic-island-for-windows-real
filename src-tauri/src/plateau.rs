@@ -30,15 +30,37 @@ pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
 const LABEL_LANCEUR: &str = "lanceur";
 /// Cacher / afficher l'île.
 pub const RACCOURCI_CACHER: &str = "ctrl+alt+h";
+/// Recherche rapide (définition / résumé Wikipédia).
+pub const RACCOURCI_RECHERCHE: &str = "ctrl+alt+space";
+const LABEL_RECHERCHE: &str = "recherche";
+
+/// Ctrl+Alt+Espace : petite fenêtre de recherche, ou la ferme.
+pub fn basculer_recherche(app: &AppHandle) {
+    if let Some(f) = app.get_webview_window(LABEL_RECHERCHE) {
+        let _ = f.close();
+        return;
+    }
+    let r = WebviewWindowBuilder::new(app, LABEL_RECHERCHE, WebviewUrl::App("index.html?recherche".into()))
+        .title("Recherche — Dynamic Island")
+        .inner_size(460.0, 360.0)
+        .resizable(false)
+        .always_on_top(true)
+        .center()
+        .build();
+    if let Err(e) = r {
+        journal!("plateau", "recherche impossible à ouvrir : {e}");
+    }
+}
 
 /// Enregistre les raccourcis un par un ; en cas de refus (déjà pris par un autre programme),
 /// essaie un raccourci de secours et le note dans le journal — sans jamais bloquer le démarrage.
 pub fn enregistrer_raccourcis(app: &AppHandle) {
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
-    let essais: [(&str, &[&str]); 3] = [
+    let essais: [(&str, &[&str]); 4] = [
         ("réglages", &[RACCOURCI_PANNEAU, "ctrl+alt+shift+d"]),
         ("lanceur", &[RACCOURCI_LANCEUR, "ctrl+alt+shift+m"]),
         ("cacher", &[RACCOURCI_CACHER, "ctrl+alt+shift+h"]),
+        ("recherche", &[RACCOURCI_RECHERCHE, "ctrl+alt+shift+space"]),
     ];
     for (nom, raccourcis) in essais {
         let ok = raccourcis.iter().find(|r| match app.global_shortcut().register(**r) {
@@ -136,6 +158,8 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     };
     if est(RACCOURCI_LANCEUR) || est("ctrl+alt+shift+m") {
         basculer_lanceur(app);
+    } else if est(RACCOURCI_RECHERCHE) || est("ctrl+alt+shift+space") {
+        basculer_recherche(app);
     } else if est(RACCOURCI_CACHER) || est("ctrl+alt+shift+h") {
         fenetre::basculer_cachee(app);
     } else {
