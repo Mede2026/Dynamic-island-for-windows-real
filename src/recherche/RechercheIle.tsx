@@ -47,7 +47,9 @@ interface Etat {
   terme: string;
   lignes: Ligne[];
   choix: number;
-  vue: "liste" | "wiki" | "chat";
+  vue: "liste" | "wiki" | "chat" | "traduction";
+  traduction: { source: string; texte: string; de: string; vers: string } | null;
+  traductionErreur: string;
   wiki: Wiki | null;
   wikiEtat: "" | "recherche" | "rien" | "erreur";
   chat: Message[];
@@ -58,7 +60,7 @@ interface Etat {
   imageJointe: string | null;
 }
 
-const VIDE: Etat = { terme: "", lignes: [], choix: 0, vue: "liste", wiki: null, wikiEtat: "", chat: [], chatEtat: "pret", chatErreur: "", cle: null, imageJointe: null };
+const VIDE: Etat = { terme: "", lignes: [], choix: 0, vue: "liste", wiki: null, wikiEtat: "", chat: [], chatEtat: "pret", chatErreur: "", cle: null, imageJointe: null, traduction: null, traductionErreur: "" };
 let etat: Etat = VIDE;
 const abonnes = new Set<() => void>();
 function maj(p: Partial<Etat>) {
@@ -93,7 +95,7 @@ export function carteRechercheVisible(e: Etat = etat): boolean {
 /** Hauteur naturelle de la carte (pt), avant que l'utilisateur la tire à la main. */
 export function hauteurAutoRecherche(e: Etat = etat): number {
   if (e.vue === "chat") return 330;
-  if (e.vue === "wiki") return 300;
+  if (e.vue === "wiki" || e.vue === "traduction") return 300;
   // Comme dans la vidéo : la liste montre environ 5 lignes et demie (plus si elle déborde, on défile).
   return Math.min(Math.max(e.lignes.length, 5.5), 6.5) * LIGNE_PT + 2 * MARGE_PT + 8;
 }
@@ -263,6 +265,19 @@ async function ouvrirWiki(t: string) {
   }
 }
 
+/** Traduit un texte (Google Traduction) et l'affiche dans la carte. */
+export async function traduireTexte(source: string, vers?: string) {
+  jeton++;
+  maj({ vue: "traduction", traduction: null, traductionErreur: "", terme: "" });
+  if (!dansTauri()) return maj({ traduction: { source, texte: "(Démo) Hello, this is the translated text.", de: "fr", vers: "en" } });
+  try {
+    const t = await backend.traduire(source, vers);
+    maj({ traduction: { source, ...t } });
+  } catch (e) {
+    maj({ traductionErreur: String(e) });
+  }
+}
+
 /** Ouvre la conversation avec une capture jointe : la question suivante portera sur elle. */
 export function preparerQuestionImage(png: string) {
   jeton++;
@@ -339,12 +354,12 @@ export function PiluleRecherche({ hauteur }: { hauteur: number }) {
         <input
           ref={champ}
           className="champ-ile"
-          value={chat ? "" : s.terme}
-          placeholder={chat ? "Claude" : "Rechercher ou demander des infos"}
+          value={chat || s.vue === "traduction" ? "" : s.terme}
+          placeholder={chat ? "Claude" : s.vue === "traduction" ? "Traduction" : "Rechercher ou demander des infos"}
           onChange={(e) => definirTerme(e.target.value)}
           onKeyDown={touche}
           onPointerDown={(e) => e.stopPropagation()}
-          readOnly={chat}
+          readOnly={chat || s.vue === "traduction"}
           spellCheck={false}
           style={{ background: "none", border: 0, outline: "none", color: "#fff", fontSize: 15, fontWeight: 400, letterSpacing: -0.1, padding: 0, width: "100%" }}
         />
@@ -365,6 +380,7 @@ export function CarteRecherche() {
   const s = useRecherche();
   if (s.vue === "chat") return <VueChat />;
   if (s.vue === "wiki") return <VueWiki />;
+  if (s.vue === "traduction") return <VueTraduction />;
   return (
     <div className="defile-ile" style={{ position: "absolute", inset: 0, overflowY: "auto", padding: `${MARGE_PT}px 9px ${MARGE_PT + 8}px` }}>
       {s.lignes.map((l, i) => (
@@ -427,6 +443,39 @@ function IconeLigne({ icone }: { icone: Icone }) {
   return (
     <div style={{ width: T, height: T, borderRadius: 7, background: "rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
       {cle.startsWith("fichier:") ? <IconeDossier taille={15} couleur="#fff" /> : <IconeApp taille={15} />}
+    </div>
+  );
+}
+
+const LANGUES: Record<string, string> = { fr: "Français", en: "Anglais", es: "Espagnol", de: "Allemand", it: "Italien", pt: "Portugais", ja: "Japonais", zh: "Chinois", ko: "Coréen", ar: "Arabe", ru: "Russe" };
+const nomLangue = (c: string) => LANGUES[c.split("-")[0] ?? c] ?? c.toUpperCase();
+
+function VueTraduction() {
+  const s = useRecherche();
+  const t = s.traduction;
+  const [copie, setCopie] = useState(false);
+  const pastille = (texte: string, agir: () => void) => (
+    <span onClick={agir} style={{ fontSize: 12, padding: "5px 11px", borderRadius: 99, background: "rgba(255,255,255,.13)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.18)", cursor: "default" }}>
+      {texte}
+    </span>
+  );
+  return (
+    <div className="defile-ile" style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px 18px", color: "#fff", display: "flex", flexDirection: "column", gap: 10 }}>
+      {s.traductionErreur && <div style={{ color: "#ff9f8a", fontSize: 13 }}>{s.traductionErreur}</div>}
+      {!t && !s.traductionErreur && <Points />}
+      {t && (
+        <>
+          <div style={{ fontSize: 11.5, color: GRIS }}>
+            {nomLangue(t.de)} → {nomLangue(t.vers)} · Google Traduction
+          </div>
+          <div style={{ fontSize: 15, lineHeight: 1.45, whiteSpace: "pre-wrap", userSelect: "text" }}>{t.texte}</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {pastille(copie ? "Copié" : "Copier", () => void backend.copierTexte(t.texte).then(() => setCopie(true)))}
+            {pastille(t.vers === "fr" ? "En anglais" : "En français", () => void traduireTexte(t.source, t.vers === "fr" ? "en" : "fr"))}
+          </div>
+          <div style={{ fontSize: 12, color: GRIS, whiteSpace: "pre-wrap", borderTop: "0.5px solid rgba(255,255,255,.15)", paddingTop: 8 }}>{t.source}</div>
+        </>
+      )}
     </div>
   );
 }

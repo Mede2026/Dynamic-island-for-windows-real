@@ -115,6 +115,8 @@ export const backend = {
   historiqueImages: () => invoke<{ id: number; miniature: string }[]>("historique_images"),
   historiqueImageColler: (id: number) => invoke<void>("historique_image_coller", { id }),
   pressePapiersImage: (id?: number) => invoke<string | null>("presse_papiers_image", { id: id ?? null }),
+  /** Google Traduction (par le moteur Rust) : en français, ou en anglais si le texte est en français. */
+  traduire: (texte: string, vers?: string) => invoke<{ texte: string; de: string; vers: string }>("traduire", { texte, vers: vers ?? null }),
   /** Asus Fan Control (canal nommé, via le moteur Rust). */
   ventiloStatut: () => invoke<StatutVentilo>("ventilo_statut"),
   ventiloProfil: (profil: "silent" | "normal" | "max" | "curve") => invoke<StatutVentilo>("ventilo_profil", { profil }),

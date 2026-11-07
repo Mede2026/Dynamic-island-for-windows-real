@@ -1708,6 +1708,26 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
           {spec.detail}
         </div>
       )}
+      {spec.boutons && (
+        // « Résumer · Corriger · Traduire » : petites pastilles sous la caméra.
+        <div style={{ position: "absolute", left: v(a.texteXPt) * S, top: haut(baselineDetail(cfg), a.texte, S) - 4 * S, display: "flex", gap: 6 * S, pointerEvents: "auto" }}>
+          {spec.boutons.map((b) => (
+            <div
+              key={b.texte}
+              role="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.dispatchEvent(new CustomEvent("ile-demander", { detail: b.action.quoi }));
+              }}
+              style={texte(a.texte, S, { position: "static", padding: `${3 * S}px ${10 * S}px`, borderRadius: 99, background: "rgba(255,255,255,.14)", color: "#e08a5f", fontSize: v(a.texte.taillePt) * 0.9 * S, cursor: "pointer" })}
+            >
+              {b.texte}
+            </div>
+          ))}
+        </div>
+      )}
       {spec.detail && spec.boutonDetail && (
         // « Plus tard » : le clic n'est PAS arrêté, il atteint l'île, qui ferme l'alerte.
         <div

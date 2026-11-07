@@ -29,6 +29,7 @@ pub mod paroles;
 pub mod plateau;
 pub mod recherche;
 pub mod systeme;
+pub mod traduction;
 pub mod ventilateurs;
 pub mod web;
 
@@ -125,6 +126,7 @@ pub fn run() {
             claude::claude_cle_definir,
             claude::claude_demander,
             claude::claude_cle_tester,
+            traduction::traduire,
             systeme::historique::historique_images,
             systeme::historique::historique_image_coller,
             systeme::historique::presse_papiers_image,

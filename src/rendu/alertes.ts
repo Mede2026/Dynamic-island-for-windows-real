@@ -101,7 +101,9 @@ export interface SpecAlerte {
     | { type: "lien"; url: string }
     | { type: "maj"; url: string }
     /** Ouvre la recherche et pose la question à Claude (texte copié, capture). */
-    | { type: "demander"; quoi: "texte" | "image" };
+    | { type: "demander"; quoi: "texte" | "image" | "corriger" | "traduire" };
+  /** Petits boutons sur la 2e ligne (sous la caméra) : « Résumer · Corriger · Traduire ». */
+  boutons?: { texte: string; action: { type: "demander"; quoi: "texte" | "image" | "corriger" | "traduire" } }[];
   /** Bouton à droite de la 2e ligne ; « fermer » referme simplement l'alerte (« Plus tard »). */
   boutonDetail?: string;
 }
@@ -427,7 +429,15 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
       const libelles = { texte: "Texte copié", image: "Image copiée", capture: "Capture copiée", fichiers: "Fichiers copiés", autre: "Copié" };
       // Texte assez long : « Résumer » le fait résumer par Claude (dans la recherche de l'île).
       if (p.type === "texte" && p.apercu.length >= 30) {
-        return { icone: "pressePapiers", libelle: "Texte copié", valeur: "Résumer", couleurValeur: "#e08a5f", action: { type: "demander", quoi: "texte" } };
+        return {
+          icone: "pressePapiers",
+          libelle: "Texte copié",
+          boutons: [
+            { texte: "Résumer", action: { type: "demander", quoi: "texte" } },
+            { texte: "Corriger", action: { type: "demander", quoi: "corriger" } },
+            { texte: "Traduire", action: { type: "demander", quoi: "traduire" } },
+          ],
+        };
       }
       return { icone: "pressePapiers", valeur: libelles[p.type] };
     }
@@ -552,7 +562,7 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
   // Place réelle de chaque côté = moitié de l'île moins la caméra (+2 pt : arrondis de rendu,
   // pris sur l'écart de 18,9 pt avant la caméra).
   // Notification sur deux lignes : l'île prend toute la largeur → toute la place du côté.
-  const cote = spec.apercu ? (cadreApercu(spec.apercu, cfg).ile - v(cfg.zoneCamera.largeurPt)) / 2 : spec.detail ? coteMax : Math.max(gauche, droite);
+  const cote = spec.apercu ? (cadreApercu(spec.apercu, cfg).ile - v(cfg.zoneCamera.largeurPt)) / 2 : spec.detail || spec.boutons ? coteMax : Math.max(gauche, droite);
   return {
     gauche,
     droite,
@@ -566,7 +576,7 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
 export function hauteurAlerte(spec: SpecAlerte, cfg: IslandConfig): number {
   const h = v(cfg.formes.alerte.taille.pt.hauteur);
   if (spec.apercu) return cadreApercu(spec.apercu, cfg).ileHauteur;
-  if (!spec.detail) return h;
+  if (!spec.detail && !spec.boutons) return h;
   // Ligne(s) sous la caméra + même marge en bas que la marge gauche du texte.
   const lignes = spec.detailTitre ? 2 : 1;
   return h + v(cfg.alerte.texte.taillePt) * 1.25 * lignes + v(cfg.alerte.texteXPt) * 0.6;
@@ -614,7 +624,7 @@ export function cadreApercu(base64: string, cfg: IslandConfig): { x: number; y: 
 
 export function largeurAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesureur): number {
   if (spec.apercu) return cadreApercu(spec.apercu, cfg).ile;
-  if (spec.detail) return v(cfg.formes.etendu.taille.pt.largeur); // texte sur toute la largeur
+  if (spec.detail || spec.boutons) return v(cfg.formes.etendu.taille.pt.largeur); // texte sur toute la largeur
   const c = cotesAlerte(spec, cfg, mesurer);
   const camera = v(cfg.zoneCamera.largeurPt);
   const min = v(cfg.formes.compact.taille.pt.largeur);

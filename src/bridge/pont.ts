@@ -14,7 +14,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { backend, dansTauri, ecouter } from "./backend";
 import { cleChanson, lireLrc } from "./paroles";
 import { donnees, majDonnees, positionActuelle } from "./donnees";
-import { demanderClaude, preparerQuestionImage } from "../recherche/RechercheIle";
+import { demanderClaude, preparerQuestionImage, traduireTexte } from "../recherche/RechercheIle";
 import { recevoirNiveau } from "../rendu/onde";
 import type { EtatMedia, EtatMinuteur } from "./types";
 import { appIgnoree, definirPreferences, definirSurcharges, preferencesActuelles, type Preferences } from "../config/store";
@@ -282,7 +282,19 @@ export function demarrerPont(machine: IslandMachine): () => void {
   const demander = (e: Event) => {
     const quoi = (e as CustomEvent<string>).detail;
     machine.envoyer({ type: "CLIC" }); // ferme l'alerte
-    if (quoi === "texte") {
+    if (quoi === "corriger" || quoi === "traduire") {
+      void backend.historiqueLire().then((textes) => {
+        const t = textes?.[0];
+        if (!t) return;
+        ouvrirOutil("recherche", true);
+        if (quoi === "traduire") void traduireTexte(t);
+        else
+          void demanderClaude(
+            `Corrige les fautes d'orthographe, de grammaire et de ponctuation de ce texte, dans sa langue. Réponds seulement avec le texte corrigé, puis une ligne vide et la liste courte des corrections.\n\n${t}`,
+            { affiche: `Corriger : « ${t.replace(/\s+/g, " ").slice(0, 60)}${t.length > 60 ? "…" : ""} »` },
+          );
+      });
+    } else if (quoi === "texte") {
       void backend.historiqueLire().then((textes) => {
         const t = textes?.[0];
         if (!t) return;
