@@ -97,6 +97,7 @@ pub fn run() {
             etagere::etagere_lire,
             etagere::etagere_coller,
             plateau::ile_menu,
+            plateau::ile_action,
             systeme::appel_entrant::appel_entrant_repondre,
             systeme::historique::historique_lire,
             systeme::historique::historique_copier,

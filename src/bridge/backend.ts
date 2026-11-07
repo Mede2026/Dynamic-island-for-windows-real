@@ -90,6 +90,7 @@ export const backend = {
   inactiviteMs: () => invoke<number>("systeme_inactivite_ms"),
   cacherAuPartage: (actif: boolean) => invoke<void>("fenetre_cacher_au_partage", { actif }),
   ileMenu: () => invoke<void>("ile_menu"),
+  ileAction: (action: string) => invoke<void>("ile_action", { action }),
   appelEntrantRepondre: (application: string, accepter: boolean) => invoke<void>("appel_entrant_repondre", { application, accepter }),
   historiqueLire: () => invoke<string[]>("historique_lire"),
   historiqueCopier: (indice: number) => invoke<void>("historique_copier", { indice }),

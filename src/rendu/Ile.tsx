@@ -35,6 +35,8 @@ import {
   EcouteCompact,
   AppelEntrantCompact,
   EnregistrementCompact,
+  MenuEtendu,
+  MenuMinimal,
   EnregistrementEtendu,
   EnregistrementMinimal,
   AppelEntrantEtendu,
@@ -479,9 +481,9 @@ export function Ile({ machine }: { machine: IslandMachine }) {
     <div
       style={{ position: "absolute", left: 0, top: 0, width: canevasL, height: canevasH, fontFamily: v(cfg.police) }}
       onContextMenu={(e) => {
-        // Clic droit sur l'île : son menu (minuteur, chanson, étagère…), près de l'île.
+        // Clic droit sur l'île : l'île s'ouvre avec ses outils (minuteur, chanson, étagère…).
         e.preventDefault();
-        void backend.ileMenu();
+        window.dispatchEvent(new CustomEvent("ile-menu-ouvrir"));
       }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
@@ -615,11 +617,11 @@ function choisirContenu(ctx: Ctx): ReactNode {
     case "repos":
       return null;
     case "compact":
-      return type === "enregistrement" ? <EnregistrementCompact {...ctx} /> : type === "appelEntrant" ? <AppelEntrantCompact {...ctx} /> : type === "impression" ? <ImpressionCompact {...ctx} /> : type === "ecoute" ? <EcouteCompact {...ctx} /> : type === "telechargement" ? <TelechargementCompact {...ctx} /> : type === "etagere" ? <EtagereCompact {...ctx} /> : type === "horloge" ? <HorlogeCompact {...ctx} /> : type === "appel" ? <AppelCompact {...ctx} /> : type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
+      return type === "menu" ? <MenuMinimal {...ctx} /> : type === "enregistrement" ? <EnregistrementCompact {...ctx} /> : type === "appelEntrant" ? <AppelEntrantCompact {...ctx} /> : type === "impression" ? <ImpressionCompact {...ctx} /> : type === "ecoute" ? <EcouteCompact {...ctx} /> : type === "telechargement" ? <TelechargementCompact {...ctx} /> : type === "etagere" ? <EtagereCompact {...ctx} /> : type === "horloge" ? <HorlogeCompact {...ctx} /> : type === "appel" ? <AppelCompact {...ctx} /> : type === "minuteur" ? <MinuteurCompact {...ctx} /> : <MusiqueCompact {...ctx} />;
     case "split":
-      return type === "enregistrement" ? <EnregistrementMinimal {...ctx} /> : type === "appelEntrant" ? <AppelEntrantMinimal {...ctx} /> : type === "impression" ? <ImpressionMinimal {...ctx} /> : type === "ecoute" ? <EcouteMinimal {...ctx} /> : type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
+      return type === "menu" ? <MenuMinimal {...ctx} /> : type === "enregistrement" ? <EnregistrementMinimal {...ctx} /> : type === "appelEntrant" ? <AppelEntrantMinimal {...ctx} /> : type === "impression" ? <ImpressionMinimal {...ctx} /> : type === "ecoute" ? <EcouteMinimal {...ctx} /> : type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />;
     case "etendu":
-      return type === "enregistrement" ? <EnregistrementEtendu {...ctx} /> : type === "appelEntrant" ? <AppelEntrantEtendu {...ctx} /> : type === "impression" ? <ImpressionEtendu {...ctx} /> : type === "ecoute" ? <EcouteEtendu {...ctx} /> : type === "telechargement" ? <TelechargementEtendu {...ctx} /> : type === "etagere" ? <EtagereEtendu {...ctx} /> : type === "horloge" ? <HorlogeEtendu {...ctx} /> : type === "appel" ? <AppelEtendu {...ctx} /> : type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
+      return type === "menu" ? <MenuEtendu {...ctx} /> : type === "enregistrement" ? <EnregistrementEtendu {...ctx} /> : type === "appelEntrant" ? <AppelEntrantEtendu {...ctx} /> : type === "impression" ? <ImpressionEtendu {...ctx} /> : type === "ecoute" ? <EcouteEtendu {...ctx} /> : type === "telechargement" ? <TelechargementEtendu {...ctx} /> : type === "etagere" ? <EtagereEtendu {...ctx} /> : type === "horloge" ? <HorlogeEtendu {...ctx} /> : type === "appel" ? <AppelEtendu {...ctx} /> : type === "minuteur" ? <MinuteurEtendu {...ctx} /> : <MusiqueEtendu {...ctx} />;
     case "alerte":
       return e.alerte ? <AlerteContenu {...ctx} alerte={e.alerte} /> : null;
   }
@@ -631,12 +633,12 @@ function choisirBulle(ctx: Ctx): ReactNode {
   const type = typeDe(etat, etat.bulleId);
   const diam = v(cfg.bulle.diametrePt) * S;
   // Les contenus « minimal » sont placés comme dans l'île ; on les recentre dans la bulle.
-  const decalage = type === "minuteur" || type === "appel" || type === "horloge" || type === "telechargement" || type === "etagere" || type === "ecoute" || type === "impression" || type === "appelEntrant" || type === "enregistrement"
+  const decalage = type === "minuteur" || type === "appel" || type === "horloge" || type === "telechargement" || type === "etagere" || type === "ecoute" || type === "impression" || type === "appelEntrant" || type === "enregistrement" || type === "menu"
     ? diam / 2 - (v(cfg.minuteur.compactIconeXPt) + v(cfg.minuteur.compactIconeTaillePt) / 2) * S
     : diam / 2 - (v(cfg.media.compact.pochetteXPt) + v(cfg.media.compact.pochetteTaillePt) / 2) * S;
   return (
     <div style={{ position: "absolute", left: decalage, top: 0, width: diam, height: diam }}>
-      {type === "enregistrement" ? <EnregistrementMinimal {...ctx} /> : type === "appelEntrant" ? <AppelEntrantMinimal {...ctx} /> : type === "impression" ? <ImpressionMinimal {...ctx} /> : type === "ecoute" ? <EcouteMinimal {...ctx} /> : type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
+      {type === "menu" ? <MenuMinimal {...ctx} /> : type === "enregistrement" ? <EnregistrementMinimal {...ctx} /> : type === "appelEntrant" ? <AppelEntrantMinimal {...ctx} /> : type === "impression" ? <ImpressionMinimal {...ctx} /> : type === "ecoute" ? <EcouteMinimal {...ctx} /> : type === "telechargement" ? <TelechargementMinimal {...ctx} /> : type === "etagere" ? <EtagereMinimal {...ctx} /> : type === "horloge" ? <HorlogeMinimal {...ctx} /> : type === "appel" ? <AppelMinimal {...ctx} /> : type === "minuteur" ? <MinuteurMinimal {...ctx} /> : <MusiqueMinimal {...ctx} />}
     </div>
   );
 }

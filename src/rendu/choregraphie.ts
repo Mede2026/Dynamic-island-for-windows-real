@@ -104,7 +104,7 @@ export function geometrieCible(e: EtatMachine, cfg: IslandConfig): Geometrie {
       return base(cfg.formes.split, true);
     case "etendu":
       // Minuteur et appel : vue étendue basse (mesurée sur le minuteur, V4729).
-      return base(["musique", "etagere"].includes(typePrincipal(e) ?? "") ? cfg.formes.etendu : cfg.formesContenu.etenduMinuteur);
+      return base(["musique", "etagere", "menu"].includes(typePrincipal(e) ?? "") ? cfg.formes.etendu : cfg.formesContenu.etenduMinuteur);
     case "alerte": {
       // Largeur selon le contenu, rangé de part et d'autre de la caméra (alertes.ts).
       const g = base(cfg.formes.alerte);

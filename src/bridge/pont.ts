@@ -184,6 +184,46 @@ export function demarrerPont(machine: IslandMachine): () => void {
     fermetureEtagere = setTimeout(fermerEtagere, dureeMs);
   };
   arrets.push(ecouter("ouvrir-etagere", () => ouvrirEtagere(8000)));
+  const etagereDepuisMenu = () => {
+    fermerMenu();
+    ouvrirEtagere(8000);
+  };
+  window.addEventListener("ile-ouvrir-etagere", etagereDepuisMenu);
+  arrets.push(Promise.resolve(() => window.removeEventListener("ile-ouvrir-etagere", etagereDepuisMenu)));
+
+  // Menu de l'île (clic droit) : activité « menu » en vue étendue ; se referme quand on clique
+  // ailleurs, quand on choisit un outil, ou quand la souris quitte l'île.
+  const menuOuvert = () => machine.etat.activites.some((a) => a.id === "menu");
+  let menuVuOuvert = false;
+  const fermerMenu = () => {
+    if (menuOuvert()) machine.envoyer({ type: "ACTIVITE_FIN", id: "menu" });
+  };
+  const ouvrirMenu = () => {
+    if (menuOuvert()) return fermerMenu();
+    machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "menu", type: "menu" } });
+    machine.envoyer({ type: "CLIC_LONG" });
+  };
+  window.addEventListener("ile-menu-ouvrir", ouvrirMenu);
+  window.addEventListener("ile-menu-fermer", fermerMenu);
+  arrets.push(
+    Promise.resolve(() => {
+      window.removeEventListener("ile-menu-ouvrir", ouvrirMenu);
+      window.removeEventListener("ile-menu-fermer", fermerMenu);
+    }),
+  );
+  // Vue étendue refermée (clic à côté, souris partie) : le menu disparaît aussi.
+  arrets.push(
+    Promise.resolve(
+      machine.abonner((e) => {
+        const menu = e.activites.some((a) => a.id === "menu");
+        if (menu && e.mode === "etendu") menuVuOuvert = true;
+        else if (menu && menuVuOuvert) {
+          menuVuOuvert = false;
+          queueMicrotask(() => machine.envoyer({ type: "ACTIVITE_FIN", id: "menu" }));
+        } else if (!menu) menuVuOuvert = false;
+      }),
+    ),
+  );
   // Quelque chose est traîné près de l'île (bouton gauche enfoncé) : l'étagère s'ouvre en
   // grand pour recevoir des fichiers ; elle se referme si on ne lâche rien.
   arrets.push(ecouter("glisser-proche", () => ouvrirEtagere(4000)));

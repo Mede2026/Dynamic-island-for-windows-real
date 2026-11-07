@@ -3,7 +3,7 @@
  * (en points, convertis en px CSS = DIP avec ISLAND_SCALE).
  */
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as PE } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as PE, type ReactNode } from "react";
 import { backend } from "../bridge/backend";
 import { donnees, formaterDuree, formaterMinuteurCompact, majDonnees, positionActuelle, type Donnees } from "../bridge/donnees";
 import type { EtatMinuteur } from "../bridge/types";
@@ -48,6 +48,9 @@ import {
   IconeHautParleur,
   IconeMiseAJour,
   IconeNote,
+  IconeLoupe,
+  IconeReglages,
+  IconeCacher,
   IconeOeil,
   IconeWifi,
   IconeTelechargement,
@@ -1116,6 +1119,74 @@ export function EnregistrementEtendu({ cfg, S, etat }: Ctx) {
       </div>
     </>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Menu de l'île (clic droit) : de gros boutons pour lancer les outils
+// ---------------------------------------------------------------------------
+
+/** Ferme le menu (le pont retire l'activité). */
+export function fermerMenuIle() {
+  window.dispatchEvent(new CustomEvent("ile-menu-fermer"));
+}
+
+const BOUTONS_MENU: { action: string; texte: string; icone: (t: number, c: string) => ReactNode; couleur: string }[] = [
+  { action: "lanceur", texte: "Minuteur", icone: (t, c) => <IconeMinuteur taille={t} couleur={c} progression={1} />, couleur: "#ff8c2b" },
+  { action: "chanson", texte: "Chanson", icone: (t, c) => <IconeNote taille={t} couleur={c} />, couleur: "#0a84ff" },
+  { action: "etagere", texte: "Étagère", icone: (t, c) => <IconeDossier taille={t} couleur={c} />, couleur: "#64a8ff" },
+  { action: "historique", texte: "Copiés", icone: (t, c) => <IconePressePapiers taille={t} couleur={c} />, couleur: "#bf5af2" },
+  { action: "capture", texte: "Capture", icone: (t, c) => <IconeEcran taille={t} couleur={c} />, couleur: "#30d158" },
+  { action: "recherche", texte: "Recherche", icone: (t, c) => <IconeLoupe taille={t} couleur={c} />, couleur: "#ffd60a" },
+  { action: "reglages", texte: "Réglages", icone: (t, c) => <IconeReglages taille={t} couleur={c} />, couleur: "#98989f" },
+  { action: "cacher", texte: "Cacher", icone: (t, c) => <IconeCacher taille={t} couleur={c} />, couleur: "#98989f" },
+];
+
+function lancerAction(action: string) {
+  if (action === "etagere") window.dispatchEvent(new CustomEvent("ile-ouvrir-etagere"));
+  else if (action === "capture") void backend.ouvrirLien("ms-screenclip:");
+  else void backend.ileAction(action);
+  if (action !== "etagere") fermerMenuIle();
+}
+
+export function MenuEtendu({ cfg, S }: Ctx) {
+  const largeur = v(cfg.formes.etendu.taille.pt.largeur) * S;
+  const hauteur = v(cfg.formes.etendu.taille.pt.hauteur) * S;
+  const marge = 18 * S;
+  const cellule = (largeur - 2 * marge) / 4;
+  const rond = 46 * S;
+  return (
+    <div style={{ position: "absolute", left: marge, top: marge * 0.9, width: largeur - 2 * marge, height: hauteur - 2 * marge, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 10 * S }}>
+      {BOUTONS_MENU.map((b) => (
+        <button
+          key={b.action}
+          {...boutonIle(() => lancerAction(b.action))}
+          style={{ flexDirection: "column", gap: 6 * S, width: cellule, color: "#fff", fontSize: 11.5 * S, fontWeight: 500 }}
+        >
+          <span
+            style={{
+              width: rond,
+              height: rond,
+              borderRadius: rond,
+              background: "#2c2c2e",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {b.icone(rond * 0.5, b.couleur)}
+          </span>
+          {b.texte}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function MenuMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeReglages taille={ti} couleur="#98989f" style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
 }
 
 // ---------------------------------------------------------------------------

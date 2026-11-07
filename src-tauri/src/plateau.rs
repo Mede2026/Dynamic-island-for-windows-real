@@ -228,6 +228,12 @@ pub fn ile_menu(app: AppHandle) -> Result<(), String> {
     fen.popup_menu(&menu).map_err(|e| e.to_string())
 }
 
+/// Bouton du menu de l'île (clic droit) : « lanceur », « chanson », « etagere »…
+#[tauri::command]
+pub fn ile_action(app: AppHandle, action: String) {
+    gerer_menu_ile(&app, &format!("ile:{action}"));
+}
+
 /// Actions du menu du clic droit sur l'île.
 fn gerer_menu_ile(app: &AppHandle, id: &str) {
     match id {

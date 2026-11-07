@@ -117,6 +117,7 @@ export const SCENARIOS = {
   miseAJour: "Mise à jour : redémarrage requis",
   notification: "Notification (titre + message)",
   deverrouillage: "Déverrouillage (cadenas)",
+  menu: "Menu de l'île (clic droit)",
   enregistrement: "Enregistrement de l'écran",
   sortieAudio: "Écouteurs branchés",
   microCoupe: "Micro coupé",
@@ -248,6 +249,10 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       break;
     case "notification":
       machine.envoyer({ type: "ALERTE", alerte: { type: "notification", donnees: { id: 9, application: "Messages", textes: ["Papa", "On soupe à 18 h, tu ramènes du pain ?"] } } });
+      break;
+    case "menu":
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "menu", type: "menu" } });
+      machine.envoyer({ type: "CLIC_LONG" });
       break;
     case "deverrouillage":
       machine.envoyer({ type: "ALERTE", alerte: { type: "deverrouillage", dureeFacteur: 0.5 } });

@@ -456,3 +456,39 @@ export function IconeHautParleur({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Loupe (recherche). */
+export function IconeLoupe({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <circle cx="10.5" cy="10.5" r="6.5" stroke={couleur} strokeWidth="2.2" />
+      <path d="M15.5 15.5 20.5 20.5" stroke={couleur} strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Engrenage (réglages). */
+export function IconeReglages({ taille, couleur, style }: P) {
+  const dents = Array.from({ length: 8 }, (_, i) => {
+    const a = (i * Math.PI) / 4;
+    return `M${12 + Math.cos(a) * 6.6} ${12 + Math.sin(a) * 6.6}L${12 + Math.cos(a) * 9.6} ${12 + Math.sin(a) * 9.6}`;
+  }).join("");
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d={dents} stroke={couleur} strokeWidth="3" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="6.2" stroke={couleur} strokeWidth="2.4" />
+      <circle cx="12" cy="12" r="2.2" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Œil barré (cacher l'île). */
+export function IconeCacher({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke={couleur} strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" fill={couleur} />
+      <path d="M4 4l16 16" stroke={couleur} strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
