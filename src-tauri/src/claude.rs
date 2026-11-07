@@ -12,7 +12,8 @@ const URL: &str = "https://api.anthropic.com/v1/messages";
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Message {
     pub role: String,
-    pub content: String,
+    /// Texte, ou blocs (image d'une capture + question).
+    pub content: serde_json::Value,
 }
 
 const CONSIGNE: &str = "Tu réponds dans la barre de recherche d'un « Dynamic Island » sur Windows : \
@@ -41,6 +42,9 @@ pub fn claude_cle_definir(cle: String) -> Result<(), String> {
 /// Pose une question (avec la conversation d'avant) ; renvoie le texte de la réponse.
 #[tauri::command]
 pub async fn claude_demander(messages: Vec<Message>) -> Result<String, String> {
+    if messages.iter().any(|m| m.role != "user" && m.role != "assistant") {
+        return Err("Conversation invalide.".into());
+    }
     let cle = plateforme::lire().ok_or("Aucune clé API : Réglages → Claude.")?;
     tauri::async_runtime::spawn_blocking(move || demander(&cle, &messages, 4000))
         .await

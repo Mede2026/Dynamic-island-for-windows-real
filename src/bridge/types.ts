@@ -172,6 +172,8 @@ export interface EvenementsBackend {
   vpn: { connecte: boolean; nom: string | null };
   /** Asus Fan Control (statut en direct) ; null = l'app n'est pas lancée. */
   ventilateurs: StatutVentilo | null;
+  /** Météo (position de Windows ou Boucherville), toutes les 15 min. */
+  meteo: Meteo;
   /** Signal Wi-Fi tombé à 1 barre ou moins. */
   "wifi-faible": { barres: number; nom: string | null };
   /** Connexion Internet perdue / retrouvée. */
@@ -287,6 +289,7 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "impression",
   "redemarrage-requis",
   "ventilateurs",
+  "meteo",
 ];
 
 /** Statut d'Asus Fan Control (canal nommé \\.\pipe\AsusFanControl, lu par le moteur Rust). */
@@ -305,4 +308,15 @@ export interface StatutVentilo {
   batteryPercent: number | null;
   batteryLimit: { enabled: boolean; percent: number | null; fullChargePending: boolean } | null;
   error: string | null;
+}
+
+export interface Meteo {
+  temperature: number;
+  /** Code météo de l'OMM (0 = clair, 61 = pluie, 71 = neige…). */
+  code: number;
+  jour: boolean;
+  /** Minutes avant la pluie ou la neige (dans l'heure), sinon null. */
+  precipitationDans: number | null;
+  neige: boolean;
+  positionReelle: boolean;
 }

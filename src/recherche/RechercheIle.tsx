@@ -40,7 +40,8 @@ interface Wiki {
   langue: string;
 }
 
-type Message = { role: "user" | "assistant"; content: string };
+/** `affiche` : texte montré dans la bulle (au lieu d'une longue consigne) ; `image` : PNG base64. */
+type Message = { role: "user" | "assistant"; content: string; affiche?: string; image?: string };
 
 interface Etat {
   terme: string;
@@ -53,9 +54,11 @@ interface Etat {
   chatEtat: "pret" | "attente";
   chatErreur: string;
   cle: boolean | null;
+  /** Capture à montrer à Claude avec la prochaine question. */
+  imageJointe: string | null;
 }
 
-const VIDE: Etat = { terme: "", lignes: [], choix: 0, vue: "liste", wiki: null, wikiEtat: "", chat: [], chatEtat: "pret", chatErreur: "", cle: null };
+const VIDE: Etat = { terme: "", lignes: [], choix: 0, vue: "liste", wiki: null, wikiEtat: "", chat: [], chatEtat: "pret", chatErreur: "", cle: null, imageJointe: null };
 let etat: Etat = VIDE;
 const abonnes = new Set<() => void>();
 function maj(p: Partial<Etat>) {
@@ -260,11 +263,19 @@ async function ouvrirWiki(t: string) {
   }
 }
 
-export async function demanderClaude(question: string) {
-  const q = question.trim();
+/** Ouvre la conversation avec une capture jointe : la question suivante portera sur elle. */
+export function preparerQuestionImage(png: string) {
+  jeton++;
+  maj({ vue: "chat", chat: [], chatErreur: "", chatEtat: "pret", imageJointe: png, terme: "" });
+}
+
+export async function demanderClaude(question: string, options: { affiche?: string } = {}) {
+  let q = question.trim();
+  const image = etat.imageJointe ?? undefined;
+  if (!q && image) q = "Explique-moi cette capture d'écran.";
   if (!q || etat.chatEtat === "attente") return;
-  const chat: Message[] = [...etat.chat, { role: "user", content: q }];
-  maj({ vue: "chat", chat, chatEtat: "attente", chatErreur: "" });
+  const chat: Message[] = [...etat.chat, { role: "user", content: q, affiche: options.affiche, image }];
+  maj({ vue: "chat", chat, chatEtat: "attente", chatErreur: "", imageJointe: null });
   if (!dansTauri()) {
     await new Promise((r) => setTimeout(r, 900));
     return maj({ chat: [...chat, { role: "assistant", content: "(Démo) Ici s'affiche la réponse de Claude, courte et directe." }], chatEtat: "pret" });
@@ -274,7 +285,13 @@ export async function demanderClaude(question: string) {
     return maj({ cle: false, chatEtat: "pret", chatErreur: "Ajoute ta clé API Anthropic dans Réglages → Claude." });
   }
   try {
-    const reponse = await backend.claudeDemander(chat);
+    // Vers l'API : le texte, et la capture en bloc image avant la question.
+    const reponse = await backend.claudeDemander(
+      chat.map((m) => ({
+        role: m.role,
+        content: m.image ? [{ type: "image", source: { type: "base64", media_type: "image/png", data: m.image } }, { type: "text", text: m.content }] : m.content,
+      })),
+    );
     if (etat.vue !== "chat") return; // conversation fermée entre-temps
     maj({ chat: [...chat, { role: "assistant", content: reponse }], chatEtat: "pret", cle: true });
   } catch (e) {
@@ -463,20 +480,27 @@ function VueChat() {
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 12px 0" }}>
-        {rond("✕", () => maj({ vue: "liste", chat: [], chatErreur: "" }), "Fermer la conversation")}
+        {rond("✕", () => maj({ vue: "liste", chat: [], chatErreur: "", imageJointe: null }), "Fermer la conversation")}
         {rond("↗", () => window.dispatchEvent(new CustomEvent("ile-carte-agrandir")), "Agrandir")}
       </div>
       <div ref={fil} className="defile-ile" style={{ flex: 1, overflowY: "auto", padding: "6px 18px 10px", display: "flex", flexDirection: "column", gap: 12 }}>
         {s.chat.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} style={{ alignSelf: "flex-end", maxWidth: "78%", background: "rgba(255,255,255,.16)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.18)", borderRadius: 14, padding: "6px 11px", fontSize: 12, color: "#fff" }}>
-              {m.content}
+            <div key={i} style={{ alignSelf: "flex-end", maxWidth: "78%", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+              {m.image && <img src={`data:image/png;base64,${m.image}`} alt="" style={{ maxWidth: 160, maxHeight: 110, borderRadius: 10, objectFit: "cover" }} />}
+              <div style={{ background: "rgba(255,255,255,.16)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.18)", borderRadius: 14, padding: "6px 11px", fontSize: 12, color: "#fff" }}>{m.affiche ?? m.content}</div>
             </div>
           ) : (
             <div key={i} style={{ fontSize: 13, lineHeight: 1.47, color: "#fff", whiteSpace: "pre-wrap", userSelect: "text" }}>
               {m.content.replace(/\*\*(.+?)\*\*/g, "$1")}
             </div>
           ),
+        )}
+        {s.imageJointe && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <img src={`data:image/png;base64,${s.imageJointe}`} alt="" style={{ maxWidth: "80%", maxHeight: 150, borderRadius: 12, boxShadow: "0 4px 14px rgba(0,0,0,.35)" }} />
+            <div style={{ fontSize: 12, color: GRIS }}>Pose ta question sur cette capture (Entrée = « Explique-la »).</div>
+          </div>
         )}
         {s.chatEtat === "attente" && <Points />}
         {s.chatErreur && <div style={{ fontSize: 12, color: "#ff9f8a" }}>{s.chatErreur}</div>}
@@ -501,7 +525,7 @@ function VueChat() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          placeholder="Demander à Claude"
+          placeholder={s.imageJointe ? "Question sur la capture…" : "Demander à Claude"}
           style={{ flex: 1, minWidth: 0, background: "rgba(255,255,255,.12)", boxShadow: "inset 0 0.5px 0 rgba(255,255,255,.14)", border: 0, outline: "none", borderRadius: 15, padding: "7px 12px", color: "#fff", fontSize: 12 }}
         />
         {rond(<IconeEtincelle taille={13} couleur="#fff" />, () => {

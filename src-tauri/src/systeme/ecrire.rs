@@ -39,6 +39,28 @@ mod win {
         r
     }
 
+    /// Image (PNG) → presse-papiers en CF_DIB (32 bits, de bas en haut).
+    pub fn image(png: &[u8]) -> Result<(), String> {
+        let img = image::load_from_memory(png).map_err(|e| e.to_string())?.to_rgba8();
+        let (l, h) = img.dimensions();
+        let mut dib = Vec::with_capacity(40 + (l * h * 4) as usize);
+        for v in [40u32, l, h] {
+            dib.extend_from_slice(&v.to_le_bytes());
+        }
+        dib.extend_from_slice(&1u16.to_le_bytes()); // plans
+        dib.extend_from_slice(&32u16.to_le_bytes()); // bits par pixel
+        for v in [0u32, l * h * 4, 2835, 2835, 0, 0] {
+            dib.extend_from_slice(&v.to_le_bytes()); // BI_RGB, taille, 72 ppp, couleurs
+        }
+        for y in (0..h).rev() {
+            for x in 0..l {
+                let p = img.get_pixel(x, y).0;
+                dib.extend_from_slice(&[p[2], p[1], p[0], p[3]]);
+            }
+        }
+        unsafe { poser(8, &dib) } // CF_DIB
+    }
+
     pub fn texte(t: &str) -> Result<(), String> {
         let octets: Vec<u8> = t.encode_utf16().chain([0]).flat_map(u16::to_le_bytes).collect();
         unsafe { poser(CF_UNICODETEXT, &octets) }
@@ -92,6 +114,9 @@ mod win {
 
 #[cfg(not(windows))]
 mod win {
+    pub fn image(_png: &[u8]) -> Result<(), String> {
+        Err("Windows seulement".into())
+    }
     pub fn texte(_t: &str) -> Result<(), String> {
         Err("Windows seulement".into())
     }
@@ -101,6 +126,11 @@ mod win {
     pub fn ouvrir(_c: &str, _e: bool) -> Result<(), String> {
         Err("Windows seulement".into())
     }
+}
+
+/// Image PNG → presse-papiers.
+pub fn image(png: &[u8]) -> Result<(), String> {
+    win::image(png)
 }
 
 #[tauri::command]

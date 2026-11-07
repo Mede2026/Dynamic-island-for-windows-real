@@ -55,7 +55,8 @@ export type TypeAlerte =
   | "nouvelleVersion"
   | "vpn"
   | "texteImage"
-  | "compteARebours";
+  | "compteARebours"
+  | "meteo";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.

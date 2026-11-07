@@ -13,6 +13,11 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 ### New in this version
 
+- 📅 **Exam countdowns from the right-click menu** (small calendar button): add a name and a date, see the days left
+- 🌦️ **Weather**: temperature on the hover clock (your Windows location, or Boucherville), and an alert when rain or snow arrives within the hour
+- 🖼️ **Copied images** in « Copiés récemment »: click one to paste it again
+- ✨ **Résumer**: the « Texte copié » alert has a button to have Claude summarize it
+- 📸 **Ask about a screenshot**: the capture alert has a « Demander » button — ask Claude a question about what's on the screen
 - 🌀 Fans: the clicked mode turns blue, and the speed shows what the mode really applies (« Auto », « 45 % », « Arrêtés »)
 - 📐 **Bigger search, same proportions as the Mac**: the measured pill, rows, icons, text and card are scaled up together to 600 pt wide; the results card shows about 5½ rows like on the Mac
 - 🔍 **New search, modeled on the Mac**: the island turns into a glass **pill** (« Rechercher ou demander des infos ») with a separate **results card** underneath — apps (Start menu + Microsoft Store, with their icons), **your files** (Windows search index, never system folders), Windows Settings pages, calculator & converter, recently copied, Wikipedia / dictionary, web
@@ -36,4 +41,4 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 🇫🇷 **En français :** installe le fichier `…-setup.exe`, puis lance **Dynamic Island** depuis le menu Démarrer. Si Windows SmartScreen affiche un avertissement : **Informations complémentaires → Exécuter quand même**. Déjà installée ? L'île propose elle-même la mise à jour (« Installer »).
 
-**Nouveau :** recherche **plus grande** (600 pt de large), recherche **comme sur Mac** (pilule + carte de résultats : apps, fichiers, réglages, calcul, web), **Demander à Claude** (clé API dans Réglages → Claude), **poignée** pour agrandir les cartes, **Asus Fan Control** dans l'île (petit bouton dans le clic droit), alertes en file de **3 s chacune**, barre de luminosité de Windows cachée, nom des clés USB corrigé, police **Inter** partout.
+**Nouveau :** comptes à rebours d'examens dans le **clic droit**, **météo** (survol + alerte pluie/neige), **images** dans « Copiés », **Résumer** un texte copié et **poser une question sur une capture** à Claude ; recherche **plus grande** (600 pt de large), recherche **comme sur Mac** (pilule + carte de résultats : apps, fichiers, réglages, calcul, web), **Demander à Claude** (clé API dans Réglages → Claude), **poignée** pour agrandir les cartes, **Asus Fan Control** dans l'île (petit bouton dans le clic droit), alertes en file de **3 s chacune**, barre de luminosité de Windows cachée, nom des clés USB corrigé, police **Inter** partout.

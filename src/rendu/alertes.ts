@@ -58,7 +58,9 @@ export type NomIcone =
   | "microCoupe"
   | "bouclier"
   | "texteImage"
-  | "chrono";
+  | "chrono"
+  | "pluie"
+  | "neige";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -97,7 +99,9 @@ export interface SpecAlerte {
     | { type: "copier"; texte: string }
     | { type: "ouvrir"; chemin: string }
     | { type: "lien"; url: string }
-    | { type: "maj"; url: string };
+    | { type: "maj"; url: string }
+    /** Ouvre la recherche et pose la question à Claude (texte copié, capture). */
+    | { type: "demander"; quoi: "texte" | "image" };
   /** Bouton à droite de la 2e ligne ; « fermer » referme simplement l'alerte (« Plus tard »). */
   boutonDetail?: string;
 }
@@ -297,6 +301,16 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
         ? { icone: "texteImage", libelle: "Texte copié", valeur: `${t.nombre} mots`, couleurValeur: v(a.valeurCouleur) }
         : { icone: "texteImage", couleurIcone: v(cfg.media.etendu.artiste.couleur), libelle: "Texte", valeur: "Rien trouvé", couleurValeur: v(cfg.media.etendu.artiste.couleur) };
     }
+    case "meteo": {
+      const m = { precipitationDans: 15, neige: false, ...(alerte.donnees as Partial<{ precipitationDans: number; neige: boolean }>) };
+      return {
+        icone: m.neige ? "neige" : "pluie",
+        couleurIcone: m.neige ? "#ffffff" : "#64a8ff",
+        libelle: m.neige ? "Neige" : "Pluie",
+        valeur: `dans ${m.precipitationDans} min`,
+        couleurValeur: v(cfg.media.etendu.artiste.couleur),
+      };
+    }
     case "compteARebours": {
       const c = { nom: "", jours: 0, ...(alerte.donnees as Partial<{ nom: string; jours: number }>) };
       const quand = c.jours <= 0 ? "Aujourd'hui" : c.jours === 1 ? "Demain" : `Dans ${c.jours} jours`;
@@ -411,12 +425,16 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
     case "pressePapiers": {
       const p = { type: "autre", apercu: "", ...(alerte.donnees as Partial<PressePapiers>) } as PressePapiers;
       const libelles = { texte: "Texte copié", image: "Image copiée", capture: "Capture copiée", fichiers: "Fichiers copiés", autre: "Copié" };
+      // Texte assez long : « Résumer » le fait résumer par Claude (dans la recherche de l'île).
+      if (p.type === "texte" && p.apercu.length >= 30) {
+        return { icone: "pressePapiers", libelle: "Texte copié", valeur: "Résumer", couleurValeur: "#e08a5f", action: { type: "demander", quoi: "texte" } };
+      }
       return { icone: "pressePapiers", valeur: libelles[p.type] };
     }
     case "capture": {
       const p = { miniature: null, ...(alerte.donnees as Partial<PressePapiers>) };
       return p.miniature
-        ? { apercu: p.miniature, icone: "pressePapiers", libelle: "Capture", valeur: "Copiée", couleurValeur: v(a.valeurCouleur) }
+        ? { apercu: p.miniature, icone: "pressePapiers", libelle: "Capture", valeur: "Demander", couleurValeur: "#e08a5f", action: { type: "demander", quoi: "image" } }
         : { icone: "pressePapiers", valeur: "Capture" };
     }
     case "luminosite": {

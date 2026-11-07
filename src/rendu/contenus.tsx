@@ -23,11 +23,12 @@ import {
 import type { Alerte, EtatMachine } from "../state/islandMachine";
 import { preferencesActuelles, v } from "../config/store";
 import { Onde } from "./onde";
-import { IconeVentilo } from "./outils";
+import { IconeCalendrier, IconeVentilo } from "./outils";
 import { animate, AnimatePresence, motion } from "framer-motion";
 import { geometrieCible, LIGNE_PAROLES, parolesVisibles } from "./choregraphie";
 import { indiceLigne } from "../bridge/paroles";
 import { basculerMusiqueDeTest, estMusiqueDeTest } from "../demo/scenarios";
+import { IconeMeteo, IconeNeige, IconePluie } from "./icones";
 import {
   IconeBatterie,
   IconeBluetooth,
@@ -1211,6 +1212,17 @@ export function MenuEtendu({ cfg, S }: Ctx) {
         >
           <IconeVentilo taille={16 * S} couleur="#64d2ff" />
         </button>
+        {/* Petit bouton : comptes à rebours (examens). */}
+        <button
+          {...boutonIle(() => {
+            fermerMenuIle();
+            window.dispatchEvent(new CustomEvent("ile-outil", { detail: "comptes" }));
+          })}
+          title="Comptes à rebours (examens)"
+          style={{ width: 28 * S, height: 28 * S, borderRadius: 14 * S, background: "#2c2c2e" }}
+        >
+          <IconeCalendrier taille={15 * S} couleur="#ff9f0a" />
+        </button>
         {(
           [
             ["maj", "Mise à jour"],
@@ -1372,14 +1384,23 @@ function useMaintenant(): Date {
 
 const heureCourte = (d: Date) => d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit", hour12: false }).replace(" h ", ":");
 
-export function HorlogeCompact({ cfg, S }: Ctx) {
+export function HorlogeCompact({ cfg, S, d }: Ctx) {
   const c = cfg.minuteur;
   const maintenant = useMaintenant();
   const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
   const ti = v(c.compactIconeTaillePt) * S;
+  const m = d.meteo;
   return (
     <>
-      <IconeHorloge taille={ti} couleur="#ffffff" heure={maintenant} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      {m ? (
+        // Météo à gauche (icône + température), l'heure à droite.
+        <div style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: 0, height: h, display: "flex", alignItems: "center", gap: 3 * S }}>
+          <IconeMeteo taille={ti * 0.95} code={m.code} jour={m.jour} />
+          <span style={texte(c.compactTexte, S, { position: "static", color: "#ffffff", fontVariantNumeric: "tabular-nums" })}>{Math.round(m.temperature)}°</span>
+        </div>
+      ) : (
+        <IconeHorloge taille={ti} couleur="#ffffff" heure={maintenant} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      )}
       <div
         style={texte(c.compactTexte, S, {
           right: v(c.compactTexteDroitePt) * S,
@@ -1466,7 +1487,8 @@ function BoutonAction({ action, style, children }: { action: NonNullable<ReturnT
       onPointerUp={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();
-        if (action.type === "copier") void backend.copierTexte(action.texte).then(() => setFait(true));
+        if (action.type === "demander") window.dispatchEvent(new CustomEvent("ile-demander", { detail: action.quoi }));
+        else if (action.type === "copier") void backend.copierTexte(action.texte).then(() => setFait(true));
         else if (action.type === "ouvrir") void backend.ouvrirFichier(action.chemin);
         else if (action.type === "maj") {
           setFait(true);
@@ -1541,6 +1563,10 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeTexteImage taille={ti} couleur={couleurIcone} />;
       case "chrono":
         return <IconeChrono taille={ti} couleur={couleurIcone} />;
+      case "pluie":
+        return <IconePluie taille={ti} couleur={couleurIcone} />;
+      case "neige":
+        return <IconeNeige taille={ti} couleur={couleurIcone} />;
       case "cadenas":
         return <CadenasQuiSouvre taille={ti} couleur={couleurIcone} />;
       case "ecran":

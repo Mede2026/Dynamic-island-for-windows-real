@@ -14,6 +14,7 @@ import { Lanceur } from "../lanceur/Lanceur";
 import { Historique } from "../historique/Historique";
 import { Note } from "../note/Note";
 import { TemperaturePilule, Ventilateurs } from "../ventilateurs/Ventilateurs";
+import { Comptes } from "../comptes/Comptes";
 import {
   CarteRecherche,
   PiluleRecherche,
@@ -27,7 +28,7 @@ import {
 import { IconeCrayon, IconeMinuteur, IconePressePapiers } from "./icones";
 import type { Ctx } from "./contenus";
 
-export type NomOutil = "recherche" | "minuteur" | "copies" | "note" | "ventilateurs";
+export type NomOutil = "recherche" | "minuteur" | "copies" | "note" | "ventilateurs" | "comptes";
 
 const OUTILS: Record<NomOutil, { titre: string; couleur: string; hauteur: number }> = {
   recherche: { titre: "Recherche", couleur: "#ffd60a", hauteur: 0 },
@@ -35,6 +36,7 @@ const OUTILS: Record<NomOutil, { titre: string; couleur: string; hauteur: number
   copies: { titre: "Copiés récemment", couleur: "#bf5af2", hauteur: 268 },
   note: { titre: "Note", couleur: "#ffd60a", hauteur: 250 },
   ventilateurs: { titre: "Ventilateurs", couleur: "#64d2ff", hauteur: 224 },
+  comptes: { titre: "Comptes à rebours", couleur: "#ff9f0a", hauteur: 236 },
 };
 
 /**
@@ -132,6 +134,7 @@ function PiluleTitre({ nom }: { nom: NomOutil }) {
     copies: <IconePressePapiers taille={18} couleur={couleur} />,
     note: <IconeCrayon taille={18} couleur={couleur} />,
     ventilateurs: <IconeVentilo taille={18} couleur={couleur} />,
+    comptes: <IconeCalendrier taille={18} couleur={couleur} />,
   };
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 10, padding: "0 20px 0 22px" }}>
@@ -181,7 +184,7 @@ export function CarteOutil({ cfg, S, etat, gauche, haut }: { cfg: IslandConfig; 
   if (!nom || !visible) return null;
 
   const contenu =
-    nom === "recherche" ? <CarteRecherche /> : nom === "ventilateurs" ? <Ventilateurs /> : nom === "minuteur" ? <Lanceur fermer={fermerOutil} dansIle /> : nom === "copies" ? <Historique fermer={fermerOutil} dansIle /> : <Note fermer={fermerOutil} dansIle />;
+    nom === "recherche" ? <CarteRecherche /> : nom === "ventilateurs" ? <Ventilateurs /> : nom === "comptes" ? <Comptes /> : nom === "minuteur" ? <Lanceur fermer={fermerOutil} dansIle /> : nom === "copies" ? <Historique fermer={fermerOutil} dansIle /> : <Note fermer={fermerOutil} dansIle />;
 
   return (
     <motion.div
@@ -259,6 +262,17 @@ export function IconeVentilo({ taille, couleur }: { taille: number; couleur: str
       <path d="M12 9.6c-.6-3.2.4-6.1 3-6.6 2.4-.4 3.6 2.2 2 4.2-1.2 1.5-3 2.1-5 2.4z" />
       <path d="M14.1 13.2c3.1-1 6.1-.4 6.9 2.1.7 2.3-1.7 3.9-3.9 2.6-1.7-1-2.6-2.7-3-4.7z" />
       <path d="M9.9 13.2c-2.5 2.2-5.4 3-7.1 1-1.5-1.9.3-4.2 2.8-3.9 1.9.3 3.4 1.4 4.3 2.9z" />
+    </svg>
+  );
+}
+
+/** Calendrier (comptes à rebours). */
+export function IconeCalendrier({ taille, couleur }: { taille: number; couleur: string }) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke={couleur} strokeWidth="2" strokeLinecap="round">
+      <rect x="3.5" y="5" width="17" height="15" rx="3" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+      <circle cx="12" cy="15" r="1.4" fill={couleur} stroke="none" />
     </svg>
   );
 }

@@ -533,3 +533,43 @@ export function IconeBouclier({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Nuage et gouttes (pluie qui arrive). */
+export function IconePluie({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M7 15.5a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 8.2a3.7 3.7 0 0 1 .4 7.3z" fill={couleur} />
+      <path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5" stroke={couleur} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Flocon à six branches (neige). */
+export function IconeNeige({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none" stroke={couleur} strokeWidth="1.9" strokeLinecap="round">
+      <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2" />
+    </svg>
+  );
+}
+
+/** Soleil ou nuage selon le code météo (petit, pour l'horloge au survol). */
+export function IconeMeteo({ taille, code, jour }: { taille: number; code: number; jour: boolean }) {
+  if (code >= 71 && code <= 86) return <IconeNeige taille={taille} couleur="#ffffff" />;
+  if (code >= 51) return <IconePluie taille={taille} couleur="#64a8ff" />;
+  if (code >= 2)
+    return (
+      <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 10.7a3.7 3.7 0 0 1 .4 7.3z" fill="#d1d1d6" />
+      </svg>
+    );
+  return jour ? (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="5" fill="#ffd60a" />
+    </svg>
+  ) : (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M15.5 4.5a8 8 0 1 0 4 12 6.5 6.5 0 0 1-4-12z" fill="#ffd60a" />
+    </svg>
+  );
+}

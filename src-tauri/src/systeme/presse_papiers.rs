@@ -64,6 +64,15 @@ pub fn miniature(octets_bmp: &[u8]) -> Option<String> {
     Some(base64::engine::general_purpose::STANDARD.encode(png))
 }
 
+/// Image BMP → PNG (octets), réduite à `max` px de côté au plus.
+pub fn png_reduit(octets_bmp: &[u8], max: u32) -> Option<Vec<u8>> {
+    let img = image::load_from_memory_with_format(octets_bmp, image::ImageFormat::Bmp).ok()?;
+    let img = if img.width() > max || img.height() > max { img.thumbnail(max, max) } else { img };
+    let mut png = Vec::new();
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+    Some(png)
+}
+
 /// Aperçu d'un texte copié : une ligne, 60 caractères au plus.
 pub fn apercu_texte(t: &str) -> String {
     let ligne: String = t.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -191,9 +200,14 @@ mod win {
                 } else {
                     "image"
                 };
-                let mini = octets(CF_DIB)
-                    .and_then(|d| dib_vers_bmp(&d))
-                    .and_then(|b| miniature(&b));
+                let bmp = octets(CF_DIB).and_then(|d| dib_vers_bmp(&d));
+                let mini = bmp.as_deref().and_then(miniature);
+                // Historique des images (en mémoire) : pour les recoller, ou les montrer à Claude.
+                if let (Some(b), Some(m)) = (bmp.as_deref(), mini.as_ref()) {
+                    if let Some(png) = png_reduit(b, 1568) {
+                        crate::systeme::historique::ajouter_image(png, m.clone());
+                    }
+                }
                 copie(genre, String::new(), mini)
             } else {
                 copie("autre", String::new(), None)

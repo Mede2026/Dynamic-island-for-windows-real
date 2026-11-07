@@ -55,10 +55,12 @@ export function Historique({ fermer = fermerFenetre, dansIle = false }: { fermer
     void backend.historiqueColler(i);
   };
   const [textes, setTextes] = useState<string[]>([]);
+  const [images, setImages] = useState<{ id: number; miniature: string }[]>([]);
   const [choix, setChoix] = useState(0);
 
   useEffect(() => {
     void backend.historiqueLire().then((t) => setTextes(t ?? []));
+    void backend.historiqueImages().then((i) => setImages(i ?? []));
   }, []);
 
   useEffect(() => {
@@ -88,8 +90,27 @@ export function Historique({ fermer = fermerFenetre, dansIle = false }: { fermer
           </button>
         )}
       </div>
+      {images.length > 0 && (
+        // Images copiées (captures comprises) : clic = coller dans l'app d'avant.
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, flexShrink: 0 }}>
+          {images.map((im) => (
+            <img
+              key={im.id}
+              src={`data:image/png;base64,${im.miniature}`}
+              alt=""
+              title="Coller cette image"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                fermer();
+                void backend.historiqueImageColler(im.id);
+              }}
+              style={{ height: 64, maxWidth: 120, objectFit: "cover", borderRadius: 10, cursor: "pointer", flexShrink: 0, boxShadow: "inset 0 0 0 0.5px rgba(255,255,255,.2)" }}
+            />
+          ))}
+        </div>
+      )}
       <div style={s.liste}>
-        {textes.length === 0 && <p style={s.gris}>Rien pour l'instant. Les textes copiés apparaissent ici (gardés en mémoire seulement, jamais sur le disque).</p>}
+        {textes.length === 0 && images.length === 0 && <p style={s.gris}>Rien pour l'instant. Les textes copiés apparaissent ici (gardés en mémoire seulement, jamais sur le disque).</p>}
         {textes.map((t, i) => (
           <button
             key={i}

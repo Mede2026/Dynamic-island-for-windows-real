@@ -111,6 +111,10 @@ export const backend = {
   partoutIcone: (cle: string) => invoke<string | null>("partout_icone", { cle }),
   partoutLancerApp: (id: string) => invoke<void>("partout_lancer_app", { id }),
   partoutOuvrirFichier: (chemin: string, montrer = false) => invoke<void>("partout_ouvrir_fichier", { chemin, montrer }),
+  /** Images copiées (en mémoire) : liste, recoller, image pour Claude. */
+  historiqueImages: () => invoke<{ id: number; miniature: string }[]>("historique_images"),
+  historiqueImageColler: (id: number) => invoke<void>("historique_image_coller", { id }),
+  pressePapiersImage: (id?: number) => invoke<string | null>("presse_papiers_image", { id: id ?? null }),
   /** Asus Fan Control (canal nommé, via le moteur Rust). */
   ventiloStatut: () => invoke<StatutVentilo>("ventilo_statut"),
   ventiloProfil: (profil: "silent" | "normal" | "max" | "curve") => invoke<StatutVentilo>("ventilo_profil", { profil }),
@@ -127,7 +131,7 @@ export const backend = {
   claudeClePresente: () => invoke<boolean>("claude_cle_presente"),
   claudeCleDefinir: (cle: string) => invoke<void>("claude_cle_definir", { cle }),
   claudeCleTester: () => invoke<string>("claude_cle_tester"),
-  claudeDemander: (messages: { role: "user" | "assistant"; content: string }[]) => invoke<string>("claude_demander", { messages }),
+  claudeDemander: (messages: { role: "user" | "assistant"; content: unknown }[]) => invoke<string>("claude_demander", { messages }),
   parolesChercher: (artiste: string, titre: string, album: string, dureeS: number | null) =>
     invoke<{ synchronisees: string | null; instrumental: boolean } | null>("paroles_chercher", { artiste, titre, album, dureeS }),
   niveauAudio: (actif: boolean) => invoke<void>("audio_niveau_actif", { actif }),

@@ -20,6 +20,7 @@ pub mod horloge;
 pub mod integration;
 pub mod journal;
 pub mod media;
+pub mod meteo;
 pub mod minuteur;
 pub mod mise_a_jour_app;
 pub mod parametres;
@@ -124,6 +125,9 @@ pub fn run() {
             claude::claude_cle_definir,
             claude::claude_demander,
             claude::claude_cle_tester,
+            systeme::historique::historique_images,
+            systeme::historique::historique_image_coller,
+            systeme::historique::presse_papiers_image,
             ventilateurs::ventilo_statut,
             ventilateurs::ventilo_profil,
             ventilateurs::ventilo_vitesse,
@@ -192,6 +196,7 @@ pub fn run() {
             etagere::charger();
             mise_a_jour_app::demarrer(handle.clone());
             ventilateurs::suivre(handle);
+            meteo::demarrer(handle);
             systeme::demarrer(handle);
             // Indicateur de Windows : remettre d'abord (fin brutale précédente), puis remplacer.
             systeme::osd::restaurer();

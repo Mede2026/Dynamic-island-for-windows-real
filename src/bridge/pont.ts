@@ -14,6 +14,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { backend, dansTauri, ecouter } from "./backend";
 import { cleChanson, lireLrc } from "./paroles";
 import { donnees, majDonnees, positionActuelle } from "./donnees";
+import { demanderClaude, preparerQuestionImage } from "../recherche/RechercheIle";
 import { recevoirNiveau } from "../rendu/onde";
 import type { EtatMedia, EtatMinuteur } from "./types";
 import { appIgnoree, definirPreferences, definirSurcharges, preferencesActuelles, type Preferences } from "../config/store";
@@ -256,9 +257,12 @@ export function demarrerPont(machine: IslandMachine): () => void {
   const fermerOutilIle = () => {
     if (outilOuvert()) machine.envoyer({ type: "ACTIVITE_FIN", id: "outil" });
   };
-  const ouvrirOutil = (nom: string) => {
+  const ouvrirOutil = (nom: string, forcer = false) => {
     const ouvert = outilOuvert();
-    if (ouvert && (ouvert.donnees as { outil?: string } | undefined)?.outil === nom) return fermerOutilIle();
+    if (ouvert && (ouvert.donnees as { outil?: string } | undefined)?.outil === nom) {
+      if (forcer) return;
+      return fermerOutilIle();
+    }
     if (menuOuvert()) machine.envoyer({ type: "ACTIVITE_FIN", id: "menu" });
     outilVuOuvert = false;
     machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "outil", type: "outil", donnees: { outil: nom } } });
@@ -274,6 +278,27 @@ export function demarrerPont(machine: IslandMachine): () => void {
     }),
   );
   arrets.push(ecouter("ouvrir-outil", (nom) => ouvrirOutil(nom)));
+  // Boutons des alertes : « Résumer » (texte copié) et « Demander » (capture) → Claude dans l'île.
+  const demander = (e: Event) => {
+    const quoi = (e as CustomEvent<string>).detail;
+    machine.envoyer({ type: "CLIC" }); // ferme l'alerte
+    if (quoi === "texte") {
+      void backend.historiqueLire().then((textes) => {
+        const t = textes?.[0];
+        if (!t) return;
+        ouvrirOutil("recherche", true);
+        void demanderClaude(`Résume ce texte en quelques phrases, dans sa langue :\n\n${t}`, { affiche: `Résumer : « ${t.replace(/\s+/g, " ").slice(0, 60)}${t.length > 60 ? "…" : ""} »` });
+      });
+    } else {
+      void backend.pressePapiersImage().then((png) => {
+        if (!png) return;
+        ouvrirOutil("recherche", true);
+        preparerQuestionImage(png);
+      });
+    }
+  };
+  window.addEventListener("ile-demander", demander);
+  arrets.push(Promise.resolve(() => window.removeEventListener("ile-demander", demander)));
   arrets.push(
     Promise.resolve(
       machine.abonner((e) => {
@@ -382,6 +407,19 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(Promise.resolve(() => window.removeEventListener("ile-maj", verifierMaj)));
   arrets.push(ecouter("nouvelle-version", (n) => envoyer([{ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: n, dureeFacteur: 3 } }])));
   arrets.push(ecouter("ventilateurs", (s) => majDonnees({ ventilo: s })));
+  // Météo : affichée au survol (horloge) ; alerte quand la pluie ou la neige arrive dans l'heure.
+  let alertePluieA = 0;
+  arrets.push(
+    ecouter("meteo", (m) => {
+      const avant = donnees().meteo;
+      majDonnees({ meteo: m });
+      const arrive = m.precipitationDans !== null && (avant?.precipitationDans ?? null) === null;
+      if (arrive && Date.now() - alertePluieA > 90 * 60_000) {
+        alertePluieA = Date.now();
+        envoyer([{ type: "ALERTE", alerte: { type: "meteo", donnees: { precipitationDans: m.precipitationDans, neige: m.neige }, dureeFacteur: 1.3 } }]);
+      }
+    }),
+  );
   arrets.push(ecouter("vpn", (n) => envoyer([{ type: "ALERTE", alerte: { type: "vpn", donnees: n } }])));
 
   // Chronomètre (menu de l'île) : démarrer, pause, reprendre, tour, arrêter.

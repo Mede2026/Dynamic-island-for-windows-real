@@ -134,6 +134,8 @@ export const SCENARIOS = {
   outilCopies: "Copiés récemment dans l'île",
   outilNote: "Note dans l'île",
   outilVentilateurs: "Ventilateurs (Asus Fan Control) dans l'île",
+  outilComptes: "Comptes à rebours dans l'île",
+  meteo: "Pluie dans 15 min (alerte météo)",
   telechargement: "Téléchargement en cours",
   finTelechargement: "Téléchargement terminé",
   etagere: "Étagère (3 fichiers)",
@@ -208,6 +210,10 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
     case "luminosite":
       machine.envoyer({ type: "ALERTE", alerte: { type: "luminosite", donnees: 62 } });
       break;
+    case "meteo":
+      majDonnees({ meteo: { temperature: 4, code: 61, jour: true, precipitationDans: 15, neige: false, positionReelle: false } });
+      machine.envoyer({ type: "ALERTE", alerte: { type: "meteo", donnees: { precipitationDans: 15, neige: false } } });
+      break;
     case "capture": {
       machine.envoyer({ type: "ALERTE", alerte: { type: "capture", donnees: { type: "capture", apercu: "", miniature: captureFactice() } } });
       break;
@@ -216,8 +222,9 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
     case "outilMinuteur":
     case "outilCopies":
     case "outilNote":
-    case "outilVentilateurs": {
-      const outil = { outilRecherche: "recherche", outilMinuteur: "minuteur", outilCopies: "copies", outilNote: "note", outilVentilateurs: "ventilateurs" }[nom];
+    case "outilVentilateurs":
+    case "outilComptes": {
+      const outil = { outilRecherche: "recherche", outilMinuteur: "minuteur", outilCopies: "copies", outilNote: "note", outilVentilateurs: "ventilateurs", outilComptes: "comptes" }[nom];
       if (dansTauri()) {
         window.dispatchEvent(new CustomEvent("ile-outil", { detail: outil }));
       } else {
