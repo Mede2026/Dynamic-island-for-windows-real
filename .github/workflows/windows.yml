@@ -63,6 +63,21 @@ jobs:
             $g.CopyFromScreen($ecran.X, $ecran.Y, 0, 0, $img.Size)
             New-Item -ItemType Directory -Force captures | Out-Null
             $img.Save("captures/$nom.png")
+            # Aperçu en caractères dans le journal (lisible sans télécharger l'image) :
+            # 100 colonnes × 22 lignes autour du centre ; « @ » clair … « . » sombre ; « R/G/B »
+            # = pixel nettement coloré (rouge, vert, bleu).
+            Write-Host "----- $nom (haut de l'écran, centre) -----"
+            $cx = [int]($img.Width / 2)
+            for ($y = 0; $y -lt 132; $y += 6) {
+              $ligne = ""
+              for ($x = $cx - 400; $x -lt $cx + 400; $x += 8) {
+                $p = $img.GetPixel([Math]::Max(0, [Math]::Min($img.Width - 1, $x)), $y)
+                $l = ($p.R + $p.G + $p.B) / 3
+                if ($p.B -gt $p.R + 40 -and $p.B -gt $p.G + 20) { $ligne += "B" }
+                elseif ($l -gt 200) { $ligne += "@" } elseif ($l -gt 140) { $ligne += "+" } elseif ($l -gt 70) { $ligne += "-" } elseif ($l -gt 25) { $ligne += "." } else { $ligne += " " }
+              }
+              Write-Host "|$ligne|"
+            }
             $g.Dispose(); $img.Dispose()
           }
           Capturer "repos"
