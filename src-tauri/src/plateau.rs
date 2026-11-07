@@ -203,7 +203,56 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     }
 }
 
+/// Clic droit sur l'île : son menu, juste à côté (sans passer par l'icône près de l'horloge).
+/// Identifiants « ile:… » : traités par `gerer_menu_ile` (le menu de l'icône les ignore).
+#[tauri::command]
+pub fn ile_menu(app: AppHandle) -> Result<(), String> {
+    let construire = || -> tauri::Result<Menu<tauri::Wry>> {
+        let item = |id: &str, texte: &str| MenuItem::with_id(&app, format!("ile:{id}"), texte, true, None::<&str>);
+        Menu::with_items(
+            &app,
+            &[
+                &item("lanceur", "Lancer un minuteur\tCtrl+Alt+M")?,
+                &item("chanson", "Quelle est cette chanson ?\tCtrl+Alt+S")?,
+                &item("etagere", "Étagère\tCtrl+Alt+E")?,
+                &item("historique", "Presse-papiers récent\tCtrl+Alt+V")?,
+                &item("recherche", "Recherche rapide\tCtrl+Alt+Espace")?,
+                &PredefinedMenuItem::separator(&app)?,
+                &item("cacher", "Cacher l'île\tCtrl+Alt+H")?,
+                &item("reglages", "Réglages\tCtrl+Alt+D")?,
+            ],
+        )
+    };
+    let menu = construire().map_err(|e| e.to_string())?;
+    let fen = app.get_webview_window(fenetre::LABEL).ok_or("île introuvable")?;
+    fen.popup_menu(&menu).map_err(|e| e.to_string())
+}
+
+/// Actions du menu du clic droit sur l'île.
+fn gerer_menu_ile(app: &AppHandle, id: &str) {
+    match id {
+        "ile:lanceur" => ouvrir_lanceur(app),
+        "ile:chanson" => crate::chanson::lancer(app),
+        "ile:etagere" => {
+            let _ = app.emit("ouvrir-etagere", ());
+        }
+        "ile:historique" => basculer_historique(app),
+        "ile:recherche" => basculer_recherche(app),
+        "ile:cacher" => {
+            fenetre::basculer_cachee(app);
+        }
+        "ile:reglages" => ouvrir_panneau(app),
+        _ => {}
+    }
+}
+
 pub fn installer(app: &AppHandle) -> tauri::Result<()> {
+    app.on_menu_event(|app, ev| {
+        let id = ev.id().as_ref();
+        if id.starts_with("ile:") {
+            gerer_menu_ile(app, id);
+        }
+    });
     let reglages = MenuItem::with_id(app, "reglages", "Réglages (Ctrl+Alt+D)", true, None::<&str>)?;
     let lanceur = MenuItem::with_id(app, "lanceur", "Lancer un minuteur (Ctrl+Alt+M)", true, None::<&str>)?;
     let chanson = MenuItem::with_id(

@@ -475,7 +475,13 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   return (
     <div
       style={{ position: "absolute", left: 0, top: 0, width: canevasL, height: canevasH, fontFamily: v(cfg.police) }}
+      onContextMenu={(e) => {
+        // Clic droit sur l'île : son menu (minuteur, chanson, étagère…), près de l'île.
+        e.preventDefault();
+        void backend.ileMenu();
+      }}
       onPointerDown={(e) => {
+        if (e.button !== 0) return;
         const cible = e.target as Element;
         // Le grand SVG du canevas ne contient que les formes : un clic qui y tombe est hors du contenu.
         if (cible === e.currentTarget || (canevasSvg.current?.contains(cible) ?? false)) {
@@ -523,10 +529,11 @@ export function Ile({ machine }: { machine: IslandMachine }) {
             pointerEvents: "auto",
           }}
           onPointerDown={(e) => {
+            if (e.button !== 0) return; // clic droit : menu (onContextMenu), pas un appui
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             debutAppui("principal");
           }}
-          onPointerUp={() => finAppui(false)}
+          onPointerUp={(e) => e.button === 0 && finAppui(false)}
           onPointerCancel={() => finAppui(true)}
         >
           <AnimatePresence initial={false}>
@@ -568,10 +575,11 @@ export function Ile({ machine }: { machine: IslandMachine }) {
             overflow: "hidden",
           }}
           onPointerDown={(e) => {
+            if (e.button !== 0) return; // clic droit : menu (onContextMenu), pas un appui
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             debutAppui("bulle");
           }}
-          onPointerUp={() => finAppui(false)}
+          onPointerUp={(e) => e.button === 0 && finAppui(false)}
           onPointerCancel={() => finAppui(true)}
         >
           <AnimatePresence initial={false}>
