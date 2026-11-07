@@ -118,6 +118,9 @@ export const SCENARIOS = {
   notification: "Notification (titre + message)",
   deverrouillage: "Déverrouillage (cadenas)",
   menu: "Menu de l'île (clic droit)",
+  chrono: "Chronomètre (avec un tour)",
+  vpn: "VPN connecté",
+  compteARebours: "Compte à rebours",
   enregistrement: "Enregistrement de l'écran",
   sortieAudio: "Écouteurs branchés",
   microCoupe: "Micro coupé",
@@ -249,6 +252,16 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       break;
     case "notification":
       machine.envoyer({ type: "ALERTE", alerte: { type: "notification", donnees: { id: 9, application: "Messages", textes: ["Papa", "On soupe à 18 h, tu ramènes du pain ?"] } } });
+      break;
+    case "chrono":
+      majDonnees({ chrono: { cumulMs: 0, debutMs: Date.now() - 83_400, tours: [41_200] } });
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "chrono", type: "chrono" } });
+      break;
+    case "vpn":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "vpn", donnees: { connecte: true, nom: "ProtonVPN" } } });
+      break;
+    case "compteARebours":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "compteARebours", donnees: { nom: "Examen de sciences", jours: 3 } } });
       break;
     case "menu":
       machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "menu", type: "menu" } });

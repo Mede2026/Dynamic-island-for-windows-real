@@ -30,7 +30,28 @@ pub const RACCOURCI_LANCEUR: &str = "ctrl+alt+m";
 const LABEL_LANCEUR: &str = "lanceur";
 /// Cacher / afficher l'île.
 pub const RACCOURCI_CACHER: &str = "ctrl+alt+h";
-/// Étagère (fichiers gardés sous la main).
+/// Note rapide.
+pub const RACCOURCI_NOTE: &str = "ctrl+alt+n";
+const LABEL_NOTE: &str = "note";
+
+/// Ctrl+Alt+N : petite fenêtre de note (enregistrée au fil de la frappe), ou la ferme.
+pub fn basculer_note(app: &AppHandle) {
+    if let Some(f) = app.get_webview_window(LABEL_NOTE) {
+        let _ = f.close();
+        return;
+    }
+    let r = WebviewWindowBuilder::new(app, LABEL_NOTE, WebviewUrl::App("index.html?note".into()))
+        .title("Note — Dynamic Island")
+        .inner_size(380.0, 420.0)
+        .always_on_top(true)
+        .center()
+        .build();
+    if let Err(e) = r {
+        journal!("plateau", "note impossible à ouvrir : {e}");
+    }
+}
+
+/// Étagère (fichiers sous la main).
 pub const RACCOURCI_ETAGERE: &str = "ctrl+alt+e";
 
 /// Historique du presse-papiers.
@@ -83,7 +104,7 @@ pub fn basculer_recherche(app: &AppHandle) {
 /// essaie un raccourci de secours et le note dans le journal — sans jamais bloquer le démarrage.
 pub fn enregistrer_raccourcis(app: &AppHandle) {
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
-    let essais: [(&str, &[&str]); 7] = [
+    let essais: [(&str, &[&str]); 8] = [
         ("réglages", &[RACCOURCI_PANNEAU, "ctrl+alt+shift+d"]),
         ("lanceur", &[RACCOURCI_LANCEUR, "ctrl+alt+shift+m"]),
         ("cacher", &[RACCOURCI_CACHER, "ctrl+alt+shift+h"]),
@@ -91,6 +112,7 @@ pub fn enregistrer_raccourcis(app: &AppHandle) {
         ("chanson", &[RACCOURCI_CHANSON, "ctrl+alt+shift+s"]),
         ("historique", &[RACCOURCI_HISTORIQUE, "ctrl+alt+shift+v"]),
         ("étagère", &[RACCOURCI_ETAGERE, "ctrl+alt+shift+e"]),
+        ("note", &[RACCOURCI_NOTE, "ctrl+alt+shift+n"]),
     ];
     for (nom, raccourcis) in essais {
         let ok = raccourcis.iter().find(|r| match app.global_shortcut().register(**r) {
@@ -188,6 +210,8 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
     };
     if est(RACCOURCI_LANCEUR) || est("ctrl+alt+shift+m") {
         basculer_lanceur(app);
+    } else if est(RACCOURCI_NOTE) || est("ctrl+alt+shift+n") {
+        basculer_note(app);
     } else if est(RACCOURCI_ETAGERE) || est("ctrl+alt+shift+e") {
         let _ = app.emit("ouvrir-etagere", ());
     } else if est(RACCOURCI_HISTORIQUE) || est("ctrl+alt+shift+v") {
@@ -245,6 +269,7 @@ fn gerer_menu_ile(app: &AppHandle, id: &str) {
             let _ = app.emit("ouvrir-etagere", ());
         }
         "ile:historique" => basculer_historique(app),
+        "ile:note" => basculer_note(app),
         "ile:recherche" => basculer_recherche(app),
         "ile:cacher" => {
             fenetre::basculer_cachee(app);

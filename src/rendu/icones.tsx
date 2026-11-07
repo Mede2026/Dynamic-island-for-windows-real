@@ -492,3 +492,43 @@ export function IconeCacher({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Chronomètre. */
+export function IconeChrono({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <circle cx="12" cy="13.5" r="8" stroke={couleur} strokeWidth="2" />
+      <path d="M10 2.5h4M12 2.5v3M12 13.5l3.2-3.2M19.2 6.2l1.4-1.4" stroke={couleur} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Crayon (note rapide). */
+export function IconeCrayon({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M4 20l1-4.6L15.6 4.8a2 2 0 0 1 2.8 0l.8.8a2 2 0 0 1 0 2.8L8.6 19 4 20z" stroke={couleur} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M13.8 6.6l3.6 3.6" stroke={couleur} strokeWidth="2" />
+    </svg>
+  );
+}
+
+/** Lettres dans un cadre (texte d'une image). */
+export function IconeTexteImage({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" stroke={couleur} strokeWidth="2" strokeLinecap="round" />
+      <path d="M8 8.5h8M12 8.5v7.5" stroke={couleur} strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Bouclier (VPN). */
+export function IconeBouclier({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <path d="M12 2.5l7.5 3v6c0 4.6-3.2 8.4-7.5 10-4.3-1.6-7.5-5.4-7.5-10v-6z" fill={couleur} />
+      <path d="M8.6 12.2l2.4 2.4 4.6-4.8" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

@@ -7,6 +7,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { backend, dansTauri } from "../bridge/backend";
 import { calculer, estCalcul, formaterNombre } from "./calcul";
+import { analyserConversion } from "./conversion";
 
 interface Resultat {
   titre: string;
@@ -73,12 +74,37 @@ export function Recherche() {
     return () => window.removeEventListener("keydown", echap);
   }, []);
 
-  const resultatCalcul = estCalcul(terme) ? calculer(terme) : null;
+  const conversion = analyserConversion(terme);
+  const [taux, setTaux] = useState<{ cle: string; valeur: number | null } | null>(null);
+  const cleDevise = conversion?.genre === "devise" ? `${conversion.de}>${conversion.vers}` : "";
+  useEffect(() => {
+    if (!cleDevise) return;
+    const [de, vers] = cleDevise.split(">");
+    if (de === vers) return setTaux({ cle: cleDevise, valeur: 1 });
+    const minuterie = setTimeout(() => {
+      void backend
+        .tauxDeChange(de!, vers!)
+        .then((t) => setTaux({ cle: cleDevise, valeur: t ?? null }))
+        .catch(() => setTaux({ cle: cleDevise, valeur: null }));
+    }, 300);
+    return () => clearTimeout(minuterie);
+  }, [cleDevise]);
+  const resultatConversion =
+    conversion?.genre === "unite"
+      ? `${formaterNombre(conversion.valeur)} ${conversion.de} = ${formaterNombre(Math.round(conversion.resultat * 1000) / 1000)} ${conversion.vers}`
+      : conversion?.genre === "devise" && taux?.cle === cleDevise && taux.valeur !== null
+        ? `${formaterNombre(conversion.valeur)} ${conversion.de} = ${formaterNombre(Math.round(conversion.valeur * taux.valeur * 100) / 100)} ${conversion.vers}`
+        : null;
+  const resultatCalcul = !conversion && estCalcul(terme) ? calculer(terme) : null;
 
   const chercher = async () => {
     if (!terme.trim()) return;
     if (resultatCalcul !== null) {
       void backend.copierTexte(String(resultatCalcul));
+      return;
+    }
+    if (resultatConversion) {
+      void backend.copierTexte(resultatConversion.split(" = ")[1] ?? resultatConversion);
       return;
     }
     setEtat("recherche");
@@ -109,6 +135,12 @@ export function Recherche() {
         />
       </form>
       <div style={s.carte}>
+        {conversion && (
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 650, fontVariantNumeric: "tabular-nums" }}>{resultatConversion ?? "Taux du jour…"}</div>
+            <div style={s.gris}>{conversion.genre === "devise" ? "Taux de la Banque centrale européenne · " : ""}Entrée pour copier le résultat</div>
+          </div>
+        )}
         {resultatCalcul !== null && (
           <div>
             <div style={{ fontSize: 34, fontWeight: 650, fontVariantNumeric: "tabular-nums" }}>= {formaterNombre(resultatCalcul)}</div>
@@ -118,7 +150,7 @@ export function Recherche() {
         {etat === "recherche" && <p style={s.gris}>Recherche…</p>}
         {etat === "rien" && <p style={s.gris}>Rien trouvé sur Wikipédia.</p>}
         {etat === "erreur" && <p style={s.gris}>Pas de connexion à Wikipédia.</p>}
-        {etat === "attente" && !resultat && resultatCalcul === null && <p style={s.gris}>Entrée pour chercher · un calcul aussi (« 15 % de 80 ») · Échap pour fermer</p>}
+        {etat === "attente" && !resultat && resultatCalcul === null && !conversion && <p style={s.gris}>Un mot (définition), un sujet, un calcul (« 15 % de 80 ») ou une conversion (« 5 km en milles », « 20 usd en cad »)</p>}
         {resultat && (
           <>
             {resultat.image && (
@@ -126,10 +158,10 @@ export function Recherche() {
             )}
             <h1 style={s.titre}>{resultat.titre}</h1>
             {resultat.description && <div style={{ ...s.gris, marginBottom: 8 }}>{resultat.description}</div>}
-            <p style={{ margin: "0 0 10px" }}>{resultat.resume}</p>
+            <p style={{ margin: "0 0 10px", whiteSpace: "pre-line" }}>{resultat.resume}</p>
             {resultat.lien && (
               <button style={s.lien} onClick={() => void backend.ouvrirLien(resultat.lien)}>
-                Lire sur Wikipédia{resultat.langue === "en" ? " (anglais)" : ""} →
+                {resultat.lien.includes("wiktionary") ? "Lire sur le Wiktionnaire" : `Lire sur Wikipédia${resultat.langue === "en" ? " (anglais)" : ""}`} →
               </button>
             )}
           </>

@@ -166,6 +166,8 @@ export interface EvenementsBackend {
   "glisser-proche": null;
   /** Nouvelle version de l'île disponible sur GitHub. */
   "nouvelle-version": { version: string; url: string };
+  /** VPN connecté / déconnecté. */
+  vpn: { connecte: boolean; nom: string | null };
   /** Signal Wi-Fi tombé à 1 barre ou moins. */
   "wifi-faible": { barres: number; nom: string | null };
   /** Connexion Internet perdue / retrouvée. */
@@ -277,6 +279,7 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "bureau",
   "wifi-faible",
   "nouvelle-version",
+  "vpn",
   "impression",
   "redemarrage-requis",
 ];

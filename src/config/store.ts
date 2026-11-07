@@ -31,6 +31,8 @@ export interface Preferences {
   paroles?: boolean;
   /** Remplacer l'indicateur de volume / luminosité de Windows par l'île (lu par le backend). */
   remplacerOsd?: boolean;
+  /** Comptes à rebours (« Examen de sciences » le 2026-11-12) : rappel chaque jour. */
+  comptesARebours?: { nom: string; date: string }[];
   /** Cacher l'île dans les partages d'écran et enregistrements (Teams, Discord, OBS). */
   cacherPartage?: boolean;
   /** Rappels de pause : yeux toutes les 20 min, bouger toutes les heures (temps devant l'écran). */

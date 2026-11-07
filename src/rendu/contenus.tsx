@@ -48,9 +48,12 @@ import {
   IconeHautParleur,
   IconeMiseAJour,
   IconeNote,
+  IconeBouclier,
+  IconeChrono,
+  IconeCrayon,
+  IconeTexteImage,
   IconeLoupe,
   IconeReglages,
-  IconeCacher,
   IconeOeil,
   IconeWifi,
   IconeTelechargement,
@@ -1132,18 +1135,22 @@ export function fermerMenuIle() {
 
 const BOUTONS_MENU: { action: string; texte: string; icone: (t: number, c: string) => ReactNode; couleur: string }[] = [
   { action: "lanceur", texte: "Minuteur", icone: (t, c) => <IconeMinuteur taille={t} couleur={c} progression={1} />, couleur: "#ff8c2b" },
+  { action: "chrono", texte: "Chrono", icone: (t, c) => <IconeChrono taille={t} couleur={c} />, couleur: "#ff9f0a" },
   { action: "chanson", texte: "Chanson", icone: (t, c) => <IconeNote taille={t} couleur={c} />, couleur: "#0a84ff" },
   { action: "etagere", texte: "Étagère", icone: (t, c) => <IconeDossier taille={t} couleur={c} />, couleur: "#64a8ff" },
   { action: "historique", texte: "Copiés", icone: (t, c) => <IconePressePapiers taille={t} couleur={c} />, couleur: "#bf5af2" },
+  { action: "note", texte: "Note", icone: (t, c) => <IconeCrayon taille={t} couleur={c} />, couleur: "#ffd60a" },
   { action: "capture", texte: "Capture", icone: (t, c) => <IconeEcran taille={t} couleur={c} />, couleur: "#30d158" },
+  { action: "ocr", texte: "Texte image", icone: (t, c) => <IconeTexteImage taille={t} couleur={c} />, couleur: "#64d2ff" },
   { action: "recherche", texte: "Recherche", icone: (t, c) => <IconeLoupe taille={t} couleur={c} />, couleur: "#ffd60a" },
   { action: "reglages", texte: "Réglages", icone: (t, c) => <IconeReglages taille={t} couleur={c} />, couleur: "#98989f" },
-  { action: "cacher", texte: "Cacher", icone: (t, c) => <IconeCacher taille={t} couleur={c} />, couleur: "#98989f" },
 ];
 
 function lancerAction(action: string) {
   if (action === "etagere") window.dispatchEvent(new CustomEvent("ile-ouvrir-etagere"));
   else if (action === "capture") void backend.ouvrirLien("ms-screenclip:");
+  else if (action === "ocr") window.dispatchEvent(new CustomEvent("ile-ocr"));
+  else if (action === "chrono") window.dispatchEvent(new CustomEvent("ile-chrono", { detail: "demarrer" }));
   else void backend.ileAction(action);
   if (action !== "etagere") fermerMenuIle();
 }
@@ -1152,15 +1159,15 @@ export function MenuEtendu({ cfg, S }: Ctx) {
   const largeur = v(cfg.formes.etendu.taille.pt.largeur) * S;
   const hauteur = v(cfg.formes.etendu.taille.pt.hauteur) * S;
   const marge = 18 * S;
-  const cellule = (largeur - 2 * marge) / 4;
-  const rond = 46 * S;
+  const cellule = (largeur - 2 * marge) / 5;
+  const rond = 42 * S;
   return (
-    <div style={{ position: "absolute", left: marge, top: marge * 0.9, width: largeur - 2 * marge, height: hauteur - 2 * marge, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: 10 * S }}>
+    <div style={{ position: "absolute", left: marge, top: marge * 0.9, width: largeur - 2 * marge, height: hauteur - 2 * marge, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", rowGap: 10 * S }}>
       {BOUTONS_MENU.map((b) => (
         <button
           key={b.action}
           {...boutonIle(() => lancerAction(b.action))}
-          style={{ flexDirection: "column", gap: 6 * S, width: cellule, color: "#fff", fontSize: 11.5 * S, fontWeight: 500 }}
+          style={{ flexDirection: "column", gap: 6 * S, width: cellule, color: "#fff", fontSize: 11 * S, fontWeight: 500, whiteSpace: "nowrap" }}
         >
           <span
             style={{
@@ -1187,6 +1194,119 @@ export function MenuMinimal({ cfg, S }: Ctx) {
   const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
   const ti = v(c.compactIconeTaillePt) * S;
   return <IconeReglages taille={ti} couleur="#98989f" style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+// ---------------------------------------------------------------------------
+// Chronomètre (avec tours)
+// ---------------------------------------------------------------------------
+
+const ORANGE_CHRONO = "#ff9f0a";
+
+export function tempsChrono(c: Donnees["chrono"], maintenant = Date.now()): number {
+  if (!c) return 0;
+  return c.cumulMs + (c.debutMs !== null ? maintenant - c.debutMs : 0);
+}
+
+/** « 1:23,4 » (dixièmes), « 1:02:03,4 ». */
+export function formaterChrono(ms: number): string {
+  const dixiemes = Math.floor(ms / 100) % 10;
+  return `${formaterDuree(Math.floor(ms / 1000) * 1000)},${dixiemes}`;
+}
+
+function useChrono(c: Donnees["chrono"]): number {
+  const [maintenant, setMaintenant] = useState(Date.now());
+  useEffect(() => {
+    if (!c || c.debutMs === null) return;
+    const id = setInterval(() => setMaintenant(Date.now()), 100);
+    return () => clearInterval(id);
+  }, [c]);
+  return tempsChrono(c, maintenant);
+}
+
+const actionChrono = (detail: string) => window.dispatchEvent(new CustomEvent("ile-chrono", { detail }));
+
+export function ChronoCompact({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  const t = useChrono(d.chrono);
+  return (
+    <>
+      <IconeChrono taille={ti} couleur={ORANGE_CHRONO} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S * 0.9) / 2,
+          fontVariantNumeric: "tabular-nums",
+          color: ORANGE_CHRONO,
+          left: undefined,
+          fontSize: v(c.compactTexte.taillePt) * S * 0.9,
+        })}
+      >
+        {formaterChrono(t).replace(/,\d$/, "")}
+      </div>
+    </>
+  );
+}
+
+export function ChronoMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S;
+  return <IconeChrono taille={ti} couleur={ORANGE_CHRONO} style={{ position: "absolute", left: v(c.compactIconeXPt) * S, top: (h - ti) / 2 }} />;
+}
+
+/** Comme l'app Horloge : Tour / Pause à gauche, temps en grand à droite, dernier tour dessous. */
+export function ChronoEtendu({ cfg, S, d }: Ctx) {
+  const c = cfg.minuteur;
+  const t = useChrono(d.chrono);
+  const enCours = d.chrono?.debutMs !== null && d.chrono !== null;
+  const diam = v(c.etenduBoutonDiametrePt) * S;
+  const [xA, xB] = v(c.etenduBoutonXPt).map((x) => x * S);
+  const y = v(c.etenduBoutonYPt) * S;
+  const tours = d.chrono?.tours ?? [];
+  return (
+    <>
+      <button
+        {...boutonIle(() => actionChrono(enCours ? "pause" : "reprendre"))}
+        style={{ position: "absolute", left: xA, top: y, width: diam, height: diam, borderRadius: diam, background: v(c.etenduBoutonPauseFond) }}
+      >
+        {enCours ? <IconePause taille={diam * 0.42} couleur={ORANGE_CHRONO} /> : <IconeLecture taille={diam * 0.42} couleur={ORANGE_CHRONO} />}
+      </button>
+      <button
+        {...boutonIle(() => actionChrono(enCours ? "tour" : "arreter"))}
+        style={{ position: "absolute", left: xB, top: y, width: diam, height: diam, borderRadius: diam, background: v(c.etenduBoutonAnnulerFond), color: "#fff", fontSize: diam * 0.26, fontWeight: 600 }}
+      >
+        {enCours ? "Tour" : <IconeFermer taille={diam * 0.42} couleur="#ffffff" />}
+      </button>
+      <div
+        style={texte(c.etenduChiffres, S, {
+          right: (v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) - v(c.etenduChiffresDroitePt)) * S,
+          top: haut(v(c.etenduBaselinePt), c.etenduChiffres, S) - (tours.length ? 6 * S : 0),
+          fontVariantNumeric: "tabular-nums",
+          color: ORANGE_CHRONO,
+          fontSize: v(c.etenduChiffres.taillePt) * S * 0.82,
+        })}
+      >
+        {formaterChrono(t)}
+      </div>
+      {tours.length > 0 && (
+        <div
+          style={texte(c.etenduLibelle, S, {
+            right: (v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) - v(c.etenduChiffresDroitePt)) * S,
+            top: y + diam * 0.8,
+            left: undefined,
+            color: v(cfg.media.etendu.artiste.couleur),
+            fontWeight: 400,
+            fontSize: v(c.etenduLibelle.taillePt) * S * 0.75,
+            fontVariantNumeric: "tabular-nums",
+          })}
+        >
+          Tour {tours.length} : {formaterChrono(tours[tours.length - 1]! - (tours[tours.length - 2] ?? 0))}
+        </div>
+      )}
+    </>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1368,6 +1488,12 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeNote taille={ti} couleur={couleurIcone} />;
       case "imprimante":
         return <IconeImprimante taille={ti} couleur={couleurIcone} />;
+      case "bouclier":
+        return <IconeBouclier taille={ti} couleur={couleurIcone} />;
+      case "texteImage":
+        return <IconeTexteImage taille={ti} couleur={couleurIcone} />;
+      case "chrono":
+        return <IconeChrono taille={ti} couleur={couleurIcone} />;
       case "cadenas":
         return <CadenasQuiSouvre taille={ti} couleur={couleurIcone} />;
       case "ecran":

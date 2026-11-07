@@ -55,7 +55,10 @@ export type NomIcone =
   | "bureaux"
   | "hautParleur"
   | "micro"
-  | "microCoupe";
+  | "microCoupe"
+  | "bouclier"
+  | "texteImage"
+  | "chrono";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -260,6 +263,28 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
         valeur: "Imprimé",
         couleurValeur: v(a.valeurCouleur),
       };
+    }
+    case "vpn": {
+      const n = { connecte: true, nom: null, ...(alerte.donnees as Partial<{ connecte: boolean; nom: string | null }>) };
+      const gris = v(cfg.media.etendu.artiste.couleur);
+      return {
+        icone: "bouclier",
+        couleurIcone: n.connecte ? v(a.valeurCouleur) : gris,
+        libelle: n.nom || "VPN",
+        valeur: n.connecte ? "Connecté" : "Déconnecté",
+        couleurValeur: n.connecte ? v(a.valeurCouleur) : gris,
+      };
+    }
+    case "texteImage": {
+      const t = { ok: true, nombre: 0, erreur: "", ...(alerte.donnees as Partial<{ ok: boolean; nombre: number; erreur: string }>) };
+      return t.ok
+        ? { icone: "texteImage", libelle: "Texte copié", valeur: `${t.nombre} mots`, couleurValeur: v(a.valeurCouleur) }
+        : { icone: "texteImage", couleurIcone: v(cfg.media.etendu.artiste.couleur), libelle: "Texte", valeur: "Rien trouvé", couleurValeur: v(cfg.media.etendu.artiste.couleur) };
+    }
+    case "compteARebours": {
+      const c = { nom: "", jours: 0, ...(alerte.donnees as Partial<{ nom: string; jours: number }>) };
+      const quand = c.jours <= 0 ? "Aujourd'hui" : c.jours === 1 ? "Demain" : `Dans ${c.jours} jours`;
+      return { icone: "chrono", couleurIcone: "#ff9f0a", libelle: c.nom || "Compte à rebours", valeur: quand, couleurValeur: "#ff9f0a" };
     }
     case "nouvelleVersion": {
       const n = { version: "", url: "", ...(alerte.donnees as Partial<{ version: string; url: string }>) };

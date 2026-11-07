@@ -21,11 +21,13 @@ pub mod mise_a_jour;
 pub mod ne_pas_deranger;
 pub mod niveau_audio;
 pub mod notifications;
+pub mod ocr;
 pub mod osd;
 pub mod presse_papiers;
 pub mod telechargements;
 pub mod usb;
 pub mod volume;
+pub mod vpn;
 
 use tauri::AppHandle;
 
@@ -46,6 +48,7 @@ pub fn demarrer(app: &AppHandle) {
     impression::demarrer(app.clone());
     micro::demarrer(app.clone());
     bureaux::demarrer(app.clone());
+    vpn::demarrer(app.clone());
     mise_a_jour::demarrer(app.clone());
 }
 

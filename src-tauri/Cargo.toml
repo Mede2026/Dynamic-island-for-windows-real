@@ -1,6 +1,6 @@
 [package]
 name = "dynamic-island"
-version = "0.1.10"
+version = "0.1.11"
 description = "Réplique du Dynamic Island pour Windows"
 edition = "2021"
 license = "MIT"
@@ -34,7 +34,10 @@ windows = { version = "0.62", features = [
   "Devices_Enumeration",
   "Foundation",
   "Foundation_Collections",
+  "Globalization",
+  "Graphics_Imaging",
   "Media_Control",
+  "Media_Ocr",
   "Networking_Connectivity",
   "Storage_Streams",
   "System_Power",
@@ -50,6 +53,9 @@ windows = { version = "0.62", features = [
   "Win32_Graphics_Dwm",
   "Win32_Graphics_Gdi",
   "Win32_Graphics_Printing",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_NetworkManagement_Ndis",
+  "Win32_Networking_WinSock",
   "Win32_Storage_EnhancedStorage",
   "Win32_Storage_FileSystem",
   "Win32_Media_Audio",

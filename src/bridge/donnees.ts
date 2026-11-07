@@ -39,6 +39,8 @@ export interface Donnees {
   paroles: ParolesChanson | null;
   telechargements: Telechargement[];
   impressions: TravailImpression[];
+  /** Chronomètre : temps cumulé, départ de la course en cours (null = en pause), tours. */
+  chrono: { cumulMs: number; debutMs: number | null; tours: number[] } | null;
   /** Appel qui sonne (nom de l'appelant, app). */
   appelEntrant: { nom: string; application: string } | null;
   /** Fichiers de l'étagère (chemins complets). */
@@ -58,6 +60,7 @@ let etat: Donnees = {
   telechargements: [],
   impressions: [],
   appelEntrant: null,
+  chrono: null,
   etagere: [],
 };
 const abonnes = new Set<() => void>();

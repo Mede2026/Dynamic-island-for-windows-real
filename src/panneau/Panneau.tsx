@@ -70,6 +70,8 @@ const ALERTES: [string, string][] = [
   ["ecranExterne", "Écran externe branché / débranché"],
   ["bureau", "Bureau virtuel"],
   ["wifiFaible", "Wi-Fi faible"],
+  ["vpn", "VPN connecté / déconnecté"],
+  ["compteARebours", "Comptes à rebours"],
 ];
 
 type Onglet =
@@ -94,6 +96,7 @@ const RACCOURCIS: [string, string][] = [
   ["Ctrl+Alt+S", "Quelle est cette chanson ?"],
   ["Ctrl+Alt+E", "Étagère (fichiers sous la main)"],
   ["Ctrl+Alt+V", "Textes copiés récemment"],
+  ["Ctrl+Alt+N", "Note rapide"],
   ["Ctrl+Alt+Espace", "Recherche rapide / calculatrice"],
   ["Ctrl+Alt+H", "Cacher / afficher l'île"],
 ];
@@ -253,6 +256,7 @@ export function Panneau() {
   const [filtre, setFiltre] = useState("");
   const [nouvelleApp, setNouvelleApp] = useState("");
   const [onglet, setOnglet] = useState<Onglet>("apparence");
+  const [nouveauCompte, setNouveauCompte] = useState({ nom: "", date: "" });
   const [version, setVersion] = useState("");
   const [maj, setMaj] = useState("");
   useEffect(() => {
@@ -459,6 +463,67 @@ export function Panneau() {
 
       {onglet === "alertes" && (
         <>
+          <Section titre="Comptes à rebours">
+            <p style={c.note}>
+              L'île te le rappelle chaque jour (au démarrage et au premier
+              déverrouillage), jusqu'à 30 jours avant.
+            </p>
+            <form
+              style={c.ligne}
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!nouveauCompte.nom.trim() || !nouveauCompte.date) return;
+                changerPrefs({
+                  comptesARebours: [
+                    ...(prefs.comptesARebours ?? []),
+                    { nom: nouveauCompte.nom.trim(), date: nouveauCompte.date },
+                  ],
+                });
+                setNouveauCompte({ nom: "", date: "" });
+              }}
+            >
+              <input
+                value={nouveauCompte.nom}
+                onChange={(e) =>
+                  setNouveauCompte({ ...nouveauCompte, nom: e.target.value })
+                }
+                placeholder="Examen de sciences"
+                style={{ flex: 1, font: "inherit" }}
+              />
+              <input
+                type="date"
+                value={nouveauCompte.date}
+                onChange={(e) =>
+                  setNouveauCompte({ ...nouveauCompte, date: e.target.value })
+                }
+                style={{ font: "inherit" }}
+              />
+              <button type="submit">Ajouter</button>
+            </form>
+            {(prefs.comptesARebours ?? []).map((cr, i) => (
+              <div key={`${cr.nom}${cr.date}${i}`} style={c.ligne}>
+                <span style={{ flex: 1 }}>
+                  {cr.nom} —{" "}
+                  {new Date(`${cr.date}T00:00:00`).toLocaleDateString("fr-CA", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </span>
+                <button
+                  onClick={() =>
+                    changerPrefs({
+                      comptesARebours: (prefs.comptesARebours ?? []).filter(
+                        (_, j) => j !== i,
+                      ),
+                    })
+                  }
+                >
+                  Retirer
+                </button>
+              </div>
+            ))}
+          </Section>
           <Section titre="Apps ignorées (musique et notifications)">
             <p style={c.note}>
               L'île ne réagit pas à ces apps : ni musique, ni notifications. Un

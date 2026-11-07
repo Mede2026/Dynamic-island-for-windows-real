@@ -111,6 +111,8 @@ pub fn run() {
             etagere::etagere_ajouter,
             etagere::etagere_retirer,
             recherche::recherche_rapide,
+            recherche::taux_de_change,
+            systeme::ocr::ocr_presse_papiers,
             recherche::ouvrir_lien,
             minuteur::minuteur_demarrer,
             minuteur::minuteur_pause,

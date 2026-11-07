@@ -304,6 +304,65 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(ecouter("sortie-audio", (s) => envoyer([{ type: "ALERTE", alerte: { type: "sortieAudio", donnees: s } }])));
   arrets.push(ecouter("micro-muet", (m) => envoyer([{ type: "ALERTE", alerte: { type: "micro", donnees: m } }])));
   arrets.push(ecouter("nouvelle-version", (n) => envoyer([{ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: n, dureeFacteur: 3 } }])));
+  arrets.push(ecouter("vpn", (n) => envoyer([{ type: "ALERTE", alerte: { type: "vpn", donnees: n } }])));
+
+  // Chronomètre (menu de l'île) : démarrer, pause, reprendre, tour, arrêter.
+  const actionChrono = (e: Event) => {
+    const action = (e as CustomEvent<string>).detail;
+    const c = donnees().chrono;
+    const maintenant = Date.now();
+    if (action === "demarrer") {
+      if (!c) {
+        majDonnees({ chrono: { cumulMs: 0, debutMs: maintenant, tours: [] } });
+        machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "chrono", type: "chrono" } });
+      }
+      machine.envoyer({ type: "CLIC_LONG" });
+    } else if (!c) return;
+    else if (action === "pause" && c.debutMs !== null) majDonnees({ chrono: { ...c, cumulMs: c.cumulMs + maintenant - c.debutMs, debutMs: null } });
+    else if (action === "reprendre" && c.debutMs === null) majDonnees({ chrono: { ...c, debutMs: maintenant } });
+    else if (action === "tour") majDonnees({ chrono: { ...c, tours: [...c.tours, c.cumulMs + (c.debutMs !== null ? maintenant - c.debutMs : 0)] } });
+    else if (action === "arreter") {
+      majDonnees({ chrono: null });
+      machine.envoyer({ type: "ACTIVITE_FIN", id: "chrono" });
+    }
+  };
+  window.addEventListener("ile-chrono", actionChrono);
+  arrets.push(Promise.resolve(() => window.removeEventListener("ile-chrono", actionChrono)));
+
+  // Texte d'une image : la capture (Win+Maj+S) qui suit est lue par l'OCR de Windows.
+  let ocrDemandeA = 0;
+  const lancerOcr = () => {
+    ocrDemandeA = Date.now();
+    void backend.ouvrirLien("ms-screenclip:");
+  };
+  window.addEventListener("ile-ocr", lancerOcr);
+  arrets.push(Promise.resolve(() => window.removeEventListener("ile-ocr", lancerOcr)));
+  arrets.push(
+    ecouter("presse-papiers", (p) => {
+      if (Date.now() - ocrDemandeA > 90_000 || (p.type !== "capture" && p.type !== "image")) return;
+      ocrDemandeA = 0;
+      void backend
+        .ocrPressePapiers()
+        .then((t) => envoyer([{ type: "ALERTE", alerte: { type: "texteImage", donnees: { ok: true, nombre: t.split(/\s+/).filter(Boolean).length } } }]))
+        .catch(() => envoyer([{ type: "ALERTE", alerte: { type: "texteImage", donnees: { ok: false } } }]));
+    }),
+  );
+
+  // Comptes à rebours (réglages) : rappel au démarrage et au premier déverrouillage du jour.
+  let jourRappel = "";
+  const rappelerComptes = () => {
+    const aujourdhui = new Date().toDateString();
+    if (jourRappel === aujourdhui) return;
+    const comptes = (preferencesActuelles().comptesARebours ?? [])
+      .map((c) => ({ nom: c.nom, jours: Math.round((new Date(`${c.date}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86_400_000) }))
+      .filter((c) => c.jours >= 0 && c.jours <= 30)
+      .sort((a, b) => a.jours - b.jours);
+    if (comptes.length === 0) return;
+    jourRappel = aujourdhui;
+    envoyer(comptes.slice(0, 2).map((c) => ({ type: "ALERTE" as const, alerte: { type: "compteARebours" as const, donnees: c, dureeFacteur: 1.5 } })));
+  };
+  setTimeout(rappelerComptes, 8000);
+  arrets.push(ecouter("session", (verrouillee) => !verrouillee && setTimeout(rappelerComptes, 2500)));
   arrets.push(ecouter("wifi-faible", (w) => envoyer([{ type: "ALERTE", alerte: { type: "wifiFaible", donnees: w } }])));
   arrets.push(ecouter("bureau", (b) => envoyer([{ type: "ALERTE", alerte: { type: "bureau", donnees: b, dureeFacteur: 0.6 } }])));
   // Écran externe branché / débranché.
