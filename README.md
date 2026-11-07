@@ -26,34 +26,40 @@ on every animation compared.
 
 ## ✨ What it does
 
-The island sits at the top-center of your screen, like on an iPhone, and reacts to what's actually happening on your PC.
+The island sits at the top-center of your screen, like on an iPhone, and reacts to what's actually happening on your PC. **More than 40 things**, grouped below.
 
-| When… | The island shows… |
-|---|---|
-| 🎵 **Music plays** (Spotify, browsers, Apple Music…) | Album art + a waveform that **moves with the real sound**, tinted with the cover's color. Long press → full player: title, artist, draggable progress bar, previous / play-pause / next |
-| ⏱️ **A timer runs** | Countdown with a ring that empties smoothly. Expanded: pause / cancel |
-| 🎵 + ⏱️ **Both at once** | **Split mode**: the island + a small bubble that detaches like a drop of water |
-| 📞 **You're in a call** (Teams, Discord, Zoom…) | Call duration; expanded: **mute your mic** in one click |
-| 🔋 **Charger plugged / unplugged, battery at 20 % or 10 %** | iOS-style alert with the battery icon |
-| 🔊 **Volume, ☀️ brightness** | Alert with the percentage |
-| 📋 **Clipboard, 📸 screenshot (Win + Shift + S)** | "Text copied" alert, or a **thumbnail** of your screenshot |
-| 🔔 **Notifications, 🌙 Do Not Disturb** | App name next to the camera, message on a second line |
-| 🟢🟠 **Camera / microphone in use** | **Green** dot (camera, with or without mic) or **orange** dot (mic only) — same rule as iOS |
+### 🎵 Music
+- Album art + a waveform that **moves with the real sound**, tinted with the cover's color.
+- **Long press** → full player: title, artist, draggable progress bar, previous / play-pause / next.
+- 🎤 **Live lyrics** under the camera, line by line (LRCLIB).
+- 🎶 **What's this song?** (Ctrl + Alt + S): listens to your PC for a few seconds and shows the cover, title and artist.
 
-**Feels built into Windows:**
+### ⏱️ Activities
+- **Timers** (also from the Windows Clock app, the pinned icon, a link or `--minuteur 5m`), with **split mode**: the island + a bubble that detaches like a drop.
+- 📞 **Calls** (Teams, Discord, Zoom, WhatsApp…): duration, **mute your mic**; **incoming call** card with Answer / Decline.
+- 📲 **Your phone** through *Phone Link*: calls and texts in the island.
+- ⬇️ **Downloads** in progress, then **Open**. 🖨️ **Printing**: page 2/4, then *Printed* (or *Out of paper*).
+- 🔴 **Screen recording**: red dot and duration.
 
-- **Right-click its pinned icon** (taskbar or Start menu) for ready-made timers — like any Windows app.
-- When a timer ends, a **Windows notification** with **Repeat** and **OK** buttons stays in the notification center if you were away.
-- A timer started in the **Windows Clock app** ends with the island's own orange *Timer done* alert.
-- `dynamicisland://` **links** start a timer from anywhere.
+### 🔔 Alerts
+- 🔋 Charger, battery 20 % / 10 %, **battery saver** (yellow). 🔊 Volume and ☀️ brightness — **replacing Windows' own popups**.
+- 📋 Clipboard, 📸 screenshot **thumbnail**, 🔔 notifications (title, app, message) with a **Copy code** button for verification codes.
+- 🎧 Bluetooth devices (with battery), audio output switched, 🎙️ mic muted, 🔌 USB drive, 🖥️ external screen, 🗂️ virtual desktop, 🔠 Caps Lock / Num Lock.
+- 📶 Internet lost / back, Wi-Fi weak, 🌙 Do Not Disturb, 🖥️ Windows Update restart, 🔓 **unlock padlock**.
+- 🟢🟠 **Camera / microphone dot** — same rule as iOS.
 
-And the little things you only notice on a real iPhone:
+### 🧰 Tools (right-click the island)
+- 📂 **Shelf**: drag files onto the island to keep them at hand; open, copy, paste in Explorer.
+- 📋 **Recently copied** (Ctrl + Alt + V): the last 10 texts, kept in memory only.
+- 🔍 **Quick search** (Ctrl + Alt + Space): Wikipedia summary, or a calculator (« 15 % of 80 »).
+- 🕒 **Clock** when the mouse passes over the idle island; 👁️ break reminders (20-20-20).
 
-- **Nothing is ever drawn where the camera would be** — alerts place their content on each side of it.
-- The island **shrinks before changing activity**, gets a **vertical bump** before splitting, and the bubble **comes out of its right edge**.
-- A **tap** gives a tiny bounce, a **long press** swells it before it opens.
-- Content **fades in from a blur**, with the exact delays measured on the iPhone.
-- Text uses **Inter** with Apple-like tracking and optical sizing, so it reads like the system font.
+### 🪟 Built into Windows
+- **Right-click its pinned icon** for ready-made timers; `dynamicisland://` links; a Windows notification with **Repeat** when a timer ends.
+- Updates itself: the island tells you when a new version is out and installs it in one click.
+- Every display scale (100 % → 200 %+), any monitor, starts with Windows, can hide in fullscreen and from screen sharing.
+
+And the little things you only notice on a real iPhone: nothing is ever drawn where the camera would be, the island **shrinks before changing activity**, gets a **vertical bump** before splitting, **bounces** when tapped, and content **fades in from a blur** with the measured delays. Prefer a Mac look? There's a **notch mode** too.
 
 ## 🎯 Why it's the most realistic
 
@@ -88,14 +94,17 @@ Works at every Windows display scale (100 %, 125 %, 150 %, 200 %…) and on any 
 | Action | How |
 |---|---|
 | Open the app that's playing | **Click** the island |
-| Expanded view (player, timer, call) | **Long press** the island |
-| Settings panel | **Ctrl + Alt + D** |
-| Quick timer launcher | **Ctrl + Alt + M** — type `5`, `2:30`, `1h15`… |
-| Tray icon | Size (small → extra large), monitor, start with Windows, hide in fullscreen, quit |
-| **Pinned icon** (taskbar or Start) | Click → timer launcher. **Right-click** → *Timer 1 / 3 / 5 / 10 / 25 min, 1 h*, launcher, settings |
-| **Links** | `dynamicisland://minuteur/5m` — from a browser, a shortcut, a Stream Deck… (also `/pause`, `/reprendre`, `/annuler`, `dynamicisland://reglages`) |
-
-The **settings panel** lets you pick the island size, animation speed, alert duration, show or hide the waveform, choose which alerts appear, and **test every animation**.
+| Expanded view (player, timer, call…) | **Long press** the island |
+| **All the tools** (timer, song, shelf, copied, capture, search, settings, hide) | **Right-click** the island |
+| Settings (tabs: Appearance, Alerts, Music, Windows, Shortcuts, Test) | **Ctrl + Alt + D** |
+| Quick timer | **Ctrl + Alt + M** — type `5`, `2:30`, `1h15`… |
+| What's this song? | **Ctrl + Alt + S** |
+| Shelf | **Ctrl + Alt + E**, or drag files onto the island |
+| Recently copied | **Ctrl + Alt + V** |
+| Quick search / calculator | **Ctrl + Alt + Space** |
+| Hide / show the island | **Ctrl + Alt + H** |
+| **Pinned icon** (taskbar or Start) | Click → timer launcher. **Right-click** → ready-made timers, song, settings |
+| **Links** | `dynamicisland://minuteur/5m`, `dynamicisland://chanson`, `dynamicisland://reglages`… |
 
 **Timer from a shortcut, a MacroPad or a Stream Deck:**
 
@@ -190,11 +199,11 @@ Known limits: [`docs/limites.md`](docs/limites.md).
 ont été **mesurés** image par image sur des vidéos d'un vrai iPhone 16 Pro (iOS 27), puis comparés :
 **moins de 3 % d'écart** sur chaque animation.
 
-- **Musique** (pochette + onde qui suit le vrai son), **minuteur**, **appels** (couper le micro), **mode split** avec la bulle.
-- **Alertes** : chargeur, batterie 20 %, volume, luminosité, presse-papiers, capture d'écran, notifications, Ne pas déranger.
-- **Point vert / orange** quand la caméra ou le micro est utilisé.
-- **Clic** : petit rebond · **appui long** : vue étendue · **Ctrl + Alt + D** : réglages · **Ctrl + Alt + M** : minuteur rapide.
-- **Intégré à Windows** : clic droit sur l'icône épinglée → minuteurs prêts ; notification Windows « Répéter » à la fin ; liens `dynamicisland://minuteur/5m`.
+- **Musique** : pochette, onde qui suit le vrai son, **paroles en direct**, **reconnaissance de chanson** (Ctrl + Alt + S).
+- **Activités** : minuteurs (aussi depuis l'Horloge), **appels** (couper le micro, appel entrant), **téléphone relié**, téléchargements, impression, enregistrement d'écran, mode **split** avec la bulle.
+- **Alertes** : chargeur, batterie, économie d'énergie, volume et luminosité (à la place des fenêtres de Windows), presse-papiers, capture, notifications (bouton **Copier le code**), Bluetooth, sortie audio, micro, clé USB, écran externe, bureau virtuel, Verr. Maj, Internet, Wi-Fi faible, mise à jour Windows, **cadenas au déverrouillage**.
+- **Outils** (clic droit sur l'île) : étagère à fichiers, textes copiés récemment, recherche rapide et calculatrice, horloge au survol, rappels de pause.
+- **Réglages** : Ctrl + Alt + D (onglets). L'île se **met à jour toute seule**.
 - **Installer** : page [**Releases**](https://github.com/Mede2026/Dynamic-island-for-windows-real/releases/latest) → fichier `…-setup.exe`.
 
 ## ⚖️ License & legal
