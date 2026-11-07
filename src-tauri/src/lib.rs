@@ -95,6 +95,7 @@ pub fn run() {
             systeme::ecrire::copier_fichiers,
             systeme::ecrire::ouvrir_fichier,
             etagere::etagere_lire,
+            etagere::etagere_coller,
             plateau::ile_menu,
             systeme::appel_entrant::appel_entrant_repondre,
             systeme::historique::historique_lire,

@@ -84,6 +84,7 @@ export const backend = {
   copierFichiers: (chemins: string[]) => invoke<void>("copier_fichiers", { chemins }),
   ouvrirFichier: (chemin: string, dansExplorateur = false) => invoke<void>("ouvrir_fichier", { chemin, dansExplorateur }),
   etagereLire: () => invoke<string[]>("etagere_lire"),
+  etagereColler: () => invoke<string[]>("etagere_coller"),
   etagereAjouter: (chemins: string[]) => invoke<string[]>("etagere_ajouter", { chemins }),
   etagereRetirer: (chemin: string | null) => invoke<string[]>("etagere_retirer", { chemin }),
   inactiviteMs: () => invoke<number>("systeme_inactivite_ms"),

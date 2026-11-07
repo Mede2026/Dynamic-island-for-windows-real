@@ -728,6 +728,13 @@ export function EtagereEtendu({ cfg, S, d }: Ctx) {
       <div style={{ display: "flex", alignItems: "center", gap: 8 * S, height: ligne, fontWeight: 600 }}>
         <IconeDossier taille={t * 1.3} couleur="#64a8ff" />
         <span style={{ flex: 1 }}>Étagère{d.etagere.length > 0 ? ` · ${d.etagere.length}` : ""}</span>
+        <button
+          {...boutonIle(() => void backend.etagereColler().catch(() => undefined))}
+          title="Ajouter les fichiers copiés dans l'Explorateur (Ctrl+C)"
+          style={{ color: "#64a8ff", fontSize: t * 0.9, fontWeight: 600, marginRight: 10 * S }}
+        >
+          Coller
+        </button>
         {d.etagere.length > 0 && (
           <>
             <button {...boutonIle(() => void backend.copierFichiers(d.etagere))} style={{ color: "#64a8ff", fontSize: t * 0.9, fontWeight: 600 }}>
@@ -763,7 +770,7 @@ export function EtagereEtendu({ cfg, S, d }: Ctx) {
       {d.etagere.length > visibles.length && <div style={{ color: gris, fontSize: t * 0.9 }}>et {d.etagere.length - visibles.length} autre(s)…</div>}
       {d.etagere.length === 0 && (
         <div style={{ color: gris, fontSize: t, lineHeight: 1.4, marginTop: 10 * S }}>
-          Glisse des fichiers ici pour les garder sous la main.
+          Glisse des fichiers ici, ou copie-les dans l'Explorateur (Ctrl+C) puis « Coller ».
           <br />
           Ils restent où ils sont : l'île garde seulement le chemin.
         </div>

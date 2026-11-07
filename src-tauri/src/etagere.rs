@@ -56,6 +56,49 @@ pub fn etagere_ajouter(app: AppHandle, chemins: Vec<String>) -> Vec<String> {
     f.clone()
 }
 
+/// Fichiers copiés dans l'Explorateur (Ctrl+C) → l'étagère.
+#[tauri::command]
+pub fn etagere_coller(app: AppHandle) -> Result<Vec<String>, String> {
+    let chemins = fichiers_copies()?;
+    if chemins.is_empty() {
+        return Err("aucun fichier copié".into());
+    }
+    Ok(etagere_ajouter(app, chemins))
+}
+
+#[cfg(windows)]
+fn fichiers_copies() -> Result<Vec<String>, String> {
+    use windows::Win32::System::DataExchange::{
+        CloseClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard,
+    };
+    use windows::Win32::UI::Shell::{DragQueryFileW, HDROP};
+    const CF_HDROP: u32 = 15;
+    unsafe {
+        if IsClipboardFormatAvailable(CF_HDROP).is_err() {
+            return Ok(Vec::new());
+        }
+        OpenClipboard(None).map_err(|e| e.to_string())?;
+        let mut chemins = Vec::new();
+        if let Ok(h) = GetClipboardData(CF_HDROP) {
+            let hdrop = HDROP(h.0);
+            let n = DragQueryFileW(hdrop, u32::MAX, None);
+            for i in 0..n {
+                let longueur = DragQueryFileW(hdrop, i, None) as usize;
+                let mut tampon = vec![0u16; longueur + 1];
+                DragQueryFileW(hdrop, i, Some(&mut tampon));
+                chemins.push(String::from_utf16_lossy(&tampon[..longueur]));
+            }
+        }
+        let _ = CloseClipboard();
+        Ok(chemins)
+    }
+}
+
+#[cfg(not(windows))]
+fn fichiers_copies() -> Result<Vec<String>, String> {
+    Err("Windows seulement".into())
+}
+
 #[tauri::command]
 pub fn etagere_retirer(app: AppHandle, chemin: Option<String>) -> Vec<String> {
     let mut f = FICHIERS.lock().unwrap();
