@@ -135,7 +135,15 @@ export interface EvenementsBackend {
   appel: Appel;
   /** Minuteur lu dans l'app Horloge de Windows. */
   "minuteur-horloge": EtatMinuteur;
-  confidentialite: { camera: boolean; micro: boolean };
+  confidentialite: { camera: boolean; micro: boolean; ecran?: boolean };
+  /** Session verrouillée (true) ou déverrouillée (false). */
+  session: boolean;
+  /** Nouvelle sortie audio par défaut. */
+  "sortie-audio": { nom: string; genre: "casque" | "haut-parleurs" | "ecran" };
+  /** Micro coupé (true) ou rétabli. */
+  "micro-muet": boolean;
+  /** Bureau virtuel affiché. */
+  bureau: { numero: number; total: number; nom: string | null };
   /** Verr. Maj / Verr. Num activé ou désactivé. */
   verrouillage: Verrouillage;
   /** Clé USB ou disque externe branché / retiré. */
@@ -259,6 +267,10 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "etagere",
   "internet",
   "reconnaissance",
+  "session",
+  "sortie-audio",
+  "micro-muet",
+  "bureau",
   "impression",
   "redemarrage-requis",
 ];

@@ -8,6 +8,7 @@
 pub mod appel_entrant;
 pub mod batterie;
 pub mod bluetooth;
+pub mod bureaux;
 pub mod clavier;
 pub mod confidentialite;
 pub mod ecrire;
@@ -43,6 +44,8 @@ pub fn demarrer(app: &AppHandle) {
     telechargements::demarrer(app.clone());
     internet::demarrer(app.clone());
     impression::demarrer(app.clone());
+    micro::demarrer(app.clone());
+    bureaux::demarrer(app.clone());
     mise_a_jour::demarrer(app.clone());
 }
 

@@ -51,6 +51,16 @@ fn publier(app: &AppHandle, etat: EtatVolume, initial: bool) {
     let _ = app.emit(evenements::VOLUME, Message { etat, initial });
 }
 
+/// Sortie audio par défaut changée (écouteurs branchés, Bluetooth…).
+pub const EVENEMENT_SORTIE: &str = "sortie-audio";
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub struct SortieAudio {
+    pub nom: String,
+    /// "casque" | "haut-parleurs" | "ecran"
+    pub genre: &'static str,
+}
+
 #[cfg(windows)]
 mod win {
     use super::*;
@@ -66,6 +76,38 @@ mod win {
         MMDeviceEnumerator, AUDIO_VOLUME_NOTIFICATION_DATA, DEVICE_STATE,
     };
     use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
+
+    /// Nom (« Casque AirPods ») et genre (« casque », « haut-parleurs », « ecran ») d'une sortie.
+    unsafe fn infos(p: &windows::Win32::Media::Audio::IMMDevice) -> (String, &'static str) {
+        use windows::Win32::Devices::FunctionDiscovery::PKEY_Device_FriendlyName;
+        use windows::Win32::Media::Audio::PKEY_AudioEndpoint_FormFactor;
+        use windows::Win32::System::Com::StructuredStorage::{
+            PropVariantClear, PropVariantToStringAlloc, PropVariantToUInt32,
+        };
+        use windows::Win32::System::Com::{CoTaskMemFree, STGM_READ};
+        let Ok(proprietes) = p.OpenPropertyStore(STGM_READ) else {
+            return (String::new(), "haut-parleurs");
+        };
+        let mut nom = String::new();
+        if let Ok(mut v) = proprietes.GetValue(&PKEY_Device_FriendlyName) {
+            if let Ok(t) = PropVariantToStringAlloc(&v) {
+                nom = t.to_string().unwrap_or_default();
+                CoTaskMemFree(Some(t.0 as *const _));
+            }
+            let _ = PropVariantClear(&mut v);
+        }
+        let mut forme = 1;
+        if let Ok(mut v) = proprietes.GetValue(&PKEY_AudioEndpoint_FormFactor) {
+            forme = PropVariantToUInt32(&v).unwrap_or(1);
+            let _ = PropVariantClear(&mut v);
+        }
+        let genre = match forme {
+            3 | 5 | 6 => "casque",
+            9 => "ecran",
+            _ => "haut-parleurs",
+        };
+        (nom, genre)
+    }
 
     #[implement(IAudioEndpointVolumeCallback)]
     struct RappelVolume {
@@ -141,6 +183,13 @@ mod win {
             // S'abonner à la sortie par défaut actuelle.
             let actuel = unsafe {
                 enumerateur.GetDefaultAudioEndpoint(eRender, eConsole).and_then(|p| {
+                    if !initial {
+                        // Nouvelle sortie (écouteurs branchés…) : l'île l'annonce.
+                        let (nom, genre) = infos(&p);
+                        journal!("volume", "nouvelle sortie : {nom} ({genre})");
+                        use tauri::Emitter;
+                        let _ = app.emit(EVENEMENT_SORTIE, SortieAudio { nom, genre });
+                    }
                     let v: IAudioEndpointVolume = p.Activate(CLSCTX_ALL, None)?;
                     v.RegisterControlChangeNotify(&rappel)?;
                     publier(

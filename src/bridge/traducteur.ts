@@ -97,6 +97,8 @@ export class Traducteur {
       return faible ? [{ type: "ALERTE", alerte: { type: "batterie", donnees: b } }] : [];
     }
     const evs: Evenement[] = [];
+    // Économiseur de batterie : alerte jaune, comme le mode économie d'énergie de l'iPhone.
+    if (b.economie !== avant.economie) evs.push({ type: "ALERTE", alerte: { type: "economie", donnees: b } });
     if (b.branche !== avant.branche) {
       evs.push({ type: "ALERTE", alerte: { type: "chargeur", donnees: b } });
     } else if (!b.branche && b.pourcentage !== null && avant.pourcentage !== null) {

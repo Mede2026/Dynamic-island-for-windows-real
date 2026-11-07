@@ -116,6 +116,13 @@ export const SCENARIOS = {
   finImpression: "Impression terminée",
   miseAJour: "Mise à jour : redémarrage requis",
   notification: "Notification (titre + message)",
+  deverrouillage: "Déverrouillage (cadenas)",
+  enregistrement: "Enregistrement de l'écran",
+  sortieAudio: "Écouteurs branchés",
+  microCoupe: "Micro coupé",
+  economie: "Économiseur de batterie",
+  ecranExterne: "Écran externe branché",
+  bureau: "Bureau virtuel 2",
   finHorloge: "Fin de l'horloge",
 } as const;
 
@@ -241,6 +248,27 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
       break;
     case "notification":
       machine.envoyer({ type: "ALERTE", alerte: { type: "notification", donnees: { id: 9, application: "Messages", textes: ["Papa", "On soupe à 18 h, tu ramènes du pain ?"] } } });
+      break;
+    case "deverrouillage":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "deverrouillage", dureeFacteur: 0.5 } });
+      break;
+    case "enregistrement":
+      machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "enregistrement", type: "enregistrement", donnees: { debutMs: Date.now() - 12_000 } } });
+      break;
+    case "sortieAudio":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "sortieAudio", donnees: { nom: "AirPods Pro", genre: "casque" } } });
+      break;
+    case "microCoupe":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "micro", donnees: true } });
+      break;
+    case "economie":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "economie", donnees: { presente: true, pourcentage: 34, branche: false, enCharge: false, economie: true } } });
+      break;
+    case "ecranExterne":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "ecranExterne", donnees: { branche: true, nom: "Écran 2 · 2560×1440" } } });
+      break;
+    case "bureau":
+      machine.envoyer({ type: "ALERTE", alerte: { type: "bureau", donnees: { numero: 2, total: 3, nom: null } } });
       break;
     case "ecoute":
       machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "ecoute", type: "ecoute", donnees: { etape: "ecoute" } } });

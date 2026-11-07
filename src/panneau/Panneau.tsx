@@ -53,6 +53,12 @@ const ALERTES: [string, string][] = [
   ["chanson", "Chanson reconnue (Ctrl+Alt+S)"],
   ["impression", "Impression terminée"],
   ["miseAJour", "Mise à jour : redémarrage requis"],
+  ["deverrouillage", "Cadenas au déverrouillage"],
+  ["sortieAudio", "Sortie audio changée (écouteurs…)"],
+  ["micro", "Micro coupé / activé"],
+  ["economie", "Économiseur de batterie"],
+  ["ecranExterne", "Écran externe branché / débranché"],
+  ["bureau", "Bureau virtuel"],
 ];
 
 const BOUCLES: Record<string, NomScenario[]> = {

@@ -64,6 +64,17 @@ mod win {
             if (0xAD..=0xB3).contains(&vk) {
                 crate::systeme::osd::signaler();
             }
+            // Win+Ctrl+flèche : changement de bureau virtuel (Windows affiche son indicateur).
+            const VK_GAUCHE: u32 = 0x25;
+            const VK_DROITE: u32 = 0x27;
+            if vk == VK_GAUCHE || vk == VK_DROITE {
+                use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_LWIN, VK_RWIN};
+                let enfoncee =
+                    |k: windows::Win32::UI::Input::KeyboardAndMouse::VIRTUAL_KEY| GetAsyncKeyState(k.0 as i32) < 0;
+                if enfoncee(VK_CONTROL) && (enfoncee(VK_LWIN) || enfoncee(VK_RWIN)) {
+                    crate::systeme::osd::signaler();
+                }
+            }
         }
         if code == HC_ACTION as i32 && (wparam.0 as u32 == WM_KEYUP || wparam.0 as u32 == WM_SYSKEYUP) {
             let touche = &*(lparam.0 as *const KBDLLHOOKSTRUCT);

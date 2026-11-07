@@ -23,7 +23,7 @@ import { islandConfig, type EtatIle, type NomTransition } from "../island.config
 // ---------------------------------------------------------------------------
 
 /** Activités longues (affichées en compact / split / étendu). */
-export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge" | "telechargement" | "etagere" | "ecoute" | "impression" | "appelEntrant";
+export type TypeActivite = "minuteur" | "musique" | "appel" | "horloge" | "telechargement" | "etagere" | "ecoute" | "impression" | "appelEntrant" | "enregistrement";
 
 /** Alertes brèves (affichées puis retour automatique). */
 export type TypeAlerte =
@@ -44,7 +44,13 @@ export type TypeAlerte =
   | "pause"
   | "chanson"
   | "impression"
-  | "miseAJour";
+  | "miseAJour"
+  | "deverrouillage"
+  | "sortieAudio"
+  | "micro"
+  | "economie"
+  | "ecranExterne"
+  | "bureau";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.
@@ -58,6 +64,7 @@ export const PRIORITES: Record<TypeActivite, number> = {
   minuteur: 1,
   telechargement: 1,
   impression: 1,
+  enregistrement: 2.8, // enregistrement de l'écran : bien visible, comme sur iPhone
   appelEntrant: 4, // appel qui sonne : devant tout, comme sur iPhone
   ecoute: 2.5, // « Quelle est cette chanson ? » : demandé à l'instant, passe devant la musique
   etagere: 3.5, // ouverte seulement à la demande (fichiers glissés, Ctrl+Alt+E) : devant

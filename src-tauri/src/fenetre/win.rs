@@ -102,6 +102,20 @@ pub fn appliquer_styles(fen: &WebviewWindow) {
     );
 }
 
+/// Pour envoyer les événements de session (verrouillage) depuis la sous-classe.
+static APP: std::sync::OnceLock<AppHandle> = std::sync::OnceLock::new();
+
+/// Verrouillage / déverrouillage de la session : Windows prévient la fenêtre de l'île.
+pub fn suivre_session(fen: &WebviewWindow, app: &AppHandle) {
+    use windows::Win32::System::RemoteDesktop::{WTSRegisterSessionNotification, NOTIFY_FOR_THIS_SESSION};
+    let _ = APP.set(app.clone());
+    let Ok(hwnd) = fen.hwnd() else { return };
+    match unsafe { WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION) } {
+        Ok(()) => journal!("fenetre", "suivi du verrouillage de session : prêt"),
+        Err(e) => journal!("fenetre", "suivi du verrouillage impossible : {e}"),
+    }
+}
+
 unsafe extern "system" fn sous_classe(
     hwnd: HWND,
     msg: u32,
@@ -112,6 +126,21 @@ unsafe extern "system" fn sous_classe(
 ) -> LRESULT {
     if msg == WM_MOUSEACTIVATE {
         return LRESULT(MA_NOACTIVATE as isize);
+    }
+    const WM_WTSSESSION_CHANGE: u32 = 0x02B1;
+    const WTS_SESSION_LOCK: usize = 0x7;
+    const WTS_SESSION_UNLOCK: usize = 0x8;
+    if msg == WM_WTSSESSION_CHANGE && (wparam.0 == WTS_SESSION_LOCK || wparam.0 == WTS_SESSION_UNLOCK) {
+        use tauri::Emitter;
+        let verrouillee = wparam.0 == WTS_SESSION_LOCK;
+        journal!(
+            "fenetre",
+            "session {}",
+            if verrouillee { "verrouillée" } else { "déverrouillée" }
+        );
+        if let Some(app) = APP.get() {
+            let _ = app.emit("session", verrouillee);
+        }
     }
     DefSubclassProc(hwnd, msg, wparam, lparam)
 }

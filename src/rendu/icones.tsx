@@ -413,3 +413,46 @@ export function IconeMiseAJour({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Cadenas ; `ouvert` (0 → 1) fait monter et pivoter l'anse, comme au déverrouillage. */
+export function IconeCadenas({ taille, couleur, style, ouvert = 0 }: P & { ouvert?: number }) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={{ overflow: "visible", ...style }} aria-hidden="true">
+      <g transform={`translate(${3 * ouvert} ${-3.2 * ouvert}) rotate(${-28 * ouvert} 16 10.5)`}>
+        <path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9" fill="none" stroke={couleur} strokeWidth="2.3" strokeLinecap="round" />
+      </g>
+      <rect x="5" y="10.2" width="14" height="10.6" rx="2.6" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Écran d'ordinateur. */
+export function IconeEcran({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <rect x="2.5" y="4" width="19" height="12.5" rx="2.2" stroke={couleur} strokeWidth="2" />
+      <path d="M9 20.5h6M12 16.5v4" stroke={couleur} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Deux bureaux superposés. */
+export function IconeBureaux({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <rect x="7.5" y="3.5" width="14" height="10" rx="2" stroke={couleur} strokeWidth="1.8" opacity="0.55" />
+      <rect x="2.5" y="9" width="14" height="11" rx="2" fill={couleur} />
+    </svg>
+  );
+}
+
+/** Haut-parleur seul (sortie audio). */
+export function IconeHautParleur({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <rect x="5" y="2.5" width="14" height="19" rx="3" fill={couleur} />
+      <circle cx="12" cy="14.5" r="3.6" fill="#000" />
+      <circle cx="12" cy="7" r="1.6" fill="#000" />
+    </svg>
+  );
+}

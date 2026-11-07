@@ -49,7 +49,13 @@ export type NomIcone =
   | "oeil"
   | "note"
   | "imprimante"
-  | "miseAJour";
+  | "miseAJour"
+  | "cadenas"
+  | "ecran"
+  | "bureaux"
+  | "hautParleur"
+  | "micro"
+  | "microCoupe";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -249,6 +255,60 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
         libelle: t.document || "Document",
         valeur: "Imprimé",
         couleurValeur: v(a.valeurCouleur),
+      };
+    }
+    case "deverrouillage":
+      // Comme Face ID : rien qu'un cadenas qui s'ouvre (l'île reste petite).
+      return { icone: "cadenas" };
+    case "sortieAudio": {
+      const s = { nom: "", genre: "haut-parleurs", ...(alerte.donnees as Partial<{ nom: string; genre: string }>) };
+      return {
+        icone: s.genre === "casque" ? "casque" : s.genre === "ecran" ? "ecran" : "hautParleur",
+        libelle: s.nom || (s.genre === "casque" ? "Casque" : "Haut-parleurs"),
+        valeur: "Sortie",
+        couleurValeur: v(cfg.media.etendu.artiste.couleur),
+      };
+    }
+    case "micro": {
+      const muet = alerte.donnees === true;
+      const rouge = v(a.batterieFaibleCouleur);
+      return {
+        icone: muet ? "microCoupe" : "micro",
+        couleurIcone: muet ? rouge : blanc,
+        libelle: "Micro",
+        valeur: muet ? "Coupé" : "Activé",
+        couleurValeur: muet ? rouge : v(a.valeurCouleur),
+      };
+    }
+    case "economie": {
+      const b = { pourcentage: null, economie: true, ...(alerte.donnees as Partial<EtatBatterie>) } as EtatBatterie;
+      const jaune = "#ffd60a"; // jaune du mode économie d'énergie
+      return {
+        libelle: "Économie",
+        valeur: b.economie ? (b.pourcentage !== null ? `${b.pourcentage} %` : "Activée") : "Désactivée",
+        couleurValeur: b.economie ? jaune : v(cfg.media.etendu.artiste.couleur),
+        valeurReference: "100 %",
+        batterie: { niveau: (b.pourcentage ?? 50) / 100, couleur: b.economie ? jaune : blanc, enCharge: false },
+      };
+    }
+    case "ecranExterne": {
+      const e = { branche: true, nom: "", ...(alerte.donnees as Partial<{ branche: boolean; nom: string }>) };
+      return {
+        icone: "ecran",
+        couleurIcone: e.branche ? blanc : v(cfg.media.etendu.artiste.couleur),
+        libelle: e.nom || "Écran",
+        valeur: e.branche ? "Branché" : "Débranché",
+        couleurValeur: e.branche ? blanc : v(cfg.media.etendu.artiste.couleur),
+      };
+    }
+    case "bureau": {
+      const b = { numero: 1, total: 1, nom: null, ...(alerte.donnees as Partial<{ numero: number; total: number; nom: string | null }>) };
+      return {
+        icone: "bureaux",
+        libelle: b.nom || `Bureau ${b.numero}`,
+        valeur: `${b.numero} / ${b.total}`,
+        couleurValeur: v(cfg.media.etendu.artiste.couleur),
+        valeurReference: "8 / 8",
       };
     }
     case "miseAJour":

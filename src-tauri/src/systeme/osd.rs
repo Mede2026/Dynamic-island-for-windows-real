@@ -134,6 +134,9 @@ mod win {
                     .ok();
             }
             ACTIF.store(g.is_some(), Ordering::SeqCst);
+            if g.is_some() {
+                lancer_crochet_affichage();
+            }
             journal!("osd", "indicateur de Windows remplacé par l'île : {}", g.is_some());
         } else {
             ACTIF.store(false, Ordering::SeqCst);
@@ -166,6 +169,65 @@ mod win {
             }
         }
         restaurer();
+    }
+
+    /// Crochet « une fenêtre de l'Explorateur s'affiche » : l'indicateur est caché à
+    /// l'instant même où il apparaît (pas de flash), s'il suit de près un changement.
+    fn lancer_crochet_affichage() {
+        use std::sync::Once;
+        use windows::Win32::UI::Accessibility::{SetWinEventHook, HWINEVENTHOOK};
+        use windows::Win32::UI::WindowsAndMessaging::{
+            DispatchMessageW, GetMessageW, TranslateMessage, EVENT_OBJECT_SHOW, MSG, WINEVENT_OUTOFCONTEXT,
+        };
+        static UNE_FOIS: Once = Once::new();
+        unsafe extern "system" fn rappel(
+            _: HWINEVENTHOOK,
+            _: u32,
+            hwnd: HWND,
+            objet: i32,
+            enfant: i32,
+            _: u32,
+            _: u32,
+        ) {
+            if objet != 0 || enfant != 0 || !ACTIF.load(Ordering::Relaxed) {
+                return;
+            }
+            if maintenant_ms().saturating_sub(DERNIER_MS.load(Ordering::Relaxed)) > 1500 {
+                return;
+            }
+            if indicateurs().contains(&hwnd) {
+                cacher(hwnd);
+            }
+        }
+        UNE_FOIS.call_once(|| {
+            std::thread::Builder::new()
+                .name("ile-osd-crochet".into())
+                .spawn(|| unsafe {
+                    let Ok(barre) = FindWindowW(w!("Shell_TrayWnd"), PCWSTR::null()) else {
+                        return;
+                    };
+                    let mut pid = 0u32;
+                    GetWindowThreadProcessId(barre, Some(&mut pid));
+                    let crochet = SetWinEventHook(
+                        EVENT_OBJECT_SHOW,
+                        EVENT_OBJECT_SHOW,
+                        None,
+                        Some(rappel),
+                        pid,
+                        0,
+                        WINEVENT_OUTOFCONTEXT,
+                    );
+                    if crochet.is_invalid() {
+                        return journal!("osd", "crochet d'affichage impossible");
+                    }
+                    let mut msg = MSG::default();
+                    while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+                        let _ = TranslateMessage(&msg);
+                        DispatchMessageW(&msg);
+                    }
+                })
+                .ok();
+        });
     }
 
     /// Volume ou luminosité vient de changer : chercher l'indicateur pendant 1 s.

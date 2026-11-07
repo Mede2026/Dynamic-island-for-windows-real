@@ -311,6 +311,7 @@ fn appliquer_region(app: &AppHandle) {
 pub fn initialiser(app: &AppHandle, clics_classiques: bool) -> Result<(), String> {
     let fen = fenetre(app).ok_or("fenêtre introuvable")?;
     plateforme::appliquer_styles(&fen);
+    plateforme::suivre_session(&fen, app);
     let etat = app.state::<EtatFenetre>();
     // Le mode « région » (expérimental) dessinait un rectangle clair sur certains PC : il
     // n'est plus proposé ; toujours le mode classique.

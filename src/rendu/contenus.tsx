@@ -22,7 +22,7 @@ import {
 import type { Alerte, EtatMachine } from "../state/islandMachine";
 import { v } from "../config/store";
 import { Onde } from "./onde";
-import { AnimatePresence, motion } from "framer-motion";
+import { animate, AnimatePresence, motion } from "framer-motion";
 import { geometrieCible, parolesVisibles } from "./choregraphie";
 import { indiceLigne } from "../bridge/paroles";
 import { basculerMusiqueDeTest, estMusiqueDeTest } from "../demo/scenarios";
@@ -42,6 +42,10 @@ import {
   IconeFermer,
   IconeFichier,
   IconeImprimante,
+  IconeCadenas,
+  IconeEcran,
+  IconeBureaux,
+  IconeHautParleur,
   IconeMiseAJour,
   IconeNote,
   IconeOeil,
@@ -1030,6 +1034,91 @@ export function AppelEntrantEtendu({ cfg, S, d }: Ctx) {
 }
 
 // ---------------------------------------------------------------------------
+// Enregistrement de l'écran : point rouge et durée, comme sur iPhone
+// ---------------------------------------------------------------------------
+
+const ROUGE_ENREGISTREMENT = "#ff3b30";
+
+function useDureeDepuis(debutMs: number | undefined): number {
+  const [maintenant, setMaintenant] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setMaintenant(Date.now()), 500);
+    return () => clearInterval(id);
+  }, []);
+  return debutMs ? maintenant - debutMs : 0;
+}
+
+const debutEnregistrement = (etat: Ctx["etat"]) =>
+  (etat.activites.find((a) => a.type === "enregistrement")?.donnees as { debutMs?: number } | undefined)?.debutMs;
+
+function PointRouge({ taille, style }: { taille: number; style?: CSSProperties }) {
+  return (
+    <motion.div
+      style={{ position: "absolute", width: taille, height: taille, borderRadius: taille, background: ROUGE_ENREGISTREMENT, ...style }}
+      animate={{ opacity: [1, 0.35, 1] }}
+      transition={{ duration: 1.6, repeat: Infinity }}
+    />
+  );
+}
+
+export function EnregistrementCompact({ cfg, S, etat }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S * 0.62;
+  const duree = useDureeDepuis(debutEnregistrement(etat));
+  return (
+    <>
+      <PointRouge taille={ti} style={{ left: v(c.compactIconeXPt) * S + ti * 0.3, top: (h - ti) / 2 }} />
+      <div
+        style={texte(c.compactTexte, S, {
+          right: v(c.compactTexteDroitePt) * S,
+          top: (h - v(c.compactTexte.taillePt) * S) / 2,
+          fontVariantNumeric: "tabular-nums",
+          color: ROUGE_ENREGISTREMENT,
+          left: undefined,
+        })}
+      >
+        {formaterDuree(duree)}
+      </div>
+    </>
+  );
+}
+
+export function EnregistrementMinimal({ cfg, S }: Ctx) {
+  const c = cfg.minuteur;
+  const h = v(cfg.formes.compact.taille.pt.hauteur) * S;
+  const ti = v(c.compactIconeTaillePt) * S * 0.62;
+  return <PointRouge taille={ti} style={{ left: v(c.compactIconeXPt) * S + ti * 0.3, top: (h - ti) / 2 }} />;
+}
+
+export function EnregistrementEtendu({ cfg, S, etat }: Ctx) {
+  const c = cfg.minuteur;
+  const gauche = (v(c.etenduBoutonXPt)[0] ?? 0) * S;
+  const diam = v(c.etenduBoutonDiametrePt) * S;
+  const y = v(c.etenduBoutonYPt) * S;
+  const duree = useDureeDepuis(debutEnregistrement(etat));
+  return (
+    <>
+      <PointRouge taille={diam * 0.55} style={{ left: gauche + diam * 0.22, top: y + diam * 0.22 }} />
+      <div style={texte(c.etenduLibelle, S, { left: gauche + diam * 1.25, top: haut(v(c.etenduBaselinePt), c.etenduLibelle, S), color: "#ffffff" })}>
+        Enregistrement de l'écran
+      </div>
+      <div
+        style={texte(c.etenduChiffres, S, {
+          right: (v(cfg.formesContenu.etenduMinuteur.taille.pt.largeur) - v(c.etenduChiffresDroitePt)) * S,
+          top: haut(v(c.etenduBaselinePt), c.etenduChiffres, S),
+          fontVariantNumeric: "tabular-nums",
+          color: ROUGE_ENREGISTREMENT,
+          fontSize: v(c.etenduChiffres.taillePt) * S * 0.7,
+        })}
+      >
+        {formaterDuree(duree)}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Horloge au survol (île au repos) : heure à droite, cadran à gauche
 // ---------------------------------------------------------------------------
 
@@ -1112,6 +1201,22 @@ export function HorlogeEtendu({ cfg, S }: Ctx) {
 // Alertes (forme mesurée sur « En charge 98 % »)
 // ---------------------------------------------------------------------------
 
+/** Cadenas qui s'ouvre (déverrouillage), avec un petit ressort comme sur iPhone. */
+function CadenasQuiSouvre({ taille, couleur }: { taille: number; couleur: string }) {
+  const [ouvert, setOuvert] = useState(0);
+  useEffect(() => {
+    const controle = animate(0, 1, {
+      type: "spring",
+      stiffness: 260,
+      damping: 14,
+      delay: 0.25,
+      onUpdate: setOuvert,
+    });
+    return () => controle.stop();
+  }, []);
+  return <IconeCadenas taille={taille} couleur={couleur} ouvert={ouvert} />;
+}
+
 /** Valeur cliquable d'une alerte : copier un code (puis « Copié »), ouvrir un fichier. */
 function BoutonAction({ action, style, children }: { action: NonNullable<ReturnType<typeof specAlerte>["action"]>; style: CSSProperties; children: string }) {
   const [fait, setFait] = useState(false);
@@ -1189,6 +1294,18 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeNote taille={ti} couleur={couleurIcone} />;
       case "imprimante":
         return <IconeImprimante taille={ti} couleur={couleurIcone} />;
+      case "cadenas":
+        return <CadenasQuiSouvre taille={ti} couleur={couleurIcone} />;
+      case "ecran":
+        return <IconeEcran taille={ti} couleur={couleurIcone} />;
+      case "bureaux":
+        return <IconeBureaux taille={ti} couleur={couleurIcone} />;
+      case "hautParleur":
+        return <IconeHautParleur taille={ti} couleur={couleurIcone} />;
+      case "micro":
+        return <IconeMicro taille={ti} couleur={couleurIcone} />;
+      case "microCoupe":
+        return <IconeMicro taille={ti} couleur={couleurIcone} coupe />;
       case "miseAJour":
         return <IconeMiseAJour taille={ti} couleur={couleurIcone} />;
       default:

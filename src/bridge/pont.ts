@@ -241,7 +241,49 @@ export function demarrerPont(machine: IslandMachine): () => void {
       publierMinuteur();
     }),
   );
-  arrets.push(ecouter("confidentialite", (c) => majDonnees({ confidentialite: c })));
+  // Enregistrement de l'écran (Outil Capture en vidéo, Game Bar…) : activité « point rouge ».
+  let enregistrement = false;
+  arrets.push(
+    ecouter("confidentialite", (c) => {
+      majDonnees({ confidentialite: c });
+      const ecran = c.ecran === true;
+      if (ecran && !enregistrement) {
+        machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "enregistrement", type: "enregistrement", donnees: { debutMs: Date.now() } } });
+      } else if (!ecran && enregistrement) {
+        machine.envoyer({ type: "ACTIVITE_FIN", id: "enregistrement" });
+      }
+      enregistrement = ecran;
+    }),
+  );
+  // Déverrouillage de la session : cadenas qui s'ouvre (comme Face ID).
+  arrets.push(
+    ecouter("session", (verrouillee) => {
+      if (!verrouillee) envoyer([{ type: "ALERTE", alerte: { type: "deverrouillage", dureeFacteur: 0.5 } }]);
+    }),
+  );
+  arrets.push(ecouter("sortie-audio", (s) => envoyer([{ type: "ALERTE", alerte: { type: "sortieAudio", donnees: s } }])));
+  arrets.push(ecouter("micro-muet", (m) => envoyer([{ type: "ALERTE", alerte: { type: "micro", donnees: m } }])));
+  arrets.push(ecouter("bureau", (b) => envoyer([{ type: "ALERTE", alerte: { type: "bureau", donnees: b, dureeFacteur: 0.6 } }])));
+  // Écran externe branché / débranché.
+  let ecransConnus: string[] | null = null;
+  arrets.push(
+    ecouter("ecrans-changes", (ecrans) => {
+      const ids = ecrans.map((e) => e.id);
+      if (ecransConnus) {
+        const ajoute = ids.find((i) => !ecransConnus!.includes(i));
+        const retire = ecransConnus.find((i) => !ids.includes(i));
+        if (ajoute || retire) {
+          const e = ecrans.find((x) => x.id === ajoute);
+          const nom = e ? `Écran ${ids.indexOf(ajoute!) + 1} · ${e.rect.largeur}×${e.rect.hauteur}` : "Écran";
+          envoyer([{ type: "ALERTE", alerte: { type: "ecranExterne", donnees: { branche: Boolean(ajoute), nom } } }]);
+        }
+      }
+      ecransConnus = ids;
+    }),
+  );
+  void backend.ecrans().then((e) => {
+    if (e && !ecransConnus) ecransConnus = e.map((x) => x.id);
+  });
   // Panneau de réglages (Ctrl+Alt+D).
   arrets.push(ecouter("config-direct", (s) => definirSurcharges(s)));
   arrets.push(

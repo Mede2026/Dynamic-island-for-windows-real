@@ -16,6 +16,9 @@ use crate::journal;
 pub struct Confidentialite {
     pub camera: bool,
     pub micro: bool,
+    /// Une app enregistre ou capture l'écran (Outil Capture en vidéo, Xbox Game Bar…) :
+    /// Windows le note dans « graphicsCaptureProgrammatic » comme la caméra.
+    pub ecran: bool,
 }
 
 static DERNIER: std::sync::Mutex<Option<Confidentialite>> = std::sync::Mutex::new(None);
@@ -144,7 +147,11 @@ mod win {
                 ) else {
                     return journal!("confidentialite", "clés du registre introuvables");
                 };
-                let (Ok(e1), Ok(e2)) = (
+                // Capture d'écran : la clé n'existe qu'après une première capture.
+                let ecr = ouvrir(HKEY_CURRENT_USER, &format!("{RACINE}graphicsCaptureProgrammatic"));
+                let ecr2 = ouvrir(HKEY_CURRENT_USER, &format!("{RACINE}graphicsCaptureWithoutBorder"));
+                let (Ok(e1), Ok(e2), Ok(e3)) = (
+                    CreateEventW(None, false, false, None),
                     CreateEventW(None, false, false, None),
                     CreateEventW(None, false, false, None),
                 ) else {
@@ -155,12 +162,18 @@ mod win {
                 loop {
                     let _ = RegNotifyChangeKeyValue(cam, true, REG_NOTIFY_CHANGE_LAST_SET, Some(e1), true);
                     let _ = RegNotifyChangeKeyValue(mic, true, REG_NOTIFY_CHANGE_LAST_SET, Some(e2), true);
+                    let mut apps_ecran = Vec::new();
+                    for k in [ecr, ecr2].into_iter().flatten() {
+                        let _ = RegNotifyChangeKeyValue(k, true, REG_NOTIFY_CHANGE_LAST_SET, Some(e3), true);
+                        utilisateurs(k, 0, &mut apps_ecran);
+                    }
                     let (mut apps_cam, mut apps_mic) = (Vec::new(), Vec::new());
                     utilisateurs(cam, 0, &mut apps_cam);
                     utilisateurs(mic, 0, &mut apps_mic);
                     let etat = Confidentialite {
                         camera: !apps_cam.is_empty(),
                         micro: !apps_mic.is_empty(),
+                        ecran: !apps_ecran.is_empty(),
                     };
                     // Appel en cours : une app d'appel utilise le micro.
                     let appel = apps_mic.iter().find_map(|n| app_d_appel(n));
@@ -176,12 +189,18 @@ mod win {
                         dernier_appel = appel;
                     }
                     if dernier != Some(etat) {
-                        journal!("confidentialite", "caméra={} micro={}", etat.camera, etat.micro);
+                        journal!(
+                            "confidentialite",
+                            "caméra={} micro={} écran={}",
+                            etat.camera,
+                            etat.micro,
+                            etat.ecran
+                        );
                         let _ = app.emit(evenements::CONFIDENTIALITE, etat);
                         *DERNIER.lock().unwrap() = Some(etat);
                         dernier = Some(etat);
                     }
-                    let evts: [HANDLE; 2] = [e1, e2];
+                    let evts: [HANDLE; 3] = [e1, e2, e3];
                     WaitForMultipleObjects(&evts, false, INFINITE);
                 }
             })
