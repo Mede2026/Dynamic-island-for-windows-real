@@ -146,6 +146,8 @@ export interface EvenementsBackend {
   telechargements: EtatTelechargements;
   /** Fichiers de l'étagère (chemins). */
   etagere: string[];
+  /** Connexion Internet perdue / retrouvée. */
+  internet: { connecte: boolean; nom: string | null };
   /** Panneau de réglages → île : valeurs modifiées en direct. */
   "config-direct": Record<string, unknown>;
   /** Panneau de réglages → île : jouer un scénario de démonstration. */
@@ -228,4 +230,5 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "bluetooth",
   "telechargements",
   "etagere",
+  "internet",
 ];

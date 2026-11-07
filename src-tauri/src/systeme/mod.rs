@@ -10,6 +10,7 @@ pub mod bluetooth;
 pub mod clavier;
 pub mod confidentialite;
 pub mod ecrire;
+pub mod internet;
 pub mod luminosite;
 pub mod micro;
 pub mod ne_pas_deranger;
@@ -36,6 +37,7 @@ pub fn demarrer(app: &AppHandle) {
     usb::demarrer(app.clone());
     bluetooth::demarrer(app.clone());
     telechargements::demarrer(app.clone());
+    internet::demarrer(app.clone());
 }
 
 #[tauri::command]

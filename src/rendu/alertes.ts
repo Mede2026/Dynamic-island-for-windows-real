@@ -41,7 +41,10 @@ export type NomIcone =
   | "manette"
   | "telephone"
   | "bluetooth"
-  | "telechargement";
+  | "telechargement"
+  | "wifi"
+  | "wifiCoupe"
+  | "oeil";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -194,6 +197,18 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
       // Code de vérification : à droite, en vert, un clic le copie.
       if (n.code) return { ...spec, valeur: n.code, couleurValeur: v(a.valeurCouleur), action: { type: "copier", texte: n.code } };
       return spec;
+    }
+    case "internet": {
+      const i = { connecte: true, nom: null, ...(alerte.donnees as Partial<{ connecte: boolean; nom: string | null }>) };
+      return i.connecte
+        ? { icone: "wifi", libelle: i.nom || "Internet", valeur: "Connecté", couleurValeur: v(a.valeurCouleur) }
+        : { icone: "wifiCoupe", couleurIcone: v(a.batterieFaibleCouleur), libelle: "Internet", valeur: "Hors ligne", couleurValeur: v(a.batterieFaibleCouleur) };
+    }
+    case "pause": {
+      const bouger = (alerte.donnees as { genre?: string } | undefined)?.genre === "bouger";
+      return bouger
+        ? { icone: "oeil", libelle: "Pause", valeur: "1 heure", detail: "Lève-toi et bouge un peu, l'écran peut attendre." }
+        : { icone: "oeil", libelle: "Pause des yeux", valeur: "20 s", detail: "Regarde au loin (6 m) pendant 20 secondes." };
     }
     case "telechargementTermine": {
       const t = { nom: "", chemin: "", ...(alerte.donnees as Partial<{ nom: string; chemin: string }>) };

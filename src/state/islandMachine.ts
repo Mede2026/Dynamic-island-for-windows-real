@@ -39,7 +39,9 @@ export type TypeAlerte =
   | "verrouillage"
   | "usb"
   | "bluetooth"
-  | "telechargementTermine";
+  | "telechargementTermine"
+  | "internet"
+  | "pause";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.

@@ -31,6 +31,10 @@ export interface Preferences {
   paroles?: boolean;
   /** Remplacer l'indicateur de volume / luminosité de Windows par l'île (lu par le backend). */
   remplacerOsd?: boolean;
+  /** Cacher l'île dans les partages d'écran et enregistrements (Teams, Discord, OBS). */
+  cacherPartage?: boolean;
+  /** Rappels de pause : yeux toutes les 20 min, bouger toutes les heures (temps devant l'écran). */
+  pauses?: boolean;
 }
 
 /** L'app (identifiant ou nom affiché) est-elle dans la liste des apps ignorées ? */

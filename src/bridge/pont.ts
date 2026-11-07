@@ -133,6 +133,23 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(ecouter("verrouillage", (v) => envoyer(traducteur.verrouillage(v))));
   arrets.push(ecouter("usb", (u) => envoyer(traducteur.usb(u))));
   arrets.push(ecouter("bluetooth", (b) => envoyer(traducteur.bluetooth(b))));
+  arrets.push(ecouter("internet", (i) => envoyer(traducteur.internet(i))));
+  // Rappels de pause : minutes passées devant l'écran (clavier ou souris utilisés dans la
+  // dernière minute) ; 5 minutes d'absence remettent le compteur à zéro.
+  let minutesActives = 0;
+  const pauses = setInterval(() => {
+    if (!dansTauri() || preferencesActuelles().pauses !== true) return;
+    void backend.inactiviteMs().then((inactif) => {
+      if (inactif > 5 * 60_000) minutesActives = 0;
+      else if (inactif < 60_000) minutesActives++;
+      if (minutesActives > 0 && minutesActives % 60 === 0) {
+        envoyer([{ type: "ALERTE", alerte: { type: "pause", donnees: { genre: "bouger" }, dureeFacteur: 2 } }]);
+      } else if (minutesActives > 0 && minutesActives % 20 === 0) {
+        envoyer([{ type: "ALERTE", alerte: { type: "pause", donnees: { genre: "yeux" }, dureeFacteur: 2 } }]);
+      }
+    });
+  }, 60_000);
+  arrets.push(Promise.resolve(() => clearInterval(pauses)));
   arrets.push(
     ecouter("telechargements", (t) => {
       majDonnees({ telechargements: t.enCours });
@@ -269,8 +286,16 @@ export function demarrerPont(machine: IslandMachine): () => void {
   void synchroniser(true);
 
   // Taille choisie par l'utilisateur (mémorisée par le backend).
-  const appliquer = (p: { taille: number; affichage?: Record<string, unknown> }) =>
+  let partageApplique: boolean | null = null;
+  const appliquer = (p: { taille: number; affichage?: Record<string, unknown> }) => {
     definirPreferences({ ...((p.affichage ?? {}) as Preferences), ISLAND_SCALE: p.taille });
+    // Cacher au partage d'écran : appliqué au démarrage et à chaque changement.
+    const partage = preferencesActuelles().cacherPartage === true;
+    if (partage !== partageApplique) {
+      partageApplique = partage;
+      void backend.cacherAuPartage(partage);
+    }
+  };
   void backend.parametres().then((p) => p && appliquer(p));
   arrets.push(ecouter("parametres", appliquer));
 

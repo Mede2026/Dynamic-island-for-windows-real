@@ -360,3 +360,24 @@ export function IconeCopier({ taille, couleur, style }: P) {
     </svg>
   );
 }
+
+/** Ondes Wi-Fi (barrée si hors ligne). */
+export function IconeWifi({ taille, couleur, style, coupe }: P & { coupe?: boolean }) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M2.8 9.2a13.2 13.2 0 0 1 18.4 0M6 12.6a8.6 8.6 0 0 1 12 0M9.2 16a4 4 0 0 1 5.6 0" stroke={couleur} strokeWidth="2.1" strokeLinecap="round" />
+      <circle cx="12" cy="19.2" r="1.6" fill={couleur} />
+      {coupe && <path d="M4 4l16 16" stroke={couleur} strokeWidth="2.1" strokeLinecap="round" />}
+    </svg>
+  );
+}
+
+/** Œil (pause des yeux). */
+export function IconeOeil({ taille, couleur, style }: P) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" style={style} aria-hidden="true" fill="none">
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke={couleur} strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3.2" fill={couleur} />
+    </svg>
+  );
+}

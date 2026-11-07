@@ -1,11 +1,12 @@
 /**
  * Recherche rapide — Ctrl+Alt+Espace : un mot ou un sujet → résumé Wikipédia (français,
- * sinon anglais). Le texte copié (s'il est court) est proposé d'avance. Échap ferme.
+ * sinon anglais) ; un calcul → son résultat. Le texte copié (s'il est court) est proposé d'avance. Échap ferme.
  */
 
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { backend, dansTauri } from "../bridge/backend";
+import { calculer, estCalcul, formaterNombre } from "./calcul";
 
 interface Resultat {
   titre: string;
@@ -72,8 +73,14 @@ export function Recherche() {
     return () => window.removeEventListener("keydown", echap);
   }, []);
 
+  const resultatCalcul = estCalcul(terme) ? calculer(terme) : null;
+
   const chercher = async () => {
     if (!terme.trim()) return;
+    if (resultatCalcul !== null) {
+      void backend.copierTexte(String(resultatCalcul));
+      return;
+    }
     setEtat("recherche");
     setResultat(null);
     try {
@@ -102,10 +109,16 @@ export function Recherche() {
         />
       </form>
       <div style={s.carte}>
+        {resultatCalcul !== null && (
+          <div>
+            <div style={{ fontSize: 34, fontWeight: 650, fontVariantNumeric: "tabular-nums" }}>= {formaterNombre(resultatCalcul)}</div>
+            <div style={s.gris}>Entrée pour copier le résultat</div>
+          </div>
+        )}
         {etat === "recherche" && <p style={s.gris}>Recherche…</p>}
         {etat === "rien" && <p style={s.gris}>Rien trouvé sur Wikipédia.</p>}
         {etat === "erreur" && <p style={s.gris}>Pas de connexion à Wikipédia.</p>}
-        {etat === "attente" && !resultat && <p style={s.gris}>Entrée pour chercher · Échap pour fermer</p>}
+        {etat === "attente" && !resultat && resultatCalcul === null && <p style={s.gris}>Entrée pour chercher · un calcul aussi (« 15 % de 80 ») · Échap pour fermer</p>}
         {resultat && (
           <>
             {resultat.image && (

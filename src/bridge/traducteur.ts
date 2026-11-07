@@ -161,6 +161,10 @@ export class Traducteur {
     return [{ type: "ALERTE", alerte: { type: "bluetooth", donnees: b } }];
   }
 
+  internet(i: { connecte: boolean; nom: string | null }): Evenement[] {
+    return [{ type: "ALERTE", alerte: { type: "internet", donnees: i } }];
+  }
+
   luminosite(niveau: number): Evenement[] {
     return [{ type: "ALERTE", alerte: { type: "luminosite", donnees: niveau } }];
   }

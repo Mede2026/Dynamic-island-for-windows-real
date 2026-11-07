@@ -41,6 +41,8 @@ import {
   IconeDossier,
   IconeFermer,
   IconeFichier,
+  IconeOeil,
+  IconeWifi,
   IconeTelechargement,
   IconeHorloge,
   IconeLecture,
@@ -905,6 +907,12 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeBluetooth taille={ti} couleur={couleurIcone} />;
       case "telechargement":
         return <IconeTelechargement taille={ti} couleur={couleurIcone} />;
+      case "wifi":
+        return <IconeWifi taille={ti} couleur={couleurIcone} />;
+      case "wifiCoupe":
+        return <IconeWifi taille={ti} couleur={couleurIcone} coupe />;
+      case "oeil":
+        return <IconeOeil taille={ti} couleur={couleurIcone} />;
       default:
         return null;
     }

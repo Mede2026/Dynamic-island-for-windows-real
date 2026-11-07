@@ -93,6 +93,8 @@ pub fn run() {
             systeme::ecrire::copier_fichiers,
             systeme::ecrire::ouvrir_fichier,
             etagere::etagere_lire,
+            systeme::internet::systeme_inactivite_ms,
+            systeme::internet::fenetre_cacher_au_partage,
             etagere::etagere_ajouter,
             etagere::etagere_retirer,
             recherche::recherche_rapide,

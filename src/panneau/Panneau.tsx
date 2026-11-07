@@ -49,6 +49,7 @@ const ALERTES: [string, string][] = [
   ["usb", "Clé USB / disque externe"],
   ["verrouillage", "Verr. Maj / Verr. Num"],
   ["telechargementTermine", "Téléchargement terminé"],
+  ["internet", "Connexion Internet perdue / retrouvée"],
 ];
 
 const BOUCLES: Record<string, NomScenario[]> = {
@@ -316,6 +317,18 @@ export function Panneau() {
         </Case>
         <Case coche={prefs.remplacerOsd ?? true} changer={(v) => changerPrefs({ remplacerOsd: v })}>
           Remplacer l'indicateur de volume et de luminosité de Windows par l'île
+        </Case>
+        <Case
+          coche={prefs.cacherPartage ?? false}
+          changer={(v) => {
+            changerPrefs({ cacherPartage: v });
+            void backend.cacherAuPartage(v);
+          }}
+        >
+          Cacher l'île dans les partages d'écran (Teams, Discord, OBS) — aussi dans les captures
+        </Case>
+        <Case coche={prefs.pauses ?? false} changer={(v) => changerPrefs({ pauses: v })}>
+          Rappels de pause : yeux toutes les 20 min, bouger toutes les heures
         </Case>
         <Case coche={prefs.notificationMinuteur ?? true} changer={(v) => changerPrefs({ notificationMinuteur: v })}>
           Notification Windows à la fin du minuteur (bouton « Répéter »)
