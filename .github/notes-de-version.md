@@ -13,6 +13,21 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 ### What's inside
 
+- 🎵 Music with album art, a waveform that follows the real sound, **live lyrics**, and **What's this song?** (Ctrl+Alt+S)
+- ⏱️ Timers (also from the Windows Clock app), split mode with the bubble, 📞 calls with mic mute and incoming-call card, 📲 your phone through Phone Link
+- ⬇️ Downloads, 🖨️ printing, 🔴 screen recording
+- 🔔 40+ alerts: charger, battery saver, volume and brightness (replacing Windows' popups), clipboard, screenshot thumbnail, notifications with **Copy code**, Bluetooth, audio output, mic, USB, external screen, virtual desktop, Caps Lock, Wi-Fi, unlock padlock…
+- 🧰 Right-click the island: shelf, recently copied, quick search & calculator, capture, settings
+- Updates itself, starts with Windows, every display scale
+
+---|---|
+| `Dynamic.Island_…_x64-setup.exe` | **Most people** — double-click and install |
+| `Dynamic.Island_…_x64_en-US.msi` | Same app, Windows Installer package (for IT / managed PCs) |
+
+Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn you because the app isn't signed: click **More info → Run anyway**.
+
+### What's inside
+
 - 🎵 Music with album art and a waveform that follows the real sound, full player on long press
 - ⏱️ Timer (also from the Windows Clock app, a shortcut or `--minuteur 5m`), split mode with the bubble
 - 📞 Calls (Teams, Discord, Zoom…) with mic mute
