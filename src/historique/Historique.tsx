@@ -29,7 +29,7 @@ const s = {
     border: 0,
     borderRadius: 12,
     padding: "9px 12px",
-    background: "#2c2c2e",
+    background: "rgba(255,255,255,.12)",
     color: "#fff",
     font: "inherit",
     textAlign: "left",
@@ -74,7 +74,7 @@ export function Historique({ fermer = fermerFenetre, dansIle = false }: { fermer
 
   return (
     <div style={dansIle ? { ...s.page, height: "100%", padding: 0, background: "transparent" } : s.page}>
-      <div style={{ ...s.entete, ...(dansIle ? { position: "absolute", right: 0, top: -30 } : {}) }}>
+      <div style={{ ...s.entete, ...(dansIle ? { justifyContent: "flex-end", minHeight: 18 } : {}) }}>
         {!dansIle && <span style={{ flex: 1 }}>Copiés récemment</span>}
         {textes.length > 0 && (
           <button

@@ -61,7 +61,8 @@ import {
   type Ctx,
 } from "./contenus";
 import { cheminEncoche, cheminIle } from "./squircle";
-import { OutilEtendu } from "./outils";
+import { CarteOutil, CARTE_MAX_PT, OutilEtendu, PILULE, outilOuvert, useCarte } from "./outils";
+import { piluleDeuxLignes, useRecherche } from "../recherche/RechercheIle";
 import { definirTypographie } from "./contenus";
 
 /** Marge autour de l'île dans le canevas (pt) : place pour l'ombre et l'appui. */
@@ -85,8 +86,10 @@ export function tailleCanevas(cfg: IslandConfig): [number, number] {
   const lMax = Math.max(...formes.map((f) => v(f.taille.pt.largeur)));
   const hMax = Math.max(...formes.map((f) => v(f.taille.pt.hauteur)));
   const gonfle = v(cfg.appui.echelleAppui);
+  // Outils (recherche…) : pilule + carte tirée au maximum + son ombre.
+  const hOutils = PILULE.hauteurDeuxLignesPt + PILULE.ecartCartePt + CARTE_MAX_PT + 24;
   const l = (lMax * gonfle + 2 * MARGE_CANEVAS_PT) * S;
-  const h = (v(cfg.margeHautPt) + hMax * gonfle + MARGE_CANEVAS_PT) * S;
+  const h = (v(cfg.margeHautPt) + Math.max(hMax * gonfle, hOutils) + MARGE_CANEVAS_PT) * S;
   return [Math.ceil(l), Math.ceil(h)];
 }
 
@@ -269,15 +272,27 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   const masquee = ileMasquee(etat);
   const masqueeRef = useRef(masquee);
   masqueeRef.current = masquee;
+  // Carte d'un outil (recherche…) sous l'île : touchable elle aussi.
+  const carte = useCarte();
+  const carteRef = useRef(carte);
+  carteRef.current = carte;
   const envoyerZones = useCallback(
     (geos: Geometrie[], finale: Geometrie) => {
-      void backend.zonesTouchables(masqueeRef.current ? [] : zonesTouchables(finale, cfg, cx), zoneAffichage(geos, cfg, cx, [canevasL, canevasH]));
+      const zones = masqueeRef.current ? [] : zonesTouchables(finale, cfg, cx);
+      const c = carteRef.current;
+      if (!masqueeRef.current && c.visible && c.hauteur > 0) {
+        const l = v(cfg.formesContenu.outil.taille.pt.largeur) * S;
+        // Pendant qu'on tire la poignée : toute la hauteur permise (la souris peut descendre).
+        const h = (c.glisse ? CARTE_MAX_PT : c.hauteur) * S + 16 * S;
+        zones.push({ x: cx - l / 2, y: v(cfg.margeHautPt) * S + (finale.hauteur + PILULE.ecartCartePt) * S, largeur: l, hauteur: h });
+      }
+      void backend.zonesTouchables(zones, zoneAffichage(geos, cfg, cx, [canevasL, canevasH]));
     },
-    [cfg, cx, canevasL, canevasH],
+    [cfg, cx, canevasL, canevasH, S],
   );
   useEffect(() => {
     envoyerZones([cibleRef.current], cibleRef.current);
-  }, [masquee, envoyerZones]);
+  }, [masquee, carte, envoyerZones]);
 
   // Taille du canevas → backend (fenêtre redimensionnée et recentrée) : seulement si elle change.
   useEffect(() => {
@@ -316,12 +331,16 @@ export function Ile({ machine }: { machine: IslandMachine }) {
 
   // Paroles affichées / retirées pendant la musique (sans changement de mode) : l'île
   // s'agrandit ou se réduit en douceur vers sa nouvelle forme.
-  const parolesOn = parolesVisibles(etat);
+  // Même chose pour la pilule de la recherche qui passe à 2 lignes (« — Demander à Claude »).
+  const recherche = useRecherche();
+  const outil = outilOuvert(etat);
+  const parolesOn = `${parolesVisibles(etat)}:${outil === "recherche" && piluleDeuxLignes(recherche)}`;
   const parolesPrecedent = useRef(parolesOn);
   useEffect(() => {
     if (parolesPrecedent.current === parolesOn) return;
     parolesPrecedent.current = parolesOn;
-    if (machine.etat.mode !== "compact") return; // une transition de la machine s'en occupe
+    const m = machine.etat;
+    if (m.mode !== "compact" && !(m.mode === "etendu" && outilOuvert(m))) return; // une transition de la machine s'en occupe
     const g = geometrieCible(machine.etat, cfg);
     const c = cibleRef.current;
     if (Math.abs(g.largeur - c.largeur) < 0.5 && Math.abs(g.hauteur - c.hauteur) < 0.5) return;
@@ -523,6 +542,11 @@ export function Ile({ machine }: { machine: IslandMachine }) {
               values={`1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${v(cfg.bulle.goutteAlphaMultiplicateur)} ${v(cfg.bulle.goutteAlphaDecalage)}`}
             />
           </filter>
+          <linearGradient id="verrePilule" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#0a0a0b" />
+            <stop offset="0.5" stopColor="#151517" />
+            <stop offset="1" stopColor="#3b3b3f" />
+          </linearGradient>
           <filter id="ombre" x="-20%" y="-30%" width="140%" height="190%">
             <feGaussianBlur in="SourceAlpha" stdDeviation={(v(cfg.ombreEtendu.flouPt) * S) / 2} />
             <feOffset dy={v(cfg.ombreEtendu.decalageYPt) * S} />
@@ -531,7 +555,8 @@ export function Ile({ machine }: { machine: IslandMachine }) {
         <motion.g transform={transformation}>
           {ombre && <motion.path d={cheminPrincipal} fill="#000" filter="url(#ombre)" style={{ opacity: ombreOpacite }} />}
           <g filter={goutte ? "url(#goutte)" : undefined}>
-            <motion.path d={cheminPrincipal} fill={v(cfg.couleurPilule)} />
+            {/* Outil ouvert : la pilule en verre sombre (noir en haut, gris en bas), comme sur Mac. */}
+            <motion.path d={cheminPrincipal} fill={outil && etat.mode === "etendu" ? "url(#verrePilule)" : v(cfg.couleurPilule)} />
             <motion.path d={cheminBulle} fill={v(cfg.couleurPilule)} style={{ opacity: val.bulleOpacite }} />
           </g>
         </motion.g>
@@ -552,6 +577,11 @@ export function Ile({ machine }: { machine: IslandMachine }) {
             cursor: "default",
             touchAction: "none",
             pointerEvents: "auto",
+            // Pilule d'un outil : liseré de lumière en haut et en bas, grande ombre douce (Mac).
+            boxShadow:
+              outil && etat.mode === "etendu"
+                ? "inset 0 0.5px 0 rgba(255,255,255,.34), inset 0 0 0 0.5px rgba(255,255,255,.09), inset 0 -0.5px 0 rgba(255,255,255,.2), 0 12px 30px rgba(0,0,0,.42)"
+                : "none",
           }}
           onPointerDown={(e) => {
             if (e.button !== 0) return; // clic droit : menu (onContextMenu), pas un appui
@@ -622,6 +652,19 @@ export function Ile({ machine }: { machine: IslandMachine }) {
           </AnimatePresence>
         </motion.div>
       )}
+      {/* Carte d'un outil (résultats, conversation, note…), séparée de la pilule. */}
+      <AnimatePresence>
+        {outil && etat.mode === "etendu" && (
+          <CarteOutil
+            key="carte"
+            cfg={cfg}
+            S={S}
+            etat={etat}
+            gauche={cx - (v(cfg.formesContenu.outil.taille.pt.largeur) * S) / 2}
+            haut={y0 + (cible.hauteur + PILULE.ecartCartePt) * S}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

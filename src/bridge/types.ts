@@ -170,6 +170,8 @@ export interface EvenementsBackend {
   "nouvelle-version": { version: string; url: string };
   /** VPN connecté / déconnecté. */
   vpn: { connecte: boolean; nom: string | null };
+  /** Asus Fan Control (statut en direct) ; null = l'app n'est pas lancée. */
+  ventilateurs: StatutVentilo | null;
   /** Signal Wi-Fi tombé à 1 barre ou moins. */
   "wifi-faible": { barres: number; nom: string | null };
   /** Connexion Internet perdue / retrouvée. */
@@ -284,4 +286,23 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "vpn",
   "impression",
   "redemarrage-requis",
+  "ventilateurs",
 ];
+
+/** Statut d'Asus Fan Control (canal nommé \\.\pipe\AsusFanControl, lu par le moteur Rust). */
+export interface StatutVentilo {
+  temperature: number | null;
+  rpms: number[];
+  /** 0 = automatique, -1 = arrêtés, sinon pourcentage appliqué. */
+  appliedPercent: number | null;
+  controlOn: boolean;
+  mode: string | null;
+  unit: string | null;
+  speed: number | null;
+  override: unknown;
+  fansStopped: boolean;
+  onCharger: boolean | null;
+  batteryPercent: number | null;
+  batteryLimit: { enabled: boolean; percent: number | null; fullChargePending: boolean } | null;
+  error: string | null;
+}

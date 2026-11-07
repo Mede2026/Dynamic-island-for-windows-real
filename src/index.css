@@ -15,6 +15,36 @@ body,
      Aucune variante stylistique : le « a » à deux étages et les chiffres fermés de SF Pro. */
   font-optical-sizing: auto;
   font-feature-settings: "calt", "kern";
+  /* Inter partout (île, réglages, outils) — jamais la police du système. */
+  font-family: "Inter Variable", Inter, "Segoe UI Variable", "Segoe UI", sans-serif;
+}
+
+/* Champs et boutons héritent d'Inter (sinon le navigateur met sa police système). */
+input,
+textarea,
+button,
+select {
+  font-family: inherit;
+}
+
+/* Barre de défilement fine, comme sur Mac (cartes de l'île). */
+.defile-ile::-webkit-scrollbar {
+  width: 9px;
+}
+.defile-ile::-webkit-scrollbar-track {
+  background: transparent;
+}
+.defile-ile::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.42);
+  border-radius: 9px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.champ-ile::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+.champ-ile {
+  caret-color: #fff;
 }
 
 /* Mode démo (navigateur) : fond clair comme les vidéos de référence. */
@@ -57,4 +87,10 @@ body.demo {
   .onde-barre {
     animation: none;
   }
+}
+
+/* Claude réfléchit : trois points qui respirent. */
+@keyframes ile-point {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
 }

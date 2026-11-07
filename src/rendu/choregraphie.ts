@@ -18,6 +18,7 @@
  * Fonction pure (aucun rendu, aucun temps réel) : testée dans choregraphie.test.ts.
  */
 
+import { hauteurPilule } from "./outils";
 import type { FormeEtat, IslandConfig, Ressort, RessortForme } from "../island.config";
 import type { EtatMachine, Transition } from "../state/islandMachine";
 import { preferencesActuelles, v } from "../config/store";
@@ -124,7 +125,7 @@ export function geometrieCible(e: EtatMachine, cfg: IslandConfig): Geometrie {
       return base(cfg.formes.split, true);
     case "etendu":
       // Minuteur et appel : vue étendue basse (mesurée sur le minuteur, V4729).
-      if (typePrincipal(e) === "outil") return base(cfg.formesContenu.outil);
+      if (typePrincipal(e) === "outil") return { ...base(cfg.formesContenu.outil), hauteur: hauteurPilule(e), rayon: hauteurPilule(e) / 2 };
       if (typePrincipal(e) === "menu") return base(cfg.formesContenu.menu);
       return base(["musique", "etagere"].includes(typePrincipal(e) ?? "") ? cfg.formes.etendu : cfg.formesContenu.etenduMinuteur);
     case "alerte": {

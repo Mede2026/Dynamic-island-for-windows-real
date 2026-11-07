@@ -91,6 +91,20 @@ mod win {
         r.trouvees
     }
 
+    /// Forme de l'indicateur de Windows 11 (volume / luminosité) : petite barre, centrée,
+    /// dans le bas de l'écran. Le menu Démarrer, les notifications et les réglages rapides sont
+    /// plus grands ou sur le côté : jamais touchés.
+    unsafe fn forme_indicateur(hwnd: HWND) -> bool {
+        let mut r = RECT::default();
+        if GetWindowRect(hwnd, &mut r).is_err() {
+            return false;
+        }
+        let (l, h) = (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+        let (lf, hf) = (r.right - r.left, r.bottom - r.top);
+        let centre = (r.left + r.right) / 2;
+        lf > 0 && hf > 0 && lf < l / 4 && hf < h / 8 && (centre - l / 2).abs() < l / 10 && r.top > h * 6 / 10
+    }
+
     unsafe fn cacher(hwnd: HWND) {
         let style = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
         if SetPropW(hwnd, PROPRIETE, Some(HANDLE((style as usize | MARQUE) as *mut _))).is_err() {
@@ -192,10 +206,10 @@ mod win {
             if objet != 0 || enfant != 0 || !ACTIF.load(Ordering::Relaxed) {
                 return;
             }
-            if maintenant_ms().saturating_sub(DERNIER_MS.load(Ordering::Relaxed)) > 1500 {
-                return;
-            }
-            if indicateurs().contains(&hwnd) {
+            // Juste après un changement (volume, touches), ou — pour la luminosité, que Windows
+            // signale APRÈS avoir affiché sa barre — toute petite barre centrée en bas de l'écran.
+            let recent = maintenant_ms().saturating_sub(DERNIER_MS.load(Ordering::Relaxed)) <= 1500;
+            if (recent || forme_indicateur(hwnd)) && indicateurs().contains(&hwnd) {
                 cacher(hwnd);
             }
         }

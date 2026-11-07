@@ -41,7 +41,7 @@ export function Note({ fermer = fermerFenetre, dansIle = false }: { fermer?: () 
         colorScheme: "dark",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", fontWeight: 650, fontSize: 16, ...(dansIle ? { position: "absolute", right: 0, top: -28 } : {}) }}>
+      <div style={{ display: "flex", alignItems: "center", fontWeight: 650, fontSize: 16, ...(dansIle ? { justifyContent: "flex-end" } : {}) }}>
         {!dansIle && <span style={{ flex: 1, color: "#ffd60a" }}>Note</span>}
         <span style={{ color: "#98989f", fontSize: 12, fontWeight: 400 }}>{texte.length} caractères · enregistrée</span>
       </div>
@@ -57,7 +57,7 @@ export function Note({ fermer = fermerFenetre, dansIle = false }: { fermer?: () 
           border: 0,
           borderRadius: 12,
           padding: 12,
-          background: "#2c2c2e",
+          background: "rgba(255,255,255,.12)",
           color: "#fff",
           font: "inherit",
           fontSize: 14,

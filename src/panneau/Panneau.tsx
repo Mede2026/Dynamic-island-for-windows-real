@@ -80,6 +80,7 @@ type Onglet =
   | "musique"
   | "windows"
   | "raccourcis"
+  | "claude"
   | "tester";
 const ONGLETS: [Onglet, string][] = [
   ["apparence", "Apparence"],
@@ -87,6 +88,7 @@ const ONGLETS: [Onglet, string][] = [
   ["musique", "Musique"],
   ["windows", "Windows"],
   ["raccourcis", "Raccourcis"],
+  ["claude", "Claude"],
   ["tester", "Tester"],
 ];
 
@@ -110,7 +112,7 @@ const BOUCLES: Record<string, NomScenario[]> = {
 
 const c = {
   page: {
-    fontFamily: "'Inter Variable', 'Segoe UI', sans-serif",
+    fontFamily: "'Inter Variable', Inter, 'Segoe UI', sans-serif",
     fontSize: 13,
     color: "#1c1c1e",
     background: "#f2f2f7",
@@ -452,6 +454,8 @@ export function Panneau() {
           </p>
         </Section>
       )}
+
+      {onglet === "claude" && <OngletClaude />}
 
       {onglet === "musique" && (
         <Section titre="Musique">
@@ -879,5 +883,85 @@ export function Panneau() {
         </>
       )}
     </div>
+  );
+}
+
+/** Onglet « Claude » : clé API (gardée dans le coffre de Windows), test, effacement. */
+function OngletClaude() {
+  const [presente, setPresente] = useState<boolean | null>(null);
+  const [cle, setCle] = useState("");
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    void backend.claudeClePresente().then((p) => setPresente(Boolean(p)));
+  }, []);
+  const enregistrer = () =>
+    void backend
+      .claudeCleDefinir(cle)
+      .then(() => {
+        setCle("");
+        setPresente(true);
+        setMessage("Clé enregistrée. Teste-la ci-dessous.");
+      })
+      .catch((e) => setMessage(String(e)));
+  return (
+    <Section titre="Claude dans la recherche">
+      <p style={c.note}>
+        Quand ce que tu écris dans la recherche de l'île (Ctrl+Alt+Espace) ressemble à une
+        question, l'île propose « Demander à Claude ». Rien n'est envoyé avant que tu appuies sur
+        Entrée. Modèle : Claude Sonnet 5.5, effort moyen. Les questions sont facturées sur ton
+        compte Anthropic.
+      </p>
+      <p style={{ ...c.note, fontWeight: 600, color: presente ? "#248a3d" : "#6e6e73" }}>
+        {presente === null ? "…" : presente ? "✓ Une clé est enregistrée (dans le coffre de Windows)." : "Aucune clé enregistrée."}
+      </p>
+      <label style={c.ligne}>
+        <span>Clé API</span>
+        <input
+          type="password"
+          value={cle}
+          onChange={(e) => setCle(e.target.value)}
+          placeholder="sk-ant-…"
+          autoComplete="off"
+          spellCheck={false}
+          style={{ flex: 1, font: "inherit", padding: "6px 8px", borderRadius: 8, border: "1px solid #d1d1d6" }}
+        />
+      </label>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button style={c.bouton} disabled={!cle.trim()} onClick={enregistrer}>
+          Enregistrer
+        </button>
+        <button
+          style={c.bouton}
+          disabled={!presente}
+          onClick={() => {
+            setMessage("Test en cours…");
+            void backend
+              .claudeCleTester()
+              .then((r) => setMessage(`✓ La clé fonctionne (réponse : « ${r} »).`))
+              .catch((e) => setMessage(String(e)));
+          }}
+        >
+          Tester la clé
+        </button>
+        <button
+          style={c.bouton}
+          disabled={!presente}
+          onClick={() =>
+            void backend.claudeCleDefinir("").then(() => {
+              setPresente(false);
+              setMessage("Clé effacée.");
+            })
+          }
+        >
+          Effacer
+        </button>
+      </div>
+      {message && <p style={{ ...c.note, marginTop: 8 }}>{message}</p>}
+      <p style={c.note}>
+        Pour créer une clé : console.anthropic.com → API Keys. La clé reste sur ce PC, dans le
+        Gestionnaire d'informations d'identification de Windows ; seul le moteur de l'app
+        l'utilise, pour parler à api.anthropic.com.
+      </p>
+    </Section>
   );
 }

@@ -11,6 +11,7 @@
 use tauri::Manager;
 
 pub mod chanson;
+pub mod claude;
 pub mod demarrage;
 pub mod etagere;
 pub mod evenements;
@@ -22,10 +23,12 @@ pub mod media;
 pub mod minuteur;
 pub mod mise_a_jour_app;
 pub mod parametres;
+pub mod partout;
 pub mod paroles;
 pub mod plateau;
 pub mod recherche;
 pub mod systeme;
+pub mod ventilateurs;
 pub mod web;
 
 /// Arrêter les tests du panneau : l'île efface les activités factices.
@@ -112,6 +115,25 @@ pub fn run() {
             etagere::etagere_ajouter,
             etagere::etagere_retirer,
             recherche::recherche_rapide,
+            partout::partout_apps,
+            partout::partout_fichiers,
+            partout::partout_icone,
+            partout::partout_lancer_app,
+            partout::partout_ouvrir_fichier,
+            claude::claude_cle_presente,
+            claude::claude_cle_definir,
+            claude::claude_demander,
+            claude::claude_cle_tester,
+            ventilateurs::ventilo_statut,
+            ventilateurs::ventilo_profil,
+            ventilateurs::ventilo_vitesse,
+            ventilateurs::ventilo_controle,
+            ventilateurs::ventilo_auto,
+            ventilateurs::ventilo_courbe,
+            ventilateurs::ventilo_definir_courbe,
+            ventilateurs::ventilo_limite_batterie,
+            ventilateurs::ventilo_charge_complete,
+            ventilateurs::ventilo_montrer,
             recherche::taux_de_change,
             systeme::ocr::ocr_presse_papiers,
             recherche::ouvrir_lien,
@@ -169,6 +191,7 @@ pub fn run() {
             media::demarrer(handle);
             etagere::charger();
             mise_a_jour_app::demarrer(handle.clone());
+            ventilateurs::suivre(handle);
             systeme::demarrer(handle);
             // Indicateur de Windows : remettre d'abord (fin brutale précédente), puis remplacer.
             systeme::osd::restaurer();

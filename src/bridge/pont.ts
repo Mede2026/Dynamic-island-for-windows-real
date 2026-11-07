@@ -381,6 +381,7 @@ export function demarrerPont(machine: IslandMachine): () => void {
   window.addEventListener("ile-maj", verifierMaj);
   arrets.push(Promise.resolve(() => window.removeEventListener("ile-maj", verifierMaj)));
   arrets.push(ecouter("nouvelle-version", (n) => envoyer([{ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: n, dureeFacteur: 3 } }])));
+  arrets.push(ecouter("ventilateurs", (s) => majDonnees({ ventilo: s })));
   arrets.push(ecouter("vpn", (n) => envoyer([{ type: "ALERTE", alerte: { type: "vpn", donnees: n } }])));
 
   // Chronomètre (menu de l'île) : démarrer, pause, reprendre, tour, arrêter.

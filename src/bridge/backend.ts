@@ -1,3 +1,4 @@
+import type { StatutVentilo } from "./types";
 /**
  * Appels vers le backend Rust (commandes) et écoute de ses événements.
  * Hors de Tauri (ex. `npm run dev` dans un navigateur), tout est désactivé proprement.
@@ -104,6 +105,29 @@ export const backend = {
   historiqueColler: (indice: number) => invoke<void>("historique_coller", { indice }),
   rechercheRapide: (terme: string) => invoke<unknown>("recherche_rapide", { terme }),
   ouvrirLien: (lien: string) => invoke<void>("ouvrir_lien", { lien }),
+  /** Recherche partout dans Windows (barre de recherche de l'île). */
+  partoutApps: (texte: string) => invoke<{ nom: string; id: string }[]>("partout_apps", { texte }),
+  partoutFichiers: (texte: string) => invoke<{ nom: string; chemin: string; dossier: string }[]>("partout_fichiers", { texte }),
+  partoutIcone: (cle: string) => invoke<string | null>("partout_icone", { cle }),
+  partoutLancerApp: (id: string) => invoke<void>("partout_lancer_app", { id }),
+  partoutOuvrirFichier: (chemin: string, montrer = false) => invoke<void>("partout_ouvrir_fichier", { chemin, montrer }),
+  /** Asus Fan Control (canal nommé, via le moteur Rust). */
+  ventiloStatut: () => invoke<StatutVentilo>("ventilo_statut"),
+  ventiloProfil: (profil: "silent" | "normal" | "max" | "curve") => invoke<StatutVentilo>("ventilo_profil", { profil }),
+  ventiloVitesse: (pourcent: number) => invoke<StatutVentilo>("ventilo_vitesse", { pourcent: Math.round(pourcent), rpm: null }),
+  ventiloVitesseRpm: (rpm: number) => invoke<StatutVentilo>("ventilo_vitesse", { pourcent: null, rpm: Math.round(rpm) }),
+  ventiloControle: (actif: boolean) => invoke<StatutVentilo>("ventilo_controle", { actif }),
+  ventiloAuto: () => invoke<StatutVentilo>("ventilo_auto"),
+  ventiloCourbe: () => invoke<{ unit: string; points: [number, number][] }>("ventilo_courbe"),
+  ventiloDefinirCourbe: (unite: "percent" | "rpm", points: [number, number][]) => invoke<StatutVentilo>("ventilo_definir_courbe", { unite, points }),
+  ventiloLimiteBatterie: (actif: boolean, pourcent: number) => invoke<StatutVentilo>("ventilo_limite_batterie", { actif, pourcent }),
+  ventiloChargeComplete: (actif: boolean) => invoke<StatutVentilo>("ventilo_charge_complete", { actif }),
+  ventiloMontrer: () => invoke<void>("ventilo_montrer"),
+  /** Claude (clé API dans le coffre de Windows ; les questions partent du moteur Rust). */
+  claudeClePresente: () => invoke<boolean>("claude_cle_presente"),
+  claudeCleDefinir: (cle: string) => invoke<void>("claude_cle_definir", { cle }),
+  claudeCleTester: () => invoke<string>("claude_cle_tester"),
+  claudeDemander: (messages: { role: "user" | "assistant"; content: string }[]) => invoke<string>("claude_demander", { messages }),
   parolesChercher: (artiste: string, titre: string, album: string, dureeS: number | null) =>
     invoke<{ synchronisees: string | null; instrumental: boolean } | null>("paroles_chercher", { artiste, titre, album, dureeS }),
   niveauAudio: (actif: boolean) => invoke<void>("audio_niveau_actif", { actif }),

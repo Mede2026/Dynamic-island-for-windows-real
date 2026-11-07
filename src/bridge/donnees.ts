@@ -45,6 +45,8 @@ export interface Donnees {
   appelEntrant: { nom: string; application: string } | null;
   /** Fichiers de l'étagère (chemins complets). */
   etagere: string[];
+  /** Asus Fan Control : statut en direct (undefined = pas encore su, null = pas lancé). */
+  ventilo?: import("./types").StatutVentilo | null;
 }
 
 let etat: Donnees = {

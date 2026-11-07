@@ -13,14 +13,13 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 ### New in this version
 
-- 🫥 **Hidden mode** (Settings → Appearance → « Afficher l'île »): the island stays hidden behind the top of the screen and only drops down for alerts — or for anything happening
-
-- 🔍 **Search, quick timer, recently copied and note now open INSIDE the island** — no more separate windows (only Settings stays a window)
-- 📸 **Screenshots**: the island reshapes around a large preview of your capture
-- 🎤 Lyrics on **two lines** (no more « … ») and better sync, plus a « late / early » slider in Settings → Music
-- 🔤 Text from image (OCR): one clean animation, no more double alert
-- Right-click menu: **Update**, **Hide the island**, **Quit**
-- Fixes: unlock padlock opens to the right side, long alert titles no longer cut off — a long notification title now goes under the camera on its own line, with the message below
+- 🔍 **New search, modeled on the Mac**: the island turns into a glass **pill** (« Rechercher ou demander des infos ») with a separate **results card** underneath — apps (Start menu + Microsoft Store, with their icons), **your files** (Windows search index, never system folders), Windows Settings pages, calculator & converter, recently copied, Wikipedia / dictionary, web
+- ✨ **Ask Claude**: type a question → « — Demander à Claude ». Add your Anthropic API key in Settings → Claude (stored in the Windows Credential Manager). Model: Claude Sonnet 5.5, medium effort
+- ↕️ **Drag handle**: pull the bottom of any tool card (search, note, copied, timer) to make it bigger — free size, remembered per tool
+- 🌀 **Asus Fan Control** in the island: live temperature & fan speeds, profiles, fixed speed, battery charge limit — small fan button in the right-click menu (needs Asus Fan Control running)
+- 🔔 Alerts arriving together now **queue: 3 s each**
+- ☀️ Windows' own brightness bar is hidden (the island shows it instead)
+- 🔌 USB drives formatted on a Mac show their real name; **Inter** font everywhere
 
 ### What's inside
 
@@ -35,4 +34,4 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 🇫🇷 **En français :** installe le fichier `…-setup.exe`, puis lance **Dynamic Island** depuis le menu Démarrer. Si Windows SmartScreen affiche un avertissement : **Informations complémentaires → Exécuter quand même**. Déjà installée ? L'île propose elle-même la mise à jour (« Installer »).
 
-**Nouveau :** mode **cachée** (Réglages → Apparence → « Afficher l'île » : seulement pour les alertes, ou seulement quand il se passe quelque chose) ; recherche, minuteur rapide, textes copiés et note s'ouvrent **dans l'île** ; la capture d'écran s'affiche en grand dans l'île ; paroles sur **2 lignes** mieux synchronisées (réglage « en retard / en avance ») ; OCR en une seule animation ; clic droit → **Mise à jour · Cacher l'île · Quitter**.
+**Nouveau :** recherche **comme sur Mac** (pilule + carte de résultats : apps, fichiers, réglages, calcul, web), **Demander à Claude** (clé API dans Réglages → Claude), **poignée** pour agrandir les cartes, **Asus Fan Control** dans l'île (petit bouton dans le clic droit), alertes en file de **3 s chacune**, barre de luminosité de Windows cachée, nom des clés USB corrigé, police **Inter** partout.

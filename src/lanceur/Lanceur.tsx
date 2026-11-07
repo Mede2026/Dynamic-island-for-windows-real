@@ -52,7 +52,7 @@ const s = {
     border: 0,
     borderRadius: 999,
     padding: "10px 0",
-    background: "#2c2c2e",
+    background: "rgba(255,255,255,.12)",
     color: "#fff",
     font: "inherit",
     fontWeight: 600,
@@ -140,7 +140,7 @@ export function Lanceur({ fermer = fermerFenetre, dansIle = false }: { fermer?: 
           }}
           placeholder="Autre durée : 7, 2:30, 1h15…"
           onPointerDown={(e) => e.stopPropagation()}
-          style={{ flex: 1, minWidth: 0, borderRadius: 999, border: 0, padding: "10px 14px", background: "#2c2c2e", color: "#fff", font: "inherit" }}
+          style={{ flex: 1, minWidth: 0, borderRadius: 999, border: 0, padding: "10px 14px", background: "rgba(255,255,255,.12)", color: "#fff", font: "inherit" }}
         />
         <button type="submit" style={s.principal}>
           Démarrer

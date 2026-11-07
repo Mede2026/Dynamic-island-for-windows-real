@@ -285,9 +285,10 @@ describe("alertes et retours automatiques", () => {
     expect(m.etat.mode).toBe("repos");
   });
 
-  it("un autre type d'alerte crée une transition", () => {
+  it("un autre type d'alerte crée une transition (après les 3 s de la première)", () => {
     const { m, effets } = creer();
     m.envoyer({ type: "ALERTE", alerte: { type: "volume" } });
+    m.envoyer({ type: "MINUTERIE", nom: "alerteMin", jeton: m.etat.minuteries.alerteMin! });
     effets.length = 0;
     m.envoyer({ type: "ALERTE", alerte: { type: "chargeur" } });
     expect(effets.filter((e) => e.type === "transition")).toHaveLength(1);
@@ -454,8 +455,26 @@ describe("transitions : numérotation, interruption, file d'événements", () =>
   it("detruire() annule toutes les minuteries", () => {
     const { m, h } = creer();
     m.envoyer({ type: "ALERTE", alerte: { type: "volume" } });
-    expect(h.nbTaches()).toBe(1);
+    expect(h.nbTaches()).toBe(2); // fin de l'alerte + ses 3 s minimum
     m.detruire();
     expect(h.nbTaches()).toBe(0);
+  });
+});
+
+describe("file d'alertes : 3 s chacune", () => {
+  it("une 2e alerte attend que la 1re ait eu ses 3 s, puis s'affiche", () => {
+    const D = { alerteAffichageMs: 3000, etenduFermetureAutoMs: 500 };
+    let e = etatInitial();
+    const pas = (ev: Evenement) => (e = reduire(e, ev, D).etat);
+    pas({ type: "ALERTE", alerte: { type: "usb" } });
+    pas({ type: "ALERTE", alerte: { type: "pressePapiers" } });
+    expect(e.alerte?.type).toBe("usb");
+    expect(e.alertesEnAttente.map((a) => a.type)).toEqual(["pressePapiers"]);
+    pas({ type: "MINUTERIE", nom: "alerteMin", jeton: e.minuteries.alerteMin! });
+    expect(e.alerte?.type).toBe("pressePapiers");
+    expect(e.alertesEnAttente).toEqual([]);
+    // Même type : mise à jour sur place, sans attendre.
+    pas({ type: "ALERTE", alerte: { type: "pressePapiers", donnees: { type: "texte", apercu: "b" } } });
+    expect(e.alertesEnAttente).toEqual([]);
   });
 });

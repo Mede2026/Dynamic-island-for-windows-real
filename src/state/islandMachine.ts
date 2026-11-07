@@ -98,7 +98,7 @@ export interface Alerte {
 /** Où le clic a eu lieu en mode split. */
 export type Cible = "principal" | "bulle";
 
-export type NomMinuterie = "alerte" | "fermetureEtendu";
+export type NomMinuterie = "alerte" | "fermetureEtendu" | "alerteMin";
 
 export interface Transition {
   id: number;
@@ -121,6 +121,10 @@ export interface EtatMachine {
   /** Activité affichée en grand (état étendu). */
   etendueId: string | null;
   alerte: Alerte | null;
+  /** Alertes arrivées pendant qu'une autre s'affiche : chacune aura ses 3 s, dans l'ordre. */
+  alertesEnAttente: Alerte[];
+  /** L'alerte affichée a-t-elle eu son temps minimum (3 s) ? */
+  alerteMinFaite: boolean;
   survol: boolean;
   appuye: boolean;
   /** Transition en cours (null quand l'île est immobile). */
@@ -171,6 +175,26 @@ export interface Resultat {
 // État initial et fonctions utilitaires
 // ---------------------------------------------------------------------------
 
+/** Affiche une alerte : minuterie de fin (durée × facteur) et minimum de 3 s si elle est nouvelle. */
+function afficherAlerte(avant: EtatMachine, e: EtatMachine, alerte: Alerte, nouvelle: boolean, durees: Durees, effets: Effet[]): EtatMachine {
+  e = stabiliser(avant, { ...e, alerte }, effets);
+  e = annuler(e, "alerte", effets);
+  e = demarrer(e, "alerte", durees.alerteAffichageMs === null ? null : durees.alerteAffichageMs * (alerte.dureeFacteur ?? 1), effets);
+  if (nouvelle && durees.alerteAffichageMs !== null) {
+    e = annuler({ ...e, alerteMinFaite: false }, "alerteMin", effets);
+    e = demarrer(e, "alerteMin", Math.min(durees.alerteAffichageMs, 3000), effets);
+  }
+  return e;
+}
+
+/** Fin de l'alerte affichée : la suivante en attente, sinon plus d'alerte. */
+function alerteSuivante(avant: EtatMachine, e: EtatMachine, durees: Durees, effets: Effet[]): EtatMachine {
+  e = annuler(annuler(e, "alerte", effets), "alerteMin", effets);
+  const [suivante, ...reste] = e.alertesEnAttente;
+  if (suivante) return afficherAlerte(avant, { ...e, alertesEnAttente: reste }, suivante, true, durees, effets);
+  return stabiliser(avant, { ...e, alerte: null, alerteMinFaite: true }, effets);
+}
+
 export function etatInitial(): EtatMachine {
   return {
     mode: "repos",
@@ -179,6 +203,8 @@ export function etatInitial(): EtatMachine {
     bulleId: null,
     etendueId: null,
     alerte: null,
+    alertesEnAttente: [],
+    alerteMinFaite: true,
     survol: false,
     appuye: false,
     transition: null,
@@ -312,16 +338,13 @@ export function reduire(etat: EtatMachine, ev: Evenement, durees: Durees): Resul
     }
 
     case "ALERTE": {
-      e = { ...e, alerte: ev.alerte };
-      e = stabiliser(etat, e, effets);
-      // Une nouvelle alerte (ex. volume qui change encore) relance le compte à rebours.
-      e = annuler(e, "alerte", effets);
-      e = demarrer(
-        e,
-        "alerte",
-        durees.alerteAffichageMs === null ? null : durees.alerteAffichageMs * (ev.alerte.dureeFacteur ?? 1),
-        effets,
-      );
+      // Une autre alerte s'affiche depuis moins de 3 s : celle-ci attend son tour (une seule
+      // par type : la plus récente). Même type (volume qui change encore) : mise à jour sur place.
+      if (e.alerte && e.alerte.type !== ev.alerte.type && !e.alerteMinFaite && durees.alerteAffichageMs !== null) {
+        e = { ...e, alertesEnAttente: [...e.alertesEnAttente.filter((a) => a.type !== ev.alerte.type), ev.alerte] };
+        break;
+      }
+      e = afficherAlerte(etat, e, ev.alerte, ev.alerte.type !== e.alerte?.type, durees, effets);
       break;
     }
 
@@ -331,7 +354,11 @@ export function reduire(etat: EtatMachine, ev: Evenement, durees: Durees): Resul
       delete minuteries[ev.nom];
       e = { ...e, minuteries };
       if (ev.nom === "alerte") {
-        e = stabiliser(etat, { ...e, alerte: null }, effets);
+        e = alerteSuivante(etat, e, durees, effets);
+      } else if (ev.nom === "alerteMin") {
+        e = { ...e, alerteMinFaite: true };
+        // Quelqu'un attend : l'alerte affichée a eu ses 3 s, on passe à la suivante.
+        if (e.alertesEnAttente.length > 0) e = alerteSuivante(etat, e, durees, effets);
       } else if (ev.nom === "fermetureEtendu" && e.mode === "etendu" && !e.survol && !e.activites.some((a) => a.type === "outil")) {
         // (un outil ouvert dans l'île — note, recherche… — ne se ferme pas tout seul pendant qu'on tape)
         e = stabiliser(etat, { ...e, etendueId: null }, effets);
@@ -341,9 +368,8 @@ export function reduire(etat: EtatMachine, ev: Evenement, durees: Durees): Resul
 
     case "CLIC": {
       if (e.mode === "alerte") {
-        // Toucher une alerte la ferme tout de suite.
-        e = annuler(e, "alerte", effets);
-        e = stabiliser(etat, { ...e, alerte: null }, effets);
+        // Toucher une alerte la ferme tout de suite (la suivante en attente s'affiche).
+        e = alerteSuivante(etat, e, durees, effets);
       } else if (e.mode === "compact" || e.mode === "split") {
         const id = ev.cible === "bulle" ? e.bulleId : e.principaleId;
         if (id) effets.push({ type: "activer", activiteId: id });
@@ -392,8 +418,9 @@ export function reduire(etat: EtatMachine, ev: Evenement, durees: Durees): Resul
 
     case "REINITIALISER": {
       e = annuler(e, "alerte", effets);
+      e = annuler(e, "alerteMin", effets);
       e = annuler(e, "fermetureEtendu", effets);
-      e = stabiliser(etat, { ...e, activites: [], alerte: null, etendueId: null, survol: false, appuye: false }, effets);
+      e = stabiliser(etat, { ...e, activites: [], alerte: null, alertesEnAttente: [], alerteMinFaite: true, etendueId: null, survol: false, appuye: false }, effets);
       break;
     }
   }

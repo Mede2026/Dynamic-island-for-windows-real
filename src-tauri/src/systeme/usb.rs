@@ -52,8 +52,49 @@ pub fn demarrer(app: AppHandle) {
             let mut nom = [0u16; 64];
             let _ = GetVolumeInformationW(&racine, Some(&mut nom), None, None, None, None);
             let fin = nom.iter().position(|&c| c == 0).unwrap_or(nom.len());
-            Some((String::from_utf16_lossy(&nom[..fin]), type_ == AMOVIBLE))
+            let brut = String::from_utf16_lossy(&nom[..fin]);
+            // Nom illisible (clé formatée sur Mac : « CDSL M�D� ») : on prend le nom que
+            // montre l'Explorateur, sinon on retire les caractères cassés.
+            let nom = if illisible(&brut) {
+                nom_explorateur(lettre).unwrap_or_else(|| nettoyer(&brut))
+            } else {
+                brut
+            };
+            Some((nom, type_ == AMOVIBLE))
         }
+    }
+
+    fn illisible(s: &str) -> bool {
+        s.chars().any(|c| c == '\u{FFFD}' || c.is_control() || ('\u{E000}'..='\u{F8FF}').contains(&c))
+    }
+
+    fn nettoyer(s: &str) -> String {
+        let t: String = s.chars().filter(|c| !illisible(&c.to_string())).collect();
+        t.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    /// Nom affiché par l'Explorateur (« CDSL MÉDÉ (D:) » → « CDSL MÉDÉ »).
+    fn nom_explorateur(lettre: char) -> Option<String> {
+        use windows::Win32::Storage::FileSystem::FILE_FLAGS_AND_ATTRIBUTES;
+        use windows::Win32::UI::Shell::{SHGetFileInfoW, SHFILEINFOW, SHGFI_DISPLAYNAME};
+        let racine = HSTRING::from(format!("{lettre}:\\"));
+        let mut info = SHFILEINFOW::default();
+        let ok = unsafe {
+            SHGetFileInfoW(
+                &racine,
+                FILE_FLAGS_AND_ATTRIBUTES(0),
+                Some(&mut info),
+                std::mem::size_of::<SHFILEINFOW>() as u32,
+                SHGFI_DISPLAYNAME,
+            )
+        };
+        if ok == 0 {
+            return None;
+        }
+        let fin = info.szDisplayName.iter().position(|&c| c == 0).unwrap_or(info.szDisplayName.len());
+        let nom = String::from_utf16_lossy(&info.szDisplayName[..fin]);
+        let nom = nom.trim_end_matches(&format!(" ({lettre}:)")).trim().to_string();
+        (!nom.is_empty() && !illisible(&nom)).then_some(nom)
     }
 
     std::thread::Builder::new()

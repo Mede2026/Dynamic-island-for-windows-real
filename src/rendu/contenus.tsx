@@ -23,6 +23,7 @@ import {
 import type { Alerte, EtatMachine } from "../state/islandMachine";
 import { preferencesActuelles, v } from "../config/store";
 import { Onde } from "./onde";
+import { IconeVentilo } from "./outils";
 import { animate, AnimatePresence, motion } from "framer-motion";
 import { geometrieCible, LIGNE_PAROLES, parolesVisibles } from "./choregraphie";
 import { indiceLigne } from "../bridge/paroles";
@@ -1199,6 +1200,17 @@ export function MenuEtendu({ cfg, S }: Ctx) {
         </button>
       ))}
       <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "center", gap: 8 * S, marginTop: 2 * S }}>
+        {/* Petit bouton : les ventilateurs (Asus Fan Control) dans l'île. */}
+        <button
+          {...boutonIle(() => {
+            fermerMenuIle();
+            window.dispatchEvent(new CustomEvent("ile-outil", { detail: "ventilateurs" }));
+          })}
+          title="Ventilateurs (Asus Fan Control)"
+          style={{ width: 28 * S, height: 28 * S, borderRadius: 14 * S, background: "#2c2c2e" }}
+        >
+          <IconeVentilo taille={16 * S} couleur="#64d2ff" />
+        </button>
         {(
           [
             ["maj", "Mise à jour"],

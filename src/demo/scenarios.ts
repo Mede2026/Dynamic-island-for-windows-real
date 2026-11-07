@@ -133,6 +133,7 @@ export const SCENARIOS = {
   outilMinuteur: "Minuteur rapide dans l'île",
   outilCopies: "Copiés récemment dans l'île",
   outilNote: "Note dans l'île",
+  outilVentilateurs: "Ventilateurs (Asus Fan Control) dans l'île",
   telechargement: "Téléchargement en cours",
   finTelechargement: "Téléchargement terminé",
   etagere: "Étagère (3 fichiers)",
@@ -214,8 +215,9 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
     case "outilRecherche":
     case "outilMinuteur":
     case "outilCopies":
-    case "outilNote": {
-      const outil = { outilRecherche: "recherche", outilMinuteur: "minuteur", outilCopies: "copies", outilNote: "note" }[nom];
+    case "outilNote":
+    case "outilVentilateurs": {
+      const outil = { outilRecherche: "recherche", outilMinuteur: "minuteur", outilCopies: "copies", outilNote: "note", outilVentilateurs: "ventilateurs" }[nom];
       if (dansTauri()) {
         window.dispatchEvent(new CustomEvent("ile-outil", { detail: outil }));
       } else {
