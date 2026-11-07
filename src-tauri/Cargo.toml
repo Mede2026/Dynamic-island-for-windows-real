@@ -1,6 +1,6 @@
 [package]
 name = "dynamic-island"
-version = "0.1.2"
+version = "0.1.3"
 description = "Réplique du Dynamic Island pour Windows"
 edition = "2021"
 license = "MIT"
@@ -38,6 +38,8 @@ windows = { version = "0.62", features = [
   "Storage_Streams",
   "System_Power",
   "UI_Shell",
+  "Web_Http",
+  "Web_Http_Headers",
   "UI_Notifications",
   "UI_Notifications_Management",
   "ApplicationModel",

@@ -20,7 +20,8 @@
 
 import type { FormeEtat, IslandConfig, Ressort, RessortForme } from "../island.config";
 import type { EtatMachine, Transition } from "../state/islandMachine";
-import { v } from "../config/store";
+import { preferencesActuelles, v } from "../config/store";
+import { donnees } from "../bridge/donnees";
 import { hauteurAlerte, largeurAlerte, mesureConfig, specAlerte } from "./alertes";
 
 /** Géométrie de l'île en POINTS iPhone. */
@@ -66,6 +67,17 @@ function typePrincipal(e: EtatMachine) {
   return e.activites.find((a) => a.id === e.principaleId)?.type ?? null;
 }
 
+/**
+ * Paroles affichées sous la caméra ? (musique en lecture, en compact, paroles trouvées,
+ * préférence activée). L'île est alors aussi large qu'une alerte et a une 2e ligne.
+ */
+export function parolesVisibles(e: EtatMachine): boolean {
+  if (e.mode !== "compact" || typePrincipal(e) !== "musique") return false;
+  if (preferencesActuelles().paroles === false) return false;
+  const d = donnees();
+  return d.media?.statut === "lecture" && (d.paroles?.lignes.length ?? 0) > 0;
+}
+
 /** Forme finale pour un état de la machine. */
 export function geometrieCible(e: EtatMachine, cfg: IslandConfig): Geometrie {
   const fondue = -v(cfg.bulle.diametrePt);
@@ -77,9 +89,17 @@ export function geometrieCible(e: EtatMachine, cfg: IslandConfig): Geometrie {
   switch (e.mode) {
     case "repos":
       return base(cfg.formes.repos);
-    case "compact":
+    case "compact": {
       // Musique et minuteur ont du contenu des deux côtés (capture « 14m »).
-      return base(cfg.formesContenu.compactDeuxCotes);
+      const g = base(cfg.formesContenu.compactDeuxCotes);
+      if (!parolesVisibles(e)) return g;
+      // Paroles : largeur de l'alerte mesurée, ligne de texte sous la caméra.
+      return {
+        ...g,
+        largeur: v(cfg.formes.alerte.taille.pt.largeur),
+        hauteur: g.hauteur + v(cfg.alerte.texte.taillePt) * 1.25 + v(cfg.alerte.texteXPt) * 0.6,
+      };
+    }
     case "split":
       return base(cfg.formes.split, true);
     case "etendu":

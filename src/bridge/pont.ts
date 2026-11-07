@@ -11,10 +11,11 @@
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import type { IslandMachine } from "../state/islandMachine";
 import { backend, dansTauri, ecouter } from "./backend";
+import { cleChanson, lireLrc } from "./paroles";
 import { majDonnees } from "./donnees";
 import { recevoirNiveau } from "../rendu/onde";
-import type { EtatMinuteur } from "./types";
-import { definirPreferences, definirSurcharges, preferencesActuelles, type Preferences } from "../config/store";
+import type { EtatMedia, EtatMinuteur } from "./types";
+import { appIgnoree, definirPreferences, definirSurcharges, preferencesActuelles, type Preferences } from "../config/store";
 import { jouer, nettoyerTests, SCENARIOS, type NomScenario } from "../demo/scenarios";
 import { Traducteur } from "./traducteur";
 import { NOMS_EVENEMENTS, type InfoFenetre } from "./types";
@@ -57,6 +58,24 @@ export function demarrerPont(machine: IslandMachine): () => void {
     );
   }
 
+  // Paroles : cherchées (LRCLIB, par le backend) à chaque nouvelle chanson.
+  let chansonParoles = "";
+  const suivreParoles = (m: EtatMedia) => {
+    const cle = cleChanson(m.artiste, m.titre);
+    if (cle === chansonParoles) return;
+    chansonParoles = cle;
+    majDonnees({ paroles: null });
+    if (!m.titre || preferencesActuelles().paroles === false) return;
+    const dureeS = m.dureeMs > 0 ? Math.round(m.dureeMs / 1000) : null;
+    void backend
+      .parolesChercher(m.artiste, m.titre, m.album, dureeS)
+      .then((p) => {
+        if (chansonParoles !== cle || !p?.synchronisees) return;
+        majDonnees({ paroles: { cle, lignes: lireLrc(p.synchronisees) } });
+      })
+      .catch(() => undefined);
+  };
+
   // Horloge au survol : la souris sur l'île au repos → l'heure (comme une activité).
   let minuterieHorloge: ReturnType<typeof setTimeout> | null = null;
   const horlogeAffichee = () => machine.etat.activites.some((a) => a.id === "horloge");
@@ -81,8 +100,11 @@ export function demarrerPont(machine: IslandMachine): () => void {
   // 2. Traduction vers la machine à états.
   arrets.push(
     ecouter("media", (m) => {
+      // App ignorée (réglages) : l'île fait comme si rien ne jouait.
+      const ignoree = appIgnoree(m.sourceActive);
       majDonnees({ media: m });
-      envoyer(traducteur.media(m));
+      suivreParoles(m);
+      envoyer(traducteur.media(ignoree ? { ...m, sourceActive: null } : m));
     }),
   );
   arrets.push(ecouter("media-pochette", (p) => majDonnees({ pochette: p })));
@@ -147,7 +169,11 @@ export function demarrerPont(machine: IslandMachine): () => void {
     }),
   );
   arrets.push(ecouter("ne-pas-deranger", (n) => envoyer(traducteur.nePasDerangerEtat(n))));
-  arrets.push(ecouter("notification", (n) => envoyer(traducteur.notification(n))));
+  arrets.push(
+    ecouter("notification", (n) => {
+      if (!appIgnoree(n.application)) envoyer(traducteur.notification(n));
+    }),
+  );
   arrets.push(
     ecouter("survol", (s) => {
       envoyer(traducteur.survol(s));

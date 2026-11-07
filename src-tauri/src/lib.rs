@@ -19,8 +19,10 @@ pub mod journal;
 pub mod media;
 pub mod minuteur;
 pub mod parametres;
+pub mod paroles;
 pub mod plateau;
 pub mod systeme;
+pub mod web;
 
 /// Arrêter les tests du panneau : l'île efface les activités factices.
 #[tauri::command]
@@ -78,6 +80,7 @@ pub fn run() {
             systeme::systeme_volume,
             systeme::systeme_ne_pas_deranger,
             systeme::notifications_etat,
+            paroles::paroles_chercher,
             minuteur::minuteur_demarrer,
             minuteur::minuteur_pause,
             minuteur::minuteur_reprendre,

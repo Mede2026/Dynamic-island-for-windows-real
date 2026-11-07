@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as PE } from "react";
 import { backend } from "../bridge/backend";
-import { formaterDuree, formaterMinuteurCompact, majDonnees, positionActuelle, type Donnees } from "../bridge/donnees";
+import { donnees, formaterDuree, formaterMinuteurCompact, majDonnees, positionActuelle, type Donnees } from "../bridge/donnees";
 import type { EtatMinuteur } from "../bridge/types";
 import type { IslandConfig, Texte } from "../island.config";
 import {
@@ -22,6 +22,9 @@ import {
 import type { Alerte, EtatMachine } from "../state/islandMachine";
 import { v } from "../config/store";
 import { Onde } from "./onde";
+import { AnimatePresence, motion } from "framer-motion";
+import { geometrieCible, parolesVisibles } from "./choregraphie";
+import { indiceLigne } from "../bridge/paroles";
 import { basculerMusiqueDeTest, estMusiqueDeTest } from "../demo/scenarios";
 import {
   IconeBatterie,
@@ -139,10 +142,12 @@ function Pochette({ d, taille, rayon, style }: { d: Donnees; taille: number; ray
 // Musique
 // ---------------------------------------------------------------------------
 
-export function MusiqueCompact({ cfg, S, d }: Ctx) {
+export function MusiqueCompact({ cfg, S, d, etat }: Ctx) {
   const c = cfg.media.compact;
   const e = cfg.media.etendu;
-  const largeur = v(cfg.formesContenu.compactDeuxCotes.taille.pt.largeur) * S;
+  // Largeur réelle (plus large quand les paroles sont affichées).
+  const largeur = geometrieCible(etat, cfg).largeur * S;
+  const paroles = parolesVisibles(etat);
   const hMax = v(c.ondeHauteurMaxPt) * S;
   const n = v(e.ondeNombreBarres);
   const largeurOnde = ((n - 1) * v(c.ondePasPt) + v(c.ondeLargeurBarrePt)) * S;
@@ -164,7 +169,53 @@ export function MusiqueCompact({ cfg, S, d }: Ctx) {
         enLecture={d.media?.statut === "lecture"}
         style={{ left: largeur - v(c.ondeDroitePt) * S - largeurOnde, top: (v(cfg.formes.compact.taille.pt.hauteur) * S - hMax) / 2 }}
       />
+      {paroles && <LigneParolesIle cfg={cfg} S={S} d={d} largeur={largeur} />}
     </>
+  );
+}
+
+/** Avance (ms) : la ligne apparaît un peu avant d'être chantée, comme dans les apps de musique. */
+const AVANCE_PAROLES_MS = 250;
+
+/** Ligne de paroles en cours, sous la caméra ; chaque nouvelle ligne arrive floue puis nette. */
+function LigneParolesIle({ cfg, S, d, largeur }: { cfg: IslandConfig; S: number; d: Donnees; largeur: number }) {
+  const lignes = d.paroles?.lignes;
+  const [i, setI] = useState(-1);
+  useEffect(() => {
+    if (!lignes) return;
+    const maj = () => {
+      const m = donnees().media;
+      if (m) setI(indiceLigne(lignes, positionActuelle(m) + AVANCE_PAROLES_MS));
+    };
+    maj();
+    const id = setInterval(maj, 120);
+    return () => clearInterval(id);
+  }, [lignes]);
+  const a = cfg.alerte;
+  const marge = v(a.texteXPt) * S;
+  const ligne = i >= 0 ? (lignes?.[i]?.texte ?? "") : "";
+  return (
+    <div style={{ position: "absolute", left: marge, width: largeur - 2 * marge, top: haut(baselineDetail(cfg), a.texte, S), height: v(a.texte.taillePt) * S * 1.4 }}>
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 7 * S, filter: `blur(${4 * S}px)` }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -7 * S, filter: `blur(${4 * S}px)` }}
+          transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
+          style={texte(a.texte, S, {
+            left: 0,
+            width: "100%",
+            textAlign: "center",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            paddingBottom: 2 * S,
+          })}
+        >
+          {ligne || "♪"}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
 

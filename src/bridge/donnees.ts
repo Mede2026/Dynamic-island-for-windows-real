@@ -2,6 +2,7 @@
  * Dernières données reçues du backend (média, pochette, minuteur…), lisibles par le rendu.
  * Petit magasin externe compatible avec React (useSyncExternalStore).
  */
+import type { ParolesChanson } from "./paroles";
 
 import { useSyncExternalStore } from "react";
 import type { EtatBatterie, EtatMedia, EtatMinuteur, EtatVolume, InfoFenetre, Pochette } from "./types";
@@ -34,6 +35,8 @@ export interface Donnees {
   confidentialite: Confidentialite;
   fenetre: InfoFenetre | null;
   appel: AppelEnCours | null;
+  /** Paroles synchronisées de la chanson en cours (LRCLIB), si trouvées. */
+  paroles: ParolesChanson | null;
 }
 
 let etat: Donnees = {
@@ -45,6 +48,7 @@ let etat: Donnees = {
   confidentialite: { camera: false, micro: false },
   fenetre: null,
   appel: null,
+  paroles: null,
 };
 const abonnes = new Set<() => void>();
 

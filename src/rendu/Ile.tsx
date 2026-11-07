@@ -19,7 +19,8 @@ import { useDonnees } from "../bridge/donnees";
 import type { IslandConfig, Ressort } from "../island.config";
 import type { Cible, EtatMachine, IslandMachine } from "../state/islandMachine";
 import { preferencesActuelles, useConfig, v } from "../config/store";
-import { cleContenu, geometrieCible, geometriesDuPlan, planifier, type Geometrie, type Phase } from "./choregraphie";
+import { cleContenu, geometrieCible,
+  parolesVisibles, geometriesDuPlan, planifier, type Geometrie, type Phase } from "./choregraphie";
 import {
   AlerteContenu,
   AppelCompact,
@@ -281,6 +282,28 @@ export function Ile({ machine }: { machine: IslandMachine }) {
       }
     });
   }, [machine, cfg, val, envoyerZones]);
+
+  // Paroles affichées / retirées pendant la musique (sans changement de mode) : l'île
+  // s'agrandit ou se réduit en douceur vers sa nouvelle forme.
+  const parolesOn = parolesVisibles(etat);
+  const parolesPrecedent = useRef(parolesOn);
+  useEffect(() => {
+    if (parolesPrecedent.current === parolesOn) return;
+    parolesPrecedent.current = parolesOn;
+    if (machine.etat.mode !== "compact") return; // une transition de la machine s'en occupe
+    const g = geometrieCible(machine.etat, cfg);
+    const c = cibleRef.current;
+    if (Math.abs(g.largeur - c.largeur) < 0.5 && Math.abs(g.hauteur - c.hauteur) < 0.5) return;
+    cibleRef.current = g;
+    annulerPlan.current();
+    envoyerZones([geometrieActuelle(val), g], g);
+    annulerPlan.current = jouerPlan(
+      val,
+      [{ debutMs: 0, cible: g, ressort: cfg.ressorts.ouvrir, ressortBulle: cfg.bulle.ressort }],
+      v(cfg.bulle.diametrePt),
+      () => envoyerZones([g], g),
+    );
+  }, [parolesOn, machine, cfg, val, envoyerZones]);
 
   // Si la configuration change (panneau de réglages), aller directement à la nouvelle cible.
   const cfgPrecedente = useRef(cfg);

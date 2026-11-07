@@ -5,7 +5,7 @@
  */
 
 import { backend, dansTauri } from "../bridge/backend";
-import { majDonnees, donnees } from "../bridge/donnees";
+import { majDonnees, donnees, positionActuelle } from "../bridge/donnees";
 import type { EtatMedia, EtatMinuteur, Pochette } from "../bridge/types";
 import type { IslandMachine } from "../state/islandMachine";
 
@@ -104,6 +104,7 @@ export const SCENARIOS = {
   bluetooth: "Écouteurs Bluetooth connectés (batterie)",
   bluetoothOff: "Souris Bluetooth déconnectée",
   horloge: "Horloge (survol de l'île au repos)",
+  paroles: "Paroles en direct (avec la musique)",
   finHorloge: "Fin de l'horloge",
 } as const;
 
@@ -183,6 +184,14 @@ export function jouer(machine: IslandMachine, nom: NomScenario) {
     case "confidentialiteOff":
       majDonnees({ confidentialite: { camera: false, micro: false } });
       break;
+    case "paroles": {
+      if (!donnees().media) jouer(machine, "musique");
+      const m = donnees().media!;
+      const t0 = positionActuelle(m);
+      const textes = ["Sous le ciel de Boucherville", "Les baguettes frappent la caisse claire", "On descend le sous-bois à Charlevoix", "Et la musique ne s'arrête jamais"];
+      majDonnees({ paroles: { cle: "demo", lignes: textes.map((texte, i) => ({ t: t0 + i * 2500, texte })) } });
+      break;
+    }
     case "horloge":
       machine.envoyer({ type: "ACTIVITE_DEBUT", activite: { id: "horloge", type: "horloge" } });
       break;

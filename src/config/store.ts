@@ -25,6 +25,17 @@ export interface Preferences {
   horlogeSurvol?: boolean;
   /** Forme : île de l'iPhone (par défaut) ou encoche collée en haut de l'écran (style Mac). */
   forme?: "ile" | "encoche";
+  /** Apps ignorées par l'île (musique et notifications), ex. "TikTok", "chrome". */
+  appsIgnorees?: string[];
+  /** Paroles synchronisées sous la caméra pendant la musique (activé par défaut). */
+  paroles?: boolean;
+}
+
+/** L'app (identifiant ou nom affiché) est-elle dans la liste des apps ignorées ? */
+export function appIgnoree(nom: string | null | undefined): boolean {
+  if (!nom) return false;
+  const n = nom.toLowerCase();
+  return (preferences.appsIgnorees ?? []).some((a) => a.trim() !== "" && n.includes(a.trim().toLowerCase()));
 }
 
 let preferences: Preferences = {};

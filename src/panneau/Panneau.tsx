@@ -128,6 +128,7 @@ export function Panneau() {
   const chemins = useMemo(() => cheminsNumeriques(islandConfig), []);
   const [surcharges, setSurcharges] = useState<Record<string, number>>({});
   const [filtre, setFiltre] = useState("");
+  const [nouvelleApp, setNouvelleApp] = useState("");
   const [boucle, setBoucle] = useState<string | null>(null);
   const [ecrans, setEcrans] = useState<InfoEcran[]>([]);
   const [auto, setAuto] = useState(false);
@@ -233,6 +234,9 @@ export function Panneau() {
         <Case coche={prefs.onde ?? true} changer={(v) => changerPrefs({ onde: v })}>
           Onde sonore pendant la musique (suit le vrai son)
         </Case>
+        <Case coche={prefs.paroles ?? true} changer={(v) => changerPrefs({ paroles: v })}>
+          Paroles en direct sous la caméra pendant la musique (LRCLIB)
+        </Case>
         <Case coche={prefs.horlogeSurvol ?? true} changer={(v) => changerPrefs({ horlogeSurvol: v })}>
           Horloge quand la souris passe sur l'île au repos
         </Case>
@@ -248,6 +252,29 @@ export function Panneau() {
           </select>
         </label>
         <p style={c.note}>Mémorisé au redémarrage. Les proportions et les courbes restent celles de l'iPhone.</p>
+      </Section>
+
+      <Section titre="Apps ignorées (musique et notifications)">
+        <p style={c.note}>L'île ne réagit pas à ces apps : ni musique, ni notifications. Un morceau du nom suffit (« tiktok », « chrome »).</p>
+        <form
+          style={c.ligne}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const nom = nouvelleApp.trim();
+            if (!nom) return;
+            changerPrefs({ appsIgnorees: [...new Set([...(prefs.appsIgnorees ?? []), nom])] });
+            setNouvelleApp("");
+          }}
+        >
+          <input value={nouvelleApp} onChange={(e) => setNouvelleApp(e.target.value)} placeholder="Nom de l'app" style={{ flex: 1, font: "inherit" }} />
+          <button type="submit">Ajouter</button>
+        </form>
+        {(prefs.appsIgnorees ?? []).map((app) => (
+          <div key={app} style={c.ligne}>
+            <span style={{ flex: 1 }}>{app}</span>
+            <button onClick={() => changerPrefs({ appsIgnorees: (prefs.appsIgnorees ?? []).filter((a) => a !== app) })}>Retirer</button>
+          </div>
+        ))}
       </Section>
 
       <Section titre="Alertes à afficher">
