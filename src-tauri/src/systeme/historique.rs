@@ -39,7 +39,7 @@ pub fn historique_copier(indice: usize) -> Result<(), String> {
 /// Recopie le texte, ferme la fenêtre de l'historique et le colle (Ctrl+V) dans l'app
 /// qui avait la main, comme Windows + V.
 #[tauri::command]
-pub fn historique_coller(app: tauri::AppHandle, indice: usize) -> Result<(), String> {
+pub async fn historique_coller(app: tauri::AppHandle, indice: usize) -> Result<(), String> {
     use tauri::Manager;
     historique_copier(indice)?;
     if let Some(f) = app.get_webview_window(crate::plateau::LABEL_HISTORIQUE) {

@@ -206,7 +206,7 @@ pub fn gestion_raccourci(app: &AppHandle, raccourci: &Shortcut, evenement: Short
 /// Clic droit sur l'île : son menu, juste à côté (sans passer par l'icône près de l'horloge).
 /// Identifiants « ile:… » : traités par `gerer_menu_ile` (le menu de l'icône les ignore).
 #[tauri::command]
-pub fn ile_menu(app: AppHandle) -> Result<(), String> {
+pub async fn ile_menu(app: AppHandle) -> Result<(), String> {
     let construire = || -> tauri::Result<Menu<tauri::Wry>> {
         let item = |id: &str, texte: &str| MenuItem::with_id(&app, format!("ile:{id}"), texte, true, None::<&str>);
         Menu::with_items(
@@ -229,8 +229,10 @@ pub fn ile_menu(app: AppHandle) -> Result<(), String> {
 }
 
 /// Bouton du menu de l'île (clic droit) : « lanceur », « chanson », « etagere »…
+/// ASYNCHRONE : sous Windows, une commande synchrone qui crée une fenêtre bloque Tauri
+/// (fenêtre blanche, île figée).
 #[tauri::command]
-pub fn ile_action(app: AppHandle, action: String) {
+pub async fn ile_action(app: AppHandle, action: String) {
     gerer_menu_ile(&app, &format!("ile:{action}"));
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "dynamic-island"
-version = "0.1.9"
+version = "0.1.10"
 description = "Réplique du Dynamic Island pour Windows"
 edition = "2021"
 license = "MIT"
