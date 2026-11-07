@@ -269,6 +269,9 @@ export function Panneau() {
         >
           Cacher quand une app est en plein écran
         </Case>
+        <Case coche={prefs.notificationMinuteur ?? true} changer={(v) => changerPrefs({ notificationMinuteur: v })}>
+          Notification Windows à la fin du minuteur (bouton « Répéter »)
+        </Case>
         <Case
           coche={clicsRegion}
           changer={(v) => {

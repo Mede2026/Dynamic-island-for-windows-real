@@ -19,6 +19,8 @@ export interface Preferences {
   dureeAlertes?: number;
   /** Types d'alertes à ne pas afficher (ex. "volume", "pressePapiers"). */
   alertesMasquees?: string[];
+  /** Notification Windows (avec « Répéter ») à la fin du minuteur — lue par le backend. */
+  notificationMinuteur?: boolean;
 }
 
 let preferences: Preferences = {};

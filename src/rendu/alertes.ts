@@ -34,31 +34,61 @@ export interface SpecAlerte {
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
 }
 
-/** Largeur d'un texte (pt) : (texte, taille pt, graisse) → largeur pt. */
-export type Mesureur = (texte: string, taillePt: number, graisse: number) => number;
+/** Largeur d'un texte (pt) : (texte, taille pt, graisse, chiffres à chasse fixe) → largeur pt. */
+export type Mesureur = (texte: string, taillePt: number, graisse: number, tabulaire?: boolean) => number;
 
 /** Mesure approximative (tests, ou avant le chargement de la police). */
 export const mesureApprox: Mesureur = (t, taille) => t.length * taille * 0.56;
 
-let canevas: CanvasRenderingContext2D | null = null;
-/** Mesure réelle avec la police de l'île (navigateur). */
-export function mesureNavigateur(police: string, suiviEm: (taille: number) => number = () => 0): Mesureur {
-  return (t, taille, graisse) => {
-    if (typeof document === "undefined") return mesureApprox(t, taille, graisse);
-    canevas ??= document.createElement("canvas").getContext("2d");
-    if (!canevas) return mesureApprox(t, taille, graisse);
-    // À la VRAIE taille : Inter change de dessin selon la taille (axe « taille optique ») ;
-    // mesurer plus grand donnerait la forme « Display », plus étroite.
-    canevas.font = `${graisse} ${taille}px ${police}`;
-    // Espacement des lettres appliqué à l'affichage (voir contenus.tsx, `suivi`).
-    return canevas.measureText(t).width + t.length * suiviEm(taille) * taille;
+let sonde: HTMLSpanElement | null = null;
+/**
+ * Mesure réelle, dans la page, d'un texte stylé EXACTEMENT comme à l'affichage (contenus.tsx) :
+ * même police, même taille en px (Inter change de dessin selon la taille : axe « taille
+ * optique »), même espacement des lettres, mêmes chiffres. `echelle` = px CSS par point
+ * (taille de l'île choisie) : mesurer en points purs donnait un texte plus étroit qu'à
+ * l'affichage dès que l'île est agrandie → « Texte co… ».
+ */
+export function mesureNavigateur(
+  police: string,
+  suiviEm: (taillePx: number) => number = () => 0,
+  echelle = 1,
+): Mesureur {
+  return (t, taille, graisse, tabulaire = false) => {
+    if (typeof document === "undefined" || !document.body) return mesureApprox(t, taille, graisse);
+    if (!sonde) {
+      sonde = document.createElement("span");
+      sonde.setAttribute("aria-hidden", "true");
+      Object.assign(sonde.style, {
+        position: "absolute",
+        left: "-10000px",
+        top: "0",
+        visibility: "hidden",
+        whiteSpace: "nowrap",
+        lineHeight: "1",
+        pointerEvents: "none",
+      });
+    }
+    if (!sonde.isConnected) document.body.appendChild(sonde);
+    const px = taille * echelle;
+    sonde.style.fontFamily = police;
+    sonde.style.fontSize = `${px}px`;
+    sonde.style.fontWeight = String(graisse);
+    sonde.style.letterSpacing = `${suiviEm(px)}em`;
+    sonde.style.fontVariantNumeric = tabulaire ? "tabular-nums" : "normal";
+    sonde.textContent = t;
+    const largeur = sonde.getBoundingClientRect().width;
+    return largeur > 0 ? largeur / echelle : mesureApprox(t, taille, graisse);
   };
 }
 
-/** Mesureur avec la police ET l'espacement des lettres de la config. */
+/** Mesureur avec la police, l'espacement des lettres ET la taille de l'île de la config. */
 export function mesureConfig(cfg: IslandConfig): Mesureur {
   const ty = cfg.typographie;
-  return mesureNavigateur(v(cfg.police), (taille) => v(ty.suiviA) + v(ty.suiviB) * Math.exp(v(ty.suiviC) * taille));
+  return mesureNavigateur(
+    v(cfg.police),
+    (taille) => v(ty.suiviA) + v(ty.suiviB) * Math.exp(v(ty.suiviC) * taille),
+    v(cfg.ISLAND_SCALE),
+  );
 }
 
 export function specAlerte(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
@@ -171,17 +201,18 @@ export function cotesAlerte(spec: SpecAlerte, cfg: IslandConfig, mesurer: Mesure
     : v(a.texteXPt) + (spec.icone ? tailleIcone(cfg) + (spec.libelle ? ECART_ICONE_PT : 0) : 0);
   const libelle = spec.libelle ? mesurer(spec.libelle, t, g) : 0;
   const finDroite = v(a.batterieDroitePt) + (spec.batterie ? v(a.batterieLargeurPt) + v(a.ecartValeurBatteriePt) : 0);
-  const valeur = spec.valeur ? mesurer(spec.valeurReference ?? spec.valeur, t, g) : 0;
+  const valeur = spec.valeur ? Math.max(mesurer(spec.valeur, t, g, true), spec.valeurReference ? mesurer(spec.valeurReference, t, g, true) : 0) : 0;
   const gauche = Math.min(debutGauche + libelle + ecart, coteMax);
   const droite = Math.min(finDroite + valeur + ecart, coteMax);
-  // Place réelle de chaque côté = moitié de l'île moins la caméra (+1 pt d'arrondi).
+  // Place réelle de chaque côté = moitié de l'île moins la caméra (+2 pt : arrondis de rendu,
+  // pris sur l'écart de 18,9 pt avant la caméra).
   // Notification sur deux lignes : l'île prend toute la largeur → toute la place du côté.
   const cote = spec.detail ? coteMax : Math.max(gauche, droite);
   return {
     gauche,
     droite,
-    libelleMax: cote - debutGauche - ecart + 1,
-    valeurMax: cote - finDroite - ecart + 1,
+    libelleMax: cote - debutGauche - ecart + 2,
+    valeurMax: cote - finDroite - ecart + 2,
   };
 }
 

@@ -40,6 +40,13 @@ The island sits at the top-center of your screen, like on an iPhone, and reacts 
 | 🔔 **Notifications, 🌙 Do Not Disturb** | App name next to the camera, message on a second line |
 | 🟢🟠 **Camera / microphone in use** | **Green** dot (camera, with or without mic) or **orange** dot (mic only) — same rule as iOS |
 
+**Feels built into Windows:**
+
+- **Right-click its pinned icon** (taskbar or Start menu) for ready-made timers — like any Windows app.
+- When a timer ends, a **Windows notification** with **Repeat** and **OK** buttons stays in the notification center if you were away.
+- A timer started in the **Windows Clock app** ends with the island's own orange *Timer done* alert.
+- `dynamicisland://` **links** start a timer from anywhere.
+
 And the little things you only notice on a real iPhone:
 
 - **Nothing is ever drawn where the camera would be** — alerts place their content on each side of it.
@@ -85,6 +92,8 @@ Works at every Windows display scale (100 %, 125 %, 150 %, 200 %…) and on any 
 | Settings panel | **Ctrl + Alt + D** |
 | Quick timer launcher | **Ctrl + Alt + M** — type `5`, `2:30`, `1h15`… |
 | Tray icon | Size (small → extra large), monitor, start with Windows, hide in fullscreen, quit |
+| **Pinned icon** (taskbar or Start) | Click → timer launcher. **Right-click** → *Timer 1 / 3 / 5 / 10 / 25 min, 1 h*, launcher, settings |
+| **Links** | `dynamicisland://minuteur/5m` — from a browser, a shortcut, a Stream Deck… (also `/pause`, `/reprendre`, `/annuler`, `dynamicisland://reglages`) |
 
 The **settings panel** lets you pick the island size, animation speed, alert duration, show or hide the waveform, choose which alerts appear, and **test every animation**.
 
@@ -185,6 +194,7 @@ ont été **mesurés** image par image sur des vidéos d'un vrai iPhone 16 Pro (
 - **Alertes** : chargeur, batterie 20 %, volume, luminosité, presse-papiers, capture d'écran, notifications, Ne pas déranger.
 - **Point vert / orange** quand la caméra ou le micro est utilisé.
 - **Clic** : petit rebond · **appui long** : vue étendue · **Ctrl + Alt + D** : réglages · **Ctrl + Alt + M** : minuteur rapide.
+- **Intégré à Windows** : clic droit sur l'icône épinglée → minuteurs prêts ; notification Windows « Répéter » à la fin ; liens `dynamicisland://minuteur/5m`.
 - **Installer** : page [**Releases**](https://github.com/Mede2026/Dynamic-island-for-windows-real/releases/latest) → fichier `…-setup.exe`.
 
 ## ⚖️ License & legal

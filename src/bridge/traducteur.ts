@@ -88,6 +88,16 @@ export class Traducteur {
     // L'outil de capture envoie une notification à chaque capture : l'alerte « Capture »
     // (avec miniature) s'affiche déjà, on ne la double pas.
     if (/capture|snipping|screen ?clip/i.test(n.application)) return [];
+    // Notification Windows de l'île elle-même (« Minuteur terminé ») : l'île l'affiche déjà.
+    if (/^dynamic island$/i.test(n.application.trim())) return [];
+    // App Horloge de Windows : la fin d'un minuteur devient la VRAIE alerte « Minuteur
+    // terminé » (orange, comme sur iPhone). Alarmes et sessions de concentration : notification.
+    if (/^(horloge|clock|alarmes? et horloge|alarms? & clock)$/i.test(n.application.trim())) {
+      const texte = n.textes.join(" ");
+      if (!/alarm|réveil|concentration|focus/i.test(texte)) {
+        return [{ type: "ALERTE", alerte: { type: "minuteurTermine", donnees: null } }];
+      }
+    }
     return [{ type: "ALERTE", alerte: { type: "notification", donnees: n } }];
   }
 

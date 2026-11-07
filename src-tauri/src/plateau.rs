@@ -61,6 +61,16 @@ pub fn basculer_lanceur(app: &AppHandle) {
         let _ = f.close();
         return;
     }
+    ouvrir_lanceur(app);
+}
+
+/// Ouvre le lanceur de minuteur (ou le ramène devant s'il est déjà ouvert).
+pub fn ouvrir_lanceur(app: &AppHandle) {
+    if let Some(f) = app.get_webview_window(LABEL_LANCEUR) {
+        let _ = f.show();
+        let _ = f.set_focus();
+        return;
+    }
     let r = WebviewWindowBuilder::new(app, LABEL_LANCEUR, WebviewUrl::App("index.html?lanceur".into()))
         .title("Lancer — Dynamic Island")
         .inner_size(380.0, 250.0)

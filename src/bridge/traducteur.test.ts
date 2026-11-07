@@ -112,4 +112,20 @@ describe("Traducteur", () => {
     expect(t.survol(false)).toEqual([{ type: "SURVOL_FIN" }]);
     expect(t.clicExterieur()).toEqual([{ type: "CLIC_EXTERIEUR" }]);
   });
+
+  it("notifications : Horloge → alerte minuteur, l'île elle-même ignorée", () => {
+    const t = new Traducteur();
+    const n = (application: string, ...textes: string[]) => ({ id: 1, application, textes });
+    const type = (evs: ReturnType<Traducteur["notification"]>) => {
+      const e = evs[0];
+      return e?.type === "ALERTE" ? e.alerte.type : null;
+    };
+    expect(t.notification(n("Horloge", "Minuteur", "Le temps est écoulé"))).toEqual([
+      { type: "ALERTE", alerte: { type: "minuteurTermine", donnees: null } },
+    ]);
+    expect(type(t.notification(n("Clock", "Pasta", "Time's up")))).toBe("minuteurTermine");
+    expect(type(t.notification(n("Horloge", "Alarme", "7:00")))).toBe("notification");
+    expect(t.notification(n("Dynamic Island", "Minuteur terminé", "5 min"))).toEqual([]);
+    expect(type(t.notification(n("Messages", "Salut")))).toBe("notification");
+  });
 });

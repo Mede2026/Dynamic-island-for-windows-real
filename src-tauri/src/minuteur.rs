@@ -161,6 +161,7 @@ fn programmer_reveil(app: &AppHandle, m: &Minuteur) {
         let mut m = etat.0.lock().unwrap();
         if m.generation == generation && m.verifier(horloge()) {
             publier(&app, &m);
+            crate::integration::notifier_fin_minuteur(&app, m.duree_ms);
         }
     });
 }

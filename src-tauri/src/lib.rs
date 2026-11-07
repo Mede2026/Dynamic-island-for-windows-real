@@ -14,6 +14,7 @@ pub mod demarrage;
 pub mod evenements;
 pub mod fenetre;
 pub mod horloge;
+pub mod integration;
 pub mod journal;
 pub mod media;
 pub mod minuteur;
@@ -38,12 +39,14 @@ fn app_quitter(app: tauri::AppHandle) {
 pub fn run() {
     journal::initialiser();
     journal!("app", "version {}", env!("CARGO_PKG_VERSION"));
+    // Même identité que les raccourcis de l'installateur (icône épinglée, notifications).
+    integration::definir_identite();
     let resultat = tauri::Builder::default()
         // Une seule île à la fois (ex. démarrage auto + double-clic).
         // Une 2e instance transmet ses arguments (ex. --minuteur 5m) à la 1re, puis se ferme.
         .plugin(tauri_plugin_single_instance::init(|app, args, _dossier| {
             journal!("app", "déjà lancée : arguments transmis {:?}", &args[1..]);
-            minuteur::executer_arguments(app, &args);
+            integration::executer(app, &args, true);
         }))
         .plugin(demarrage::plugin())
         .plugin(
@@ -129,7 +132,8 @@ pub fn run() {
             media::demarrer(handle);
             systeme::demarrer(handle);
             horloge::demarrer(handle.clone());
-            minuteur::executer_arguments(handle, &std::env::args().collect::<Vec<_>>());
+            integration::installer();
+            integration::executer(handle, &std::env::args().collect::<Vec<_>>(), false);
             Ok(())
         })
         .run(tauri::generate_context!());
