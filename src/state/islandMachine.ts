@@ -50,7 +50,9 @@ export type TypeAlerte =
   | "micro"
   | "economie"
   | "ecranExterne"
-  | "bureau";
+  | "bureau"
+  | "wifiFaible"
+  | "nouvelleVersion";
 
 /**
  * Priorités : plus le nombre est grand, plus l'activité est importante.

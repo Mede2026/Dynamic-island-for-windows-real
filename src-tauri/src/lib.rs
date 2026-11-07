@@ -20,6 +20,7 @@ pub mod integration;
 pub mod journal;
 pub mod media;
 pub mod minuteur;
+pub mod mise_a_jour_app;
 pub mod parametres;
 pub mod paroles;
 pub mod plateau;
@@ -98,6 +99,8 @@ pub fn run() {
             etagere::etagere_coller,
             plateau::ile_menu,
             plateau::ile_action,
+            mise_a_jour_app::app_verifier_maj,
+            mise_a_jour_app::app_installer_maj,
             systeme::appel_entrant::appel_entrant_repondre,
             systeme::historique::historique_lire,
             systeme::historique::historique_copier,
@@ -162,6 +165,7 @@ pub fn run() {
             }
             media::demarrer(handle);
             etagere::charger();
+            mise_a_jour_app::demarrer(handle.clone());
             systeme::demarrer(handle);
             // Indicateur de Windows : remettre d'abord (fin brutale précédente), puis remplacer.
             systeme::osd::restaurer();

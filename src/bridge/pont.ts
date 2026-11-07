@@ -303,6 +303,8 @@ export function demarrerPont(machine: IslandMachine): () => void {
   );
   arrets.push(ecouter("sortie-audio", (s) => envoyer([{ type: "ALERTE", alerte: { type: "sortieAudio", donnees: s } }])));
   arrets.push(ecouter("micro-muet", (m) => envoyer([{ type: "ALERTE", alerte: { type: "micro", donnees: m } }])));
+  arrets.push(ecouter("nouvelle-version", (n) => envoyer([{ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: n, dureeFacteur: 3 } }])));
+  arrets.push(ecouter("wifi-faible", (w) => envoyer([{ type: "ALERTE", alerte: { type: "wifiFaible", donnees: w } }])));
   arrets.push(ecouter("bureau", (b) => envoyer([{ type: "ALERTE", alerte: { type: "bureau", donnees: b, dureeFacteur: 0.6 } }])));
   // Écran externe branché / débranché.
   let ecransConnus: string[] | null = null;

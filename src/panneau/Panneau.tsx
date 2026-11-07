@@ -59,6 +59,7 @@ const ALERTES: [string, string][] = [
   ["economie", "Économiseur de batterie"],
   ["ecranExterne", "Écran externe branché / débranché"],
   ["bureau", "Bureau virtuel"],
+  ["wifiFaible", "Wi-Fi faible"],
 ];
 
 const BOUCLES: Record<string, NomScenario[]> = {

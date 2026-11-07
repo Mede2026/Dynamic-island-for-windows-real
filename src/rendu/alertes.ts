@@ -86,7 +86,11 @@ export interface SpecAlerte {
   valeurReference?: string;
   batterie?: { niveau: number; couleur: string; enCharge: boolean };
   /** La valeur est un bouton : copier un code, ouvrir un fichier téléchargé. */
-  action?: { type: "copier"; texte: string } | { type: "ouvrir"; chemin: string } | { type: "lien"; url: string };
+  action?:
+    | { type: "copier"; texte: string }
+    | { type: "ouvrir"; chemin: string }
+    | { type: "lien"; url: string }
+    | { type: "maj"; url: string };
   /** Bouton à droite de la 2e ligne ; « fermer » referme simplement l'alerte (« Plus tard »). */
   boutonDetail?: string;
 }
@@ -256,6 +260,24 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
         valeur: "Imprimé",
         couleurValeur: v(a.valeurCouleur),
       };
+    }
+    case "nouvelleVersion": {
+      const n = { version: "", url: "", ...(alerte.donnees as Partial<{ version: string; url: string }>) };
+      return {
+        icone: "miseAJour",
+        couleurIcone: v(a.valeurCouleur),
+        libelle: "Mise à jour",
+        valeur: "Installer",
+        couleurValeur: v(a.valeurCouleur),
+        action: { type: "maj", url: n.url },
+        detail: `Dynamic Island ${n.version.replace(/^v/, "")} est disponible.`,
+        boutonDetail: "Plus tard",
+      };
+    }
+    case "wifiFaible": {
+      const w = { barres: 1, nom: null, ...(alerte.donnees as Partial<{ barres: number; nom: string | null }>) };
+      const orange = "#ff9f0a";
+      return { icone: "wifi", couleurIcone: orange, libelle: w.nom || "Wi-Fi", valeur: "Signal faible", couleurValeur: orange };
     }
     case "deverrouillage":
       // Comme Face ID : rien qu'un cadenas qui s'ouvre (l'île reste petite).

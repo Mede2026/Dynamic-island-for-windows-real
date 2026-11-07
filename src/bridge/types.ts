@@ -164,6 +164,10 @@ export interface EvenementsBackend {
   "ouvrir-etagere": null;
   /** Bouton gauche enfoncé et curseur amené près de l'île (glisser-déposer probable). */
   "glisser-proche": null;
+  /** Nouvelle version de l'île disponible sur GitHub. */
+  "nouvelle-version": { version: string; url: string };
+  /** Signal Wi-Fi tombé à 1 barre ou moins. */
+  "wifi-faible": { barres: number; nom: string | null };
   /** Connexion Internet perdue / retrouvée. */
   internet: { connecte: boolean; nom: string | null };
   /** Panneau de réglages → île : valeurs modifiées en direct. */
@@ -271,6 +275,8 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "sortie-audio",
   "micro-muet",
   "bureau",
+  "wifi-faible",
+  "nouvelle-version",
   "impression",
   "redemarrage-requis",
 ];

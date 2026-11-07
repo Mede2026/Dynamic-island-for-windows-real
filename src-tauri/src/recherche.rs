@@ -101,7 +101,11 @@ pub async fn recherche_rapide(terme: String) -> Result<Option<Resultat>, String>
 #[tauri::command]
 pub fn ouvrir_lien(lien: String) -> Result<(), String> {
     // Pages web, et pages des Paramètres de Windows (« ms-settings:windowsupdate »).
-    if !(lien.starts_with("https://") || lien.starts_with("http://") || lien.starts_with("ms-settings:") || lien == "ms-screenclip:") {
+    if !(lien.starts_with("https://")
+        || lien.starts_with("http://")
+        || lien.starts_with("ms-settings:")
+        || lien == "ms-screenclip:")
+    {
         return Err("adresse refusée".into());
     }
     #[cfg(windows)]

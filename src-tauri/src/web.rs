@@ -69,6 +69,32 @@ pub fn post_json(url: &str, corps: &str, entetes: &[(&str, &str)]) -> Result<Rep
     .map_err(|e| e.to_string())
 }
 
+/// Télécharge un fichier (suit les redirections) et l'écrit sur le disque.
+#[cfg(windows)]
+pub fn telecharger(url: &str, chemin: &std::path::Path) -> Result<(), String> {
+    use windows::core::HSTRING;
+    use windows::Foundation::Uri;
+    use windows::Storage::Streams::DataReader;
+    let octets = (|| -> windows::core::Result<Vec<u8>> {
+        let tampon = client(&[])?
+            .GetBufferAsync(&Uri::CreateUri(&HSTRING::from(url))?)?
+            .join()?;
+        let mut o = vec![0u8; tampon.Length()? as usize];
+        DataReader::FromBuffer(&tampon)?.ReadBytes(&mut o)?;
+        Ok(o)
+    })()
+    .map_err(|e| e.to_string())?;
+    if octets.len() < 100_000 {
+        return Err("fichier téléchargé trop petit".into());
+    }
+    std::fs::write(chemin, octets).map_err(|e| e.to_string())
+}
+
+#[cfg(not(windows))]
+pub fn telecharger(_url: &str, _chemin: &std::path::Path) -> Result<(), String> {
+    Err("Windows seulement".into())
+}
+
 #[cfg(not(windows))]
 pub fn get(_url: &str, _entetes: &[(&str, &str)]) -> Result<Reponse, String> {
     Err("requêtes web : Windows seulement".into())

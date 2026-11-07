@@ -1301,10 +1301,13 @@ function BoutonAction({ action, style, children }: { action: NonNullable<ReturnT
         e.stopPropagation();
         if (action.type === "copier") void backend.copierTexte(action.texte).then(() => setFait(true));
         else if (action.type === "ouvrir") void backend.ouvrirFichier(action.chemin);
-        else void backend.ouvrirLien(action.url);
+        else if (action.type === "maj") {
+          setFait(true);
+          void backend.installerMaj(action.url).catch(() => setFait(false));
+        } else void backend.ouvrirLien(action.url);
       }}
     >
-      {fait ? "Copié" : children}
+      {fait ? (action.type === "maj" ? "Téléchargement…" : "Copié") : children}
     </div>
   );
 }

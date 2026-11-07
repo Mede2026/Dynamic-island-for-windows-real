@@ -7,6 +7,14 @@ use tauri::AppHandle;
 use crate::journal;
 
 pub const EVENEMENT: &str = "internet";
+pub const EVENEMENT_WIFI: &str = "wifi-faible";
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub struct WifiFaible {
+    /// Barres de signal (0 à 5).
+    pub barres: u8,
+    pub nom: Option<String>,
+}
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -38,6 +46,7 @@ pub fn demarrer(app: AppHandle) {
     }
 
     static DERNIER: Mutex<Option<bool>> = Mutex::new(None);
+    let app2 = app.clone();
     *DERNIER.lock().unwrap() = Some(lire().connecte);
     let gestionnaire = NetworkStatusChangedEventHandler::new(move |_| {
         // Windows envoie souvent plusieurs changements d'affilée : attendre que ça se stabilise.
@@ -55,6 +64,47 @@ pub fn demarrer(app: AppHandle) {
         Ok(_) => journal!("internet", "prêt"),
         Err(e) => journal!("internet", "indisponible : {e}"),
     }
+
+    // Wi-Fi faible : nombre de barres (0 à 5) relevé toutes les 20 s ; alerte quand il tombe
+    // à 1 barre ou moins (au plus une fois toutes les 10 minutes).
+    std::thread::Builder::new()
+        .name("ile-wifi".into())
+        .spawn(move || {
+            let mut avant: Option<u8> = None;
+            let mut derniere_alerte: Option<std::time::Instant> = None;
+            loop {
+                std::thread::sleep(std::time::Duration::from_secs(20));
+                let Ok(profil) = NetworkInformation::GetInternetConnectionProfile() else {
+                    continue;
+                };
+                if !profil.IsWlanConnectionProfile().unwrap_or(false) {
+                    avant = None;
+                    continue;
+                }
+                let barres = profil.GetSignalBars().ok().and_then(|r| r.Value().ok());
+                let nom = profil
+                    .ProfileName()
+                    .ok()
+                    .map(|n| n.to_string())
+                    .filter(|n| !n.is_empty());
+                if let (Some(b), Some(a)) = (barres, avant) {
+                    let recente = derniere_alerte.is_some_and(|t| t.elapsed() < std::time::Duration::from_secs(600));
+                    if b <= 1 && a >= 2 && !recente {
+                        journal!("internet", "Wi-Fi faible : {b} barre(s)");
+                        let _ = app2.emit(
+                            EVENEMENT_WIFI,
+                            WifiFaible {
+                                barres: b,
+                                nom: nom.clone(),
+                            },
+                        );
+                        derniere_alerte = Some(std::time::Instant::now());
+                    }
+                }
+                avant = barres;
+            }
+        })
+        .ok();
 }
 
 #[cfg(not(windows))]
