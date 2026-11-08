@@ -170,6 +170,17 @@ export function CarteOutil({ cfg, S, etat, gauche, haut, ecran }: { cfg: IslandC
   const [glissement, setGlissement] = useState(false);
 
   useEffect(() => setTiree(nom ? hauteurRetenue(nom) : null), [nom]);
+  // Échap ferme l'outil (la recherche gère le sien : elle revient d'abord à la liste).
+  useEffect(() => {
+    if (!nom || nom === "recherche") return;
+    const echap = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      fermerOutil();
+    };
+    window.addEventListener("keydown", echap);
+    return () => window.removeEventListener("keydown", echap);
+  }, [nom]);
   // « Agrandir » (conversation) : la carte prend toute la hauteur permise, ou revient.
   useEffect(() => {
     const agrandir = () => setTiree((t) => (t !== null && t >= CARTE_MAX_PT - 1 ? null : CARTE_MAX_PT));

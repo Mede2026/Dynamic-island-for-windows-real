@@ -39,7 +39,8 @@ export function Dessin() {
   const [message, setMessage] = useState("");
   const annuler = useRef<ImageData[]>([]);
   const retablir = useRef<ImageData[]>([]);
-  const geste = useRef<{ depart: { x: number; y: number }; points: { x: number; y: number; p: number }[]; avant: ImageData } | null>(null);
+  /** Geste en cours ; `dessines` = nombre de points déjà tracés (on ne trace que les nouveaux). */
+  const geste = useRef<{ depart: { x: number; y: number }; points: { x: number; y: number; p: number }[]; avant: ImageData; dessines: number; efface: boolean } | null>(null);
   const [, forcer] = useState(0);
   const [courbe, setCourbe] = useState<Courbe>(() => (localStorage.getItem("ile-dessin-courbe") as Courbe) ?? "normale");
   const [lissage, setLissage] = useState(() => Number(localStorage.getItem("ile-dessin-lissage") ?? 3));
@@ -150,14 +151,16 @@ export function Dessin() {
   };
 
   /** Trait à main levée lissé (courbes passant par les milieux), épaisseur selon la pression. */
-  const tracerLibre = (g: CanvasRenderingContext2D, pts: { x: number; y: number; p: number }[], efface: boolean, surligneur: boolean) => {
+  const tracerLibre = (g: CanvasRenderingContext2D, pts: { x: number; y: number; p: number }[], efface: boolean, surligneur: boolean, debut = 1, fin = false) => {
     const base = taille * devicePixelRatio;
     g.globalCompositeOperation = efface ? "destination-out" : surligneur ? "source-over" : "source-over";
     g.globalAlpha = surligneur ? 0.35 : 1;
     g.strokeStyle = couleur;
     g.lineCap = surligneur ? "butt" : "round";
     g.lineJoin = "round";
-    for (let i = 1; i < pts.length; i++) {
+    // TOUS les nouveaux segments (un mouvement rapide en apporte plusieurs d'un coup) : sinon le
+    // trait devient des pointillés.
+    for (let i = Math.max(1, debut); i < pts.length; i++) {
       const a = pts[i - 1]!;
       const b = pts[i]!;
       const m0 = i > 1 ? { x: (pts[i - 2]!.x + a.x) / 2, y: (pts[i - 2]!.y + a.y) / 2 } : a;
@@ -168,6 +171,22 @@ export function Dessin() {
       g.moveTo(m0.x, m0.y);
       g.quadraticCurveTo(a.x, a.y, m1.x, m1.y);
       g.stroke();
+    }
+    if (fin && pts.length >= 2) {
+      const a = pts[pts.length - 2]!;
+      const b = pts[pts.length - 1]!;
+      g.beginPath();
+      g.moveTo((a.x + b.x) / 2, (a.y + b.y) / 2);
+      g.lineTo(b.x, b.y);
+      g.stroke();
+    }
+    if (pts.length === 1 && !surligneur) {
+      // Simple touche du stylet : un point.
+      const a = pts[0]!;
+      g.beginPath();
+      g.arc(a.x, a.y, (efface ? base * 2 : base * (0.35 + a.p * 1.3)) / 2, 0, Math.PI * 2);
+      g.fillStyle = couleur;
+      g.fill();
     }
     g.globalAlpha = 1;
     g.globalCompositeOperation = "source-over";
@@ -437,7 +456,7 @@ export function Dessin() {
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
           memoriser();
           const p = point(e);
-          geste.current = { depart: p, points: [p], avant: instantane() };
+          geste.current = { depart: p, points: [p], avant: instantane(), dessines: 1, efface: false };
           setMessage("");
         }}
         onPointerMove={(e) => {
@@ -467,14 +486,24 @@ export function Dessin() {
               g.putImageData(ge.avant, 0, 0);
               tracerLibre(g, ge.points, false, true);
             } else {
-              tracerLibre(g, ge.points.slice(-4), efface, false);
+              tracerLibre(g, ge.points, efface, false, ge.dessines);
+              ge.dessines = ge.points.length;
+              ge.efface = efface;
             }
           } else {
             g.putImageData(ge.avant, 0, 0);
             tracerForme(g, ge.depart, point(e), e.shiftKey);
           }
         }}
-        onPointerUp={() => (geste.current = null)}
+        onPointerUp={() => {
+          const g = ctx();
+          const ge = geste.current;
+          // Fin du trait (et simple point si on a juste touché).
+          if (g && ge && (outil === "stylo" || ge.efface) && ge.points.length >= 1) {
+            tracerLibre(g, ge.points, ge.efface, false, ge.points.length, true);
+          }
+          geste.current = null;
+        }}
         style={{
           flex: 1,
           width: "100%",
