@@ -419,6 +419,12 @@ export function demarrerPont(machine: IslandMachine): () => void {
   arrets.push(Promise.resolve(() => window.removeEventListener("ile-maj", verifierMaj)));
   arrets.push(ecouter("nouvelle-version", (n) => envoyer([{ type: "ALERTE", alerte: { type: "nouvelleVersion", donnees: n, dureeFacteur: 3 } }])));
   arrets.push(ecouter("ventilateurs", (s) => majDonnees({ ventilo: s })));
+  // Pipette : la couleur sous la souris en direct (même alerte mise à jour), puis la couleur copiée.
+  arrets.push(
+    ecouter("pipette", (c) =>
+      envoyer([{ type: "ALERTE", alerte: { type: "pipette", donnees: c, dureeFacteur: c.fini ? 1.3 : 8 } }]),
+    ),
+  );
   // Météo : affichée au survol (horloge) ; alerte quand la pluie ou la neige arrive dans l'heure.
   let alertePluieA = 0;
   arrets.push(

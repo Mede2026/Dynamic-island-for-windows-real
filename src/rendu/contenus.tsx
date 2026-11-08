@@ -23,7 +23,7 @@ import {
 import type { Alerte, EtatMachine } from "../state/islandMachine";
 import { preferencesActuelles, v } from "../config/store";
 import { Onde } from "./onde";
-import { IconeCalendrier, IconeVentilo } from "./outils";
+import { IconeCalendrier, IconePipette, IconeVentilo } from "./outils";
 import { animate, AnimatePresence, motion } from "framer-motion";
 import { geometrieCible, LIGNE_PAROLES, parolesVisibles } from "./choregraphie";
 import { indiceLigne } from "../bridge/paroles";
@@ -1149,18 +1149,21 @@ const BOUTONS_MENU: { action: string; texte: string; icone: (t: number, c: strin
   { action: "historique", texte: "Copiés", icone: (t, c) => <IconePressePapiers taille={t} couleur={c} />, couleur: "#bf5af2" },
   { action: "note", texte: "Note", icone: (t, c) => <IconeCrayon taille={t} couleur={c} />, couleur: "#ffd60a" },
   { action: "capture", texte: "Capture", icone: (t, c) => <IconeEcran taille={t} couleur={c} />, couleur: "#30d158" },
-  { action: "ocr", texte: "Texte image", icone: (t, c) => <IconeTexteImage taille={t} couleur={c} />, couleur: "#64d2ff" },
+  { action: "ocr", texte: "Lire texte", icone: (t, c) => <IconeTexteImage taille={t} couleur={c} />, couleur: "#64d2ff" },
   { action: "recherche", texte: "Recherche", icone: (t, c) => <IconeLoupe taille={t} couleur={c} />, couleur: "#ffd60a" },
+  { action: "dessin", texte: "Dessin", icone: (t, c) => <IconeCrayon taille={t} couleur={c} />, couleur: "#0a84ff" },
+  { action: "pipette", texte: "Pipette", icone: (t, c) => <IconePipette taille={t} couleur={c} />, couleur: "#ff9f0a" },
   { action: "reglages", texte: "Réglages", icone: (t, c) => <IconeReglages taille={t} couleur={c} />, couleur: "#98989f" },
 ];
 
-const OUTIL_DU_MENU: Record<string, string> = { lanceur: "minuteur", historique: "copies", note: "note", recherche: "recherche" };
+const OUTIL_DU_MENU: Record<string, string> = { lanceur: "minuteur", historique: "copies", note: "note", recherche: "recherche", dessin: "dessin" };
 
 function lancerAction(action: string) {
   if (action === "etagere") window.dispatchEvent(new CustomEvent("ile-ouvrir-etagere"));
   else if (action === "capture") void backend.ouvrirLien("ms-screenclip:");
   else if (action === "ocr") window.dispatchEvent(new CustomEvent("ile-ocr"));
   else if (action === "chrono") window.dispatchEvent(new CustomEvent("ile-chrono", { detail: "demarrer" }));
+  else if (action === "pipette") void backend.pipette();
   else if (action in OUTIL_DU_MENU) {
     // Outil ouvert DANS l'île : le menu se referme, l'outil prend sa place.
     fermerMenuIle();
@@ -1174,15 +1177,15 @@ export function MenuEtendu({ cfg, S }: Ctx) {
   const largeur = v(cfg.formesContenu.menu.taille.pt.largeur) * S;
   const hauteur = v(cfg.formesContenu.menu.taille.pt.hauteur) * S;
   const marge = 18 * S;
-  const cellule = (largeur - 2 * marge) / 5;
-  const rond = 38 * S;
+  const cellule = (largeur - 2 * marge) / 6;
+  const rond = 36 * S;
   return (
-    <div style={{ position: "absolute", left: marge, top: marge * 1.05, width: largeur - 2 * marge, height: hauteur - 1.6 * marge, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", alignContent: "start", rowGap: 7 * S }}>
+    <div style={{ position: "absolute", left: marge, top: marge * 1.05, width: largeur - 2 * marge, height: hauteur - 1.6 * marge, display: "grid", gridTemplateColumns: "repeat(6, 1fr)", alignContent: "start", rowGap: 7 * S }}>
       {BOUTONS_MENU.map((b) => (
         <button
           key={b.action}
           {...boutonIle(() => lancerAction(b.action))}
-          style={{ flexDirection: "column", gap: 6 * S, width: cellule, color: "#fff", fontSize: 11 * S, fontWeight: 500, whiteSpace: "nowrap" }}
+          style={{ flexDirection: "column", gap: 6 * S, width: cellule, color: "#fff", fontSize: 10.5 * S, fontWeight: 500, whiteSpace: "nowrap" }}
         >
           <span
             style={{
@@ -1565,6 +1568,8 @@ export function AlerteContenu(ctx: Ctx & { alerte: Alerte }) {
         return <IconeChrono taille={ti} couleur={couleurIcone} />;
       case "pluie":
         return <IconePluie taille={ti} couleur={couleurIcone} />;
+      case "pastille":
+        return <div style={{ width: ti, height: ti, borderRadius: ti, background: couleurIcone, boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.55)" }} />;
       case "neige":
         return <IconeNeige taille={ti} couleur={couleurIcone} />;
       case "cadenas":

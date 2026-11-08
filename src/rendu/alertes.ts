@@ -1,3 +1,4 @@
+import { detecterColis } from "../recherche/colis";
 /**
  * Alertes : contenu (à GAUCHE et à DROITE de la caméra) et largeur de l'île.
  *
@@ -60,7 +61,8 @@ export type NomIcone =
   | "texteImage"
   | "chrono"
   | "pluie"
-  | "neige";
+  | "neige"
+  | "pastille";
 
 const ICONES_BLUETOOTH: Record<CategorieBluetooth, NomIcone> = {
   audio: "casque",
@@ -303,6 +305,17 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
         ? { icone: "texteImage", libelle: "Texte copié", valeur: `${t.nombre} mots`, couleurValeur: v(a.valeurCouleur) }
         : { icone: "texteImage", couleurIcone: v(cfg.media.etendu.artiste.couleur), libelle: "Texte", valeur: "Rien trouvé", couleurValeur: v(cfg.media.etendu.artiste.couleur) };
     }
+    case "pipette": {
+      const c = { hex: "#FFFFFF", fini: false, annule: false, ...(alerte.donnees as Partial<{ hex: string; fini: boolean; annule: boolean }>) };
+      if (c.annule) return { icone: "pastille", couleurIcone: "#8e8e93", libelle: "Pipette", valeur: "Annulée", couleurValeur: v(cfg.media.etendu.artiste.couleur) };
+      return {
+        icone: "pastille",
+        couleurIcone: c.hex,
+        libelle: c.fini ? "Couleur copiée" : "Clique une couleur",
+        valeur: c.hex,
+        couleurValeur: c.fini ? v(a.valeurCouleur) : blanc,
+      };
+    }
     case "meteo": {
       const m = { precipitationDans: 15, neige: false, ...(alerte.donnees as Partial<{ precipitationDans: number; neige: boolean }>) };
       return {
@@ -428,6 +441,11 @@ function specBrute(alerte: Alerte, cfg: IslandConfig): SpecAlerte {
       const p = { type: "autre", apercu: "", ...(alerte.donnees as Partial<PressePapiers>) } as PressePapiers;
       const libelles = { texte: "Texte copié", image: "Image copiée", capture: "Capture copiée", fichiers: "Fichiers copiés", autre: "Copié" };
       // Texte assez long : « Résumer » le fait résumer par Claude (dans la recherche de l'île).
+      // Numéro de colis copié : « Suivre » ouvre la page du transporteur.
+      const colis = p.type === "texte" ? detecterColis(p.apercu) : [];
+      if (colis[0]) {
+        return { icone: "pressePapiers", libelle: `Colis ${colis[0].transporteur.split(" ")[0]}`, valeur: "Suivre", couleurValeur: v(a.valeurCouleur), action: { type: "lien", url: colis[0].url } };
+      }
       if (p.type === "texte" && p.apercu.length >= 30) {
         return {
           icone: "pressePapiers",

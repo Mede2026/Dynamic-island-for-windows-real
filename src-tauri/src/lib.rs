@@ -26,6 +26,7 @@ pub mod mise_a_jour_app;
 pub mod parametres;
 pub mod partout;
 pub mod paroles;
+pub mod pipette;
 pub mod plateau;
 pub mod recherche;
 pub mod systeme;
@@ -127,6 +128,9 @@ pub fn run() {
             claude::claude_demander,
             claude::claude_cle_tester,
             traduction::traduire,
+            pipette::pipette,
+            pipette::copier_image,
+            pipette::enregistrer_image,
             systeme::historique::historique_images,
             systeme::historique::historique_image_coller,
             systeme::historique::presse_papiers_image,

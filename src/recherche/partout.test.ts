@@ -28,3 +28,15 @@ describe("modes d'Asus Fan Control", () => {
     expect(normaliserMode(null)).toBeNull();
   });
 });
+
+import { detecterColis } from "./colis";
+describe("suivi de colis", () => {
+  it("reconnaît les transporteurs", () => {
+    expect(detecterColis("1Z999AA10123456784")[0]?.transporteur).toBe("UPS");
+    expect(detecterColis("RR123456789CA")[0]?.transporteur).toBe("Postes Canada");
+    expect(detecterColis("7023 2100 0123 4567")[0]?.transporteur).toBe("Postes Canada");
+    expect(detecterColis("TBA123456789012")[0]?.transporteur).toBe("Amazon");
+    expect(detecterColis("bonjour tout le monde")).toEqual([]);
+    expect(detecterColis("12345")).toEqual([]);
+  });
+});

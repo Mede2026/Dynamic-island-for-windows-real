@@ -265,7 +265,10 @@ export function Ile({ machine }: { machine: IslandMachine }) {
   const cibleRef = useRef<Geometrie>(geometrieCible(machine.etat, cfg));
   const annulerPlan = useRef<() => void>(() => undefined);
   const canevasSvg = useRef<SVGSVGElement>(null);
-  const [canevasL, canevasH] = tailleCanevas(cfg);
+  // Tableau blanc ouvert : la fenêtre de l'île couvre presque tout l'écran (le reste laisse
+  // passer les clics, comme toujours).
+  const pleinEcran = outilOuvert(etat) === "dessin" && etat.mode === "etendu";
+  const [canevasL, canevasH] = pleinEcran ? [Math.round(window.screen.availWidth), Math.round(window.screen.availHeight)] : tailleCanevas(cfg);
 
   const cx = canevasL / 2;
   // Île cachée (préférence « visibilite ») : rien de touchable, les clics passent dessous.
@@ -281,7 +284,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
       const zones = masqueeRef.current ? [] : zonesTouchables(finale, cfg, cx);
       const c = carteRef.current;
       if (!masqueeRef.current && c.visible && c.hauteur > 0) {
-        const l = v(cfg.formesContenu.outil.taille.pt.largeur) * S;
+        const l = (c.largeur ?? v(cfg.formesContenu.outil.taille.pt.largeur)) * S;
         // Pendant qu'on tire la poignée : toute la hauteur permise (la souris peut descendre).
         const h = (c.glisse ? CARTE_MAX_PT : c.hauteur) * S + 16 * S;
         zones.push({ x: cx - l / 2, y: v(cfg.margeHautPt) * S + (finale.hauteur + PILULE.ecartCartePt) * S, largeur: l, hauteur: h });
@@ -661,6 +664,7 @@ export function Ile({ machine }: { machine: IslandMachine }) {
             S={S}
             etat={etat}
             gauche={cx - (v(cfg.formesContenu.outil.taille.pt.largeur) * S) / 2}
+            ecran={[canevasL, canevasH]}
             haut={y0 + (cible.hauteur + PILULE.ecartCartePt) * S}
           />
         )}

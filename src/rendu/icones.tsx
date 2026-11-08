@@ -414,12 +414,13 @@ export function IconeMiseAJour({ taille, couleur, style }: P) {
   );
 }
 
-/** Cadenas ; `ouvert` (0 → 1) fait monter et pivoter l'anse, comme au déverrouillage. */
+/** Cadenas ; `ouvert` (0 → 1) fait monter l'anse et la glisse à gauche, comme au déverrouillage d'iOS. */
 export function IconeCadenas({ taille, couleur, style, ouvert = 0 }: P & { ouvert?: number }) {
   return (
     <svg width={taille} height={taille} viewBox="0 0 24 24" style={{ overflow: "visible", ...style }} aria-hidden="true">
-      {/* Comme sur iPhone : l'anse se soulève et s'ouvre vers la DROITE (la patte gauche reste en place). */}
-      <g transform={`translate(${4.2 * ouvert} ${-2.6 * ouvert}) rotate(${-14 * ouvert} 8 10.5)`}>
+      {/* Comme le cadenas ouvert d'iOS : l'anse reste droite, se soulève un peu et glisse vers la
+          GAUCHE ; sa patte droite reste dans le coin gauche du corps, la gauche est en l'air. */}
+      <g transform={`translate(${-7 * ouvert} ${-1.6 * ouvert})`}>
         <path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9" fill="none" stroke={couleur} strokeWidth="2.3" strokeLinecap="round" />
       </g>
       <rect x="5" y="10.2" width="14" height="10.6" rx="2.6" fill={couleur} />

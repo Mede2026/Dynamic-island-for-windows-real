@@ -13,6 +13,10 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 ### New in this version
 
+- 🎨 **Whiteboard** (right-click → Dessin): almost full screen, **Wacom / pen pressure** and pen eraser, smooth strokes, pen, highlighter, line, arrow, rectangle, ellipse, eraser, any color, size, undo/redo (Ctrl+Z / Ctrl+Y), plain / grid / lined background, Copy or Save as PNG
+- 💧 **Color picker** (right-click → Pipette): live color under the mouse, click anywhere to copy its #hex
+- 📦 **Parcel tracking**: copy or type a tracking number (Canada Post, UPS, Purolator, FedEx, DHL, Amazon) → « Suivre » opens the carrier's page
+- 🔒 Unlock padlock now opens like iOS (shackle lifts and slides left)
 - ✍️ « Texte copié » alert now has **Résumer · Corriger · Traduire**: Claude fixes spelling and grammar; **Google Translate** translates (French ↔ English, any language → French)
 - 📅 **Exam countdowns from the right-click menu** (small calendar button): add a name and a date, see the days left
 - 🌦️ **Weather**: temperature on the hover clock (your Windows location, or Boucherville), and an alert when rain or snow arrives within the hour
@@ -42,4 +46,4 @@ Then launch **Dynamic Island** from the Start menu. Windows SmartScreen may warn
 
 🇫🇷 **En français :** installe le fichier `…-setup.exe`, puis lance **Dynamic Island** depuis le menu Démarrer. Si Windows SmartScreen affiche un avertissement : **Informations complémentaires → Exécuter quand même**. Déjà installée ? L'île propose elle-même la mise à jour (« Installer »).
 
-**Nouveau :** alerte « Texte copié » avec **Résumer · Corriger · Traduire** (Google Traduction) ; comptes à rebours d'examens dans le **clic droit**, **météo** (survol + alerte pluie/neige), **images** dans « Copiés », **Résumer** un texte copié et **poser une question sur une capture** à Claude ; recherche **plus grande** (600 pt de large), recherche **comme sur Mac** (pilule + carte de résultats : apps, fichiers, réglages, calcul, web), **Demander à Claude** (clé API dans Réglages → Claude), **poignée** pour agrandir les cartes, **Asus Fan Control** dans l'île (petit bouton dans le clic droit), alertes en file de **3 s chacune**, barre de luminosité de Windows cachée, nom des clés USB corrigé, police **Inter** partout.
+**Nouveau :** **tableau blanc** presque plein écran (Wacom, formes, couleurs), **pipette**, **suivi de colis**, cadenas corrigé ; alerte « Texte copié » avec **Résumer · Corriger · Traduire** (Google Traduction) ; comptes à rebours d'examens dans le **clic droit**, **météo** (survol + alerte pluie/neige), **images** dans « Copiés », **Résumer** un texte copié et **poser une question sur une capture** à Claude ; recherche **plus grande** (600 pt de large), recherche **comme sur Mac** (pilule + carte de résultats : apps, fichiers, réglages, calcul, web), **Demander à Claude** (clé API dans Réglages → Claude), **poignée** pour agrandir les cartes, **Asus Fan Control** dans l'île (petit bouton dans le clic droit), alertes en file de **3 s chacune**, barre de luminosité de Windows cachée, nom des clés USB corrigé, police **Inter** partout.

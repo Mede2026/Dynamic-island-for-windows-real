@@ -15,6 +15,7 @@ import { Historique } from "../historique/Historique";
 import { Note } from "../note/Note";
 import { TemperaturePilule, Ventilateurs } from "../ventilateurs/Ventilateurs";
 import { Comptes } from "../comptes/Comptes";
+import { Dessin } from "../dessin/Dessin";
 import {
   CarteRecherche,
   PiluleRecherche,
@@ -28,7 +29,7 @@ import {
 import { IconeCrayon, IconeMinuteur, IconePressePapiers } from "./icones";
 import type { Ctx } from "./contenus";
 
-export type NomOutil = "recherche" | "minuteur" | "copies" | "note" | "ventilateurs" | "comptes";
+export type NomOutil = "recherche" | "minuteur" | "copies" | "note" | "ventilateurs" | "comptes" | "dessin";
 
 const OUTILS: Record<NomOutil, { titre: string; couleur: string; hauteur: number }> = {
   recherche: { titre: "Recherche", couleur: "#ffd60a", hauteur: 0 },
@@ -37,6 +38,7 @@ const OUTILS: Record<NomOutil, { titre: string; couleur: string; hauteur: number
   note: { titre: "Note", couleur: "#ffd60a", hauteur: 250 },
   ventilateurs: { titre: "Ventilateurs", couleur: "#64d2ff", hauteur: 224 },
   comptes: { titre: "Comptes à rebours", couleur: "#ff9f0a", hauteur: 236 },
+  dessin: { titre: "Tableau blanc", couleur: "#0a84ff", hauteur: 0 },
 };
 
 /**
@@ -82,7 +84,7 @@ export function hauteurPilule(e: EtatMachine): number {
 // Carte : hauteur (libre, tirée à la main) et zone touchable, partagées avec l'île
 // ---------------------------------------------------------------------------
 
-let carte = { visible: false, hauteur: 0, glisse: false };
+let carte: { visible: boolean; hauteur: number; glisse: boolean; largeur?: number } = { visible: false, hauteur: 0, glisse: false };
 const abonnes = new Set<() => void>();
 function majCarte(p: Partial<typeof carte>) {
   carte = { ...carte, ...p };
@@ -135,6 +137,7 @@ function PiluleTitre({ nom }: { nom: NomOutil }) {
     note: <IconeCrayon taille={18} couleur={couleur} />,
     ventilateurs: <IconeVentilo taille={18} couleur={couleur} />,
     comptes: <IconeCalendrier taille={18} couleur={couleur} />,
+    dessin: <IconeCrayon taille={18} couleur={couleur} />,
   };
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 10, padding: "0 20px 0 22px" }}>
@@ -156,7 +159,7 @@ export const VERRE_CARTE: CSSProperties = {
     "inset 0 0.5px 0 rgba(255,255,255,.30), inset 0 0 0 0.5px rgba(255,255,255,.10), inset 0 -0.5px 0 rgba(255,255,255,.16), 0 16px 38px rgba(0,0,0,.42), 0 2px 8px rgba(0,0,0,.25)",
 };
 
-export function CarteOutil({ cfg, S, etat, gauche, haut }: { cfg: IslandConfig; S: number; etat: EtatMachine; gauche: number; haut: number }) {
+export function CarteOutil({ cfg, S, etat, gauche, haut, ecran }: { cfg: IslandConfig; S: number; etat: EtatMachine; gauche: number; haut: number; ecran: [number, number] }) {
   const nom = outilOuvert(etat);
   const r = useRecherche();
   const largeur = v(cfg.formesContenu.outil.taille.pt.largeur);
@@ -176,12 +179,37 @@ export function CarteOutil({ cfg, S, etat, gauche, haut }: { cfg: IslandConfig; 
   const auto = (nom === "recherche" ? hauteurAutoRecherche(r) : nom ? OUTILS[nom].hauteur : 0) * K;
   const hauteur = borner(tiree ?? auto);
 
+  // Tableau blanc : presque tout l'écran (la fenêtre de l'île s'agrandit pour lui).
+  const dessin = nom === "dessin";
+  const marge = 40;
+  const largeurDessin = Math.max(400, ecran[0] - 2 * marge);
+  const hauteurDessin = Math.max(300, ecran[1] - haut - 28);
+
   useEffect(() => {
-    majCarte({ visible, hauteur: visible ? hauteur : 0 });
-  }, [visible, hauteur]);
-  useEffect(() => () => majCarte({ visible: false, hauteur: 0 }), []);
+    if (dessin) majCarte({ visible: true, hauteur: hauteurDessin / S, largeur: largeurDessin / S });
+    else majCarte({ visible, hauteur: visible ? hauteur : 0, largeur: undefined });
+  }, [visible, hauteur, dessin, largeurDessin, hauteurDessin, S]);
+  useEffect(() => () => majCarte({ visible: false, hauteur: 0, largeur: undefined }), []);
 
   if (!nom || !visible) return null;
+
+  if (dessin) {
+    return (
+      <motion.div
+        key="dessin"
+        initial={{ opacity: 0, scale: 0.97, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.14 } }}
+        transition={{ type: "spring", stiffness: 380, damping: 32, opacity: { duration: 0.15 } }}
+        onPointerDown={(e) => e.stopPropagation()}
+        style={{ position: "absolute", left: (ecran[0] - largeurDessin) / 2, top: haut, width: largeurDessin, height: hauteurDessin, borderRadius: PILULE.rayonCartePt * S, overflow: "hidden", pointerEvents: "auto", transformOrigin: "50% 0%", ...VERRE_CARTE }}
+      >
+        <div style={{ position: "absolute", left: 0, top: 0, width: largeurDessin / S, height: hauteurDessin / S, zoom: S, padding: 14, boxSizing: "border-box" }}>
+          <Dessin />
+        </div>
+      </motion.div>
+    );
+  }
 
   const contenu =
     nom === "recherche" ? <CarteRecherche /> : nom === "ventilateurs" ? <Ventilateurs /> : nom === "comptes" ? <Comptes /> : nom === "minuteur" ? <Lanceur fermer={fermerOutil} dansIle /> : nom === "copies" ? <Historique fermer={fermerOutil} dansIle /> : <Note fermer={fermerOutil} dansIle />;
@@ -273,6 +301,15 @@ export function IconeCalendrier({ taille, couleur }: { taille: number; couleur: 
       <rect x="3.5" y="5" width="17" height="15" rx="3" />
       <path d="M3.5 10h17M8 3v4M16 3v4" />
       <circle cx="12" cy="15" r="1.4" fill={couleur} stroke="none" />
+    </svg>
+  );
+}
+
+/** Pipette (couleur à l'écran). */
+export function IconePipette({ taille, couleur }: { taille: number; couleur: string }) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke={couleur} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.5 6.5l3 3M4 20l1.5-.5L15.8 9.2l-1-1L4.5 18.5zM13.2 4.8a2.4 2.4 0 0 1 3.4 0l2.6 2.6a2.4 2.4 0 0 1 0 3.4l-1.4 1.4-6-6z" />
     </svg>
   );
 }

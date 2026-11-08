@@ -174,6 +174,8 @@ export interface EvenementsBackend {
   ventilateurs: StatutVentilo | null;
   /** Météo (position de Windows ou Boucherville), toutes les 15 min. */
   meteo: Meteo;
+  /** Pipette : couleur sous la souris (en direct), puis celle cliquée (copiée). */
+  pipette: { hex: string; fini: boolean; annule: boolean };
   /** Signal Wi-Fi tombé à 1 barre ou moins. */
   "wifi-faible": { barres: number; nom: string | null };
   /** Connexion Internet perdue / retrouvée. */
@@ -290,6 +292,7 @@ export const NOMS_EVENEMENTS: NomEvenement[] = [
   "redemarrage-requis",
   "ventilateurs",
   "meteo",
+  "pipette",
 ];
 
 /** Statut d'Asus Fan Control (canal nommé \\.\pipe\AsusFanControl, lu par le moteur Rust). */

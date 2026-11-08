@@ -14,6 +14,7 @@ import { IconeDossier, IconeLoupe, IconePressePapiers, IconeReglages } from "../
 import { calculer, estCalcul, formaterNombre } from "./calcul";
 import { analyserConversion } from "./conversion";
 import { correspondance, estQuestion, reglagesPour } from "./partout";
+import { detecterColis } from "./colis";
 
 // ---------------------------------------------------------------------------
 // État partagé
@@ -155,6 +156,20 @@ async function chercher(terme: string) {
   } else if (estCalcul(t)) {
     const r = calculer(t);
     if (r !== null) debut.push(ligneCopie("calc", formaterNombre(r), `${t} =`));
+  }
+  // Numéro de colis : la page de suivi du transporteur.
+  for (const c of detecterColis(t)) {
+    debut.push({
+      cle: `colis:${c.transporteur}`,
+      titre: `Suivre le colis · ${c.transporteur}`,
+      sous: t.replace(/\s+/g, "").toUpperCase(),
+      icone: glyphe((n) => <IconeColis taille={n} />, "linear-gradient(160deg,#a2845e,#7a5c3a)"),
+      indice: "Suivre",
+      agir: () => {
+        void backend.ouvrirLien(c.url);
+        fermerOutilIle();
+      },
+    });
   }
   const reglages: Ligne[] = reglagesPour(t).map((r) => ({
     cle: `reglage:${r.uri}`,
@@ -633,6 +648,14 @@ function IconeApp({ taille }: { taille: number }) {
       <rect x="13" y="4" width="7" height="7" rx="2" />
       <rect x="4" y="13" width="7" height="7" rx="2" />
       <rect x="13" y="13" width="7" height="7" rx="2" />
+    </svg>
+  );
+}
+
+function IconeColis({ taille }: { taille: number }) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" />
     </svg>
   );
 }
