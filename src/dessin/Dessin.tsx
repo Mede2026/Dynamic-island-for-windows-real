@@ -7,6 +7,11 @@
  *  - Couleurs (palette + « Autre couleur », retenues), taille réglable.
  *  - Annuler / rétablir (Ctrl+Z / Ctrl+Y), tout effacer, fond uni / quadrillé / ligné.
  *  - Copier l'image, l'enregistrer en PNG (Images › Dynamic Island).
+ *  - Wacom : courbe de pression (douce / normale / ferme), lissage du trait (stabilisateur),
+ *    bouton latéral du stylet = gomme, la paume (tactile) est ignorée quand le stylet est là,
+ *    aperçu de la pointe au survol, tracé à faible latence (canevas « desynchronized »).
+ *  - Raccourcis : P stylo, H surligneur, L ligne, A flèche, R rectangle, O ellipse, E gomme,
+ *    [ ] taille, Ctrl+Z / Ctrl+Y, Ctrl+C copier, Ctrl+S enregistrer.
  */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -14,6 +19,8 @@ import { backend } from "../bridge/backend";
 
 type Outil = "stylo" | "surligneur" | "ligne" | "fleche" | "rectangle" | "ellipse" | "gomme";
 type Fond = "uni" | "quadrille" | "ligne";
+type Courbe = "douce" | "normale" | "ferme";
+const GAMMA: Record<Courbe, number> = { douce: 0.55, normale: 1, ferme: 1.7 };
 
 const COULEURS = ["#ffffff", "#8e8e93", "#000000", "#ff453a", "#ff9f0a", "#ffd60a", "#30d158", "#64d2ff", "#0a84ff", "#bf5af2"];
 const CLE_PERSO = "ile-dessin-couleurs";
@@ -34,8 +41,16 @@ export function Dessin() {
   const retablir = useRef<ImageData[]>([]);
   const geste = useRef<{ depart: { x: number; y: number }; points: { x: number; y: number; p: number }[]; avant: ImageData } | null>(null);
   const [, forcer] = useState(0);
+  const [courbe, setCourbe] = useState<Courbe>(() => (localStorage.getItem("ile-dessin-courbe") as Courbe) ?? "normale");
+  const [lissage, setLissage] = useState(() => Number(localStorage.getItem("ile-dessin-lissage") ?? 3));
+  /** Aperçu de la pointe (position et diamètre en px écran) quand le stylet survole. */
+  const [pointe, setPointe] = useState<{ x: number; y: number; d: number } | null>(null);
+  /** Dernier passage du stylet : le tactile (la paume) est ignoré pendant 1,5 s. */
+  const styletVu = useRef(0);
 
-  const ctx = () => toile.current?.getContext("2d") ?? null;
+  // « desynchronized » : le dessin s'affiche sans attendre l'image suivante (moins de retard
+  // entre la pointe du stylet et le trait).
+  const ctx = () => (toile.current?.getContext("2d", { desynchronized: true, willReadFrequently: true }) as CanvasRenderingContext2D | null) ?? null;
   const instantane = () => {
     const c = toile.current!;
     return ctx()!.getImageData(0, 0, c.width, c.height);
@@ -55,7 +70,7 @@ export function Dessin() {
       c.height = h;
       if (avant) {
         const img = new Image();
-        img.onload = () => c.getContext("2d")?.drawImage(img, 0, 0);
+        img.onload = () => (c.getContext("2d", { desynchronized: true, willReadFrequently: true }) as CanvasRenderingContext2D | null)?.drawImage(img, 0, 0);
         img.src = avant;
       }
     };
@@ -91,6 +106,25 @@ export function Dessin() {
 
   useEffect(() => {
     const touche = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.tagName === "INPUT") return;
+      if (!e.ctrlKey && !e.altKey) {
+        const k = e.key.toLowerCase();
+        const outils: Record<string, Outil> = { p: "stylo", h: "surligneur", l: "ligne", a: "fleche", r: "rectangle", o: "ellipse", e: "gomme" };
+        if (outils[k]) setOutil(outils[k]!);
+        else if (k === "[") setTaille((t) => Math.max(1, t - 1));
+        else if (k === "]") setTaille((t) => Math.min(40, t + 1));
+        return;
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        void backend.copierImage(exporterRef.current()).then(() => setMessage("Copiée"));
+        return;
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void backend.enregistrerImage(exporterRef.current()).then(() => setMessage("Enregistrée dans Images › Dynamic Island"));
+        return;
+      }
       if (!e.ctrlKey) return;
       if (e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
@@ -111,7 +145,7 @@ export function Dessin() {
     return {
       x: ((e.clientX - r.left) * c.width) / r.width,
       y: ((e.clientY - r.top) * c.height) / r.height,
-      p: stylet ? Math.max(0.05, e.pressure || 0.5) : 0.5,
+      p: stylet ? Math.max(0.03, Math.pow(e.pressure || 0.5, GAMMA[courbe])) : 0.5,
     };
   };
 
@@ -207,6 +241,9 @@ export function Dessin() {
     return f.toDataURL("image/png").split(",")[1] ?? "";
   };
 
+  const exporterRef = useRef(exporter);
+  exporterRef.current = exporter;
+
   const grille =
     fond === "uni"
       ? "none"
@@ -282,6 +319,42 @@ export function Dessin() {
         </Groupe>
 
         <Groupe>
+          <span title="Courbe de pression du stylet (Wacom)" style={{ color: "rgba(255,255,255,.6)" }}>Pression</span>
+          {(
+            [
+              ["douce", "Douce"],
+              ["normale", "Normale"],
+              ["ferme", "Ferme"],
+            ] as [Courbe, string][]
+          ).map(([id, nom]) => (
+            <BoutonOutil
+              key={id}
+              titre={id === "douce" ? "Trait épais même en appuyant peu" : id === "ferme" ? "Il faut appuyer fort pour un trait épais" : "Pression normale"}
+              actif={courbe === id}
+              onClick={() => {
+                setCourbe(id);
+                localStorage.setItem("ile-dessin-courbe", id);
+              }}
+            >
+              {nom}
+            </BoutonOutil>
+          ))}
+          <span title="Stabilisateur : lisse les tremblements du trait" style={{ color: "rgba(255,255,255,.6)", marginLeft: 4 }}>Lissage</span>
+          <input
+            type="range"
+            min={0}
+            max={9}
+            value={lissage}
+            onPointerDown={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              setLissage(Number(e.target.value));
+              localStorage.setItem("ile-dessin-lissage", e.target.value);
+            }}
+            style={{ width: 70, accentColor: "#0a84ff" }}
+          />
+        </Groupe>
+
+        <Groupe>
           <BoutonOutil titre="Annuler (Ctrl+Z)" actif={false} inactif={annuler.current.length === 0} onClick={defaire}>
             ↶
           </BoutonOutil>
@@ -349,11 +422,16 @@ export function Dessin() {
         </Groupe>
       </div>
 
+      <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex" }}>
       <canvas
         ref={toile}
         onContextMenu={(e) => e.preventDefault()}
+        onPointerLeave={() => setPointe(null)}
         onPointerDown={(e) => {
           e.stopPropagation();
+          if (e.pointerType === "pen") styletVu.current = Date.now();
+          // La paume posée sur la tablette tactile pendant qu'on dessine au stylet : ignorée.
+          if (e.pointerType === "touch" && Date.now() - styletVu.current < 1500) return;
           const g = ctx();
           if (!g || toile.current!.width < 2) return;
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -363,13 +441,27 @@ export function Dessin() {
           setMessage("");
         }}
         onPointerMove={(e) => {
+          if (e.pointerType === "pen") styletVu.current = Date.now();
+          // Aperçu de la pointe : un cercle de la taille du trait suit le stylet ou la souris.
+          {
+            const r = toile.current!.getBoundingClientRect();
+            const d = (outil === "gomme" ? taille * 4 : outil === "surligneur" ? taille * 4 : taille) * (r.width / (toile.current!.width / devicePixelRatio || 1));
+            setPointe({ x: e.clientX - r.left, y: e.clientY - r.top, d: Math.max(4, d) });
+          }
           const g = ctx();
           const ge = geste.current;
           if (!g || !ge) return;
-          const efface = outil === "gomme" || (e.buttons & 32) !== 0;
+          if (e.pointerType === "touch" && Date.now() - styletVu.current < 1500) return;
+          // Bout gomme (32) ou bouton latéral du stylet (2) : on efface.
+          const efface = outil === "gomme" || (e.buttons & 32) !== 0 || (e.pointerType === "pen" && (e.buttons & 2) !== 0);
           if (efface || outil === "stylo" || outil === "surligneur") {
             const evs = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent];
-            for (const ev of evs.length ? evs : [e.nativeEvent]) ge.points.push(point(ev));
+            const k = 1 - Math.min(lissage, 9) / 10.5; // stabilisateur (moyenne glissante)
+            for (const ev of evs.length ? evs : [e.nativeEvent]) {
+              const brut = point(ev);
+              const prec = ge.points[ge.points.length - 1];
+              ge.points.push(prec ? { x: prec.x + (brut.x - prec.x) * k, y: prec.y + (brut.y - prec.y) * k, p: brut.p } : brut);
+            }
             if (outil === "surligneur" && !efface) {
               // Le surligneur se redessine d'un bloc : pas de surépaisseur aux recouvrements.
               g.putImageData(ge.avant, 0, 0);
@@ -392,10 +484,26 @@ export function Dessin() {
           backgroundImage: grille,
           backgroundSize: "28px 28px",
           boxShadow: "inset 0 0 0 0.5px rgba(255,255,255,.14)",
-          cursor: outil === "gomme" ? "cell" : "crosshair",
+          cursor: "none",
           touchAction: "none",
         }}
       />
+      {pointe && (
+        <div
+          style={{
+            position: "absolute",
+            left: pointe.x - pointe.d / 2,
+            top: pointe.y - pointe.d / 2,
+            width: pointe.d,
+            height: pointe.d,
+            borderRadius: pointe.d,
+            pointerEvents: "none",
+            boxShadow: "0 0 0 1px rgba(255,255,255,.85), 0 0 0 2px rgba(0,0,0,.5)",
+            background: outil === "gomme" ? "transparent" : `${couleur}55`,
+          }}
+        />
+      )}
+      </div>
     </div>
   );
 }

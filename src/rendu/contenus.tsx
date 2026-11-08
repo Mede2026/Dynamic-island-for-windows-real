@@ -1149,7 +1149,7 @@ const BOUTONS_MENU: { action: string; texte: string; icone: (t: number, c: strin
   { action: "historique", texte: "Copiés", icone: (t, c) => <IconePressePapiers taille={t} couleur={c} />, couleur: "#bf5af2" },
   { action: "note", texte: "Note", icone: (t, c) => <IconeCrayon taille={t} couleur={c} />, couleur: "#ffd60a" },
   { action: "capture", texte: "Capture", icone: (t, c) => <IconeEcran taille={t} couleur={c} />, couleur: "#30d158" },
-  { action: "ocr", texte: "Lire texte", icone: (t, c) => <IconeTexteImage taille={t} couleur={c} />, couleur: "#64d2ff" },
+  { action: "ocr", texte: "Texte image", icone: (t, c) => <IconeTexteImage taille={t} couleur={c} />, couleur: "#64d2ff" },
   { action: "recherche", texte: "Recherche", icone: (t, c) => <IconeLoupe taille={t} couleur={c} />, couleur: "#ffd60a" },
   { action: "dessin", texte: "Dessin", icone: (t, c) => <IconeCrayon taille={t} couleur={c} />, couleur: "#0a84ff" },
   { action: "pipette", texte: "Pipette", icone: (t, c) => <IconePipette taille={t} couleur={c} />, couleur: "#ff9f0a" },
@@ -1177,15 +1177,15 @@ export function MenuEtendu({ cfg, S }: Ctx) {
   const largeur = v(cfg.formesContenu.menu.taille.pt.largeur) * S;
   const hauteur = v(cfg.formesContenu.menu.taille.pt.hauteur) * S;
   const marge = 18 * S;
-  const cellule = (largeur - 2 * marge) / 6;
-  const rond = 36 * S;
+  const cellule = (largeur - 2 * marge) / 4;
+  const rond = 38 * S;
   return (
-    <div style={{ position: "absolute", left: marge, top: marge * 1.05, width: largeur - 2 * marge, height: hauteur - 1.6 * marge, display: "grid", gridTemplateColumns: "repeat(6, 1fr)", alignContent: "start", rowGap: 7 * S }}>
+    <div style={{ position: "absolute", left: marge, top: marge * 1.05, width: largeur - 2 * marge, height: hauteur - 1.6 * marge, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", alignContent: "start", rowGap: 8 * S }}>
       {BOUTONS_MENU.map((b) => (
         <button
           key={b.action}
           {...boutonIle(() => lancerAction(b.action))}
-          style={{ flexDirection: "column", gap: 6 * S, width: cellule, color: "#fff", fontSize: 10.5 * S, fontWeight: 500, whiteSpace: "nowrap" }}
+          style={{ flexDirection: "column", gap: 6 * S, width: cellule, color: "#fff", fontSize: 11.5 * S, fontWeight: 500, whiteSpace: "nowrap" }}
         >
           <span
             style={{

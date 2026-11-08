@@ -77,6 +77,8 @@ definirFermeture(fermerOutil);
 
 /** Hauteur de la pilule (pt) : 2 lignes quand le texte est une question. */
 export function hauteurPilule(e: EtatMachine): number {
+  // Tableau blanc : pilule plus mince, pour laisser presque tout l'écran au dessin.
+  if (outilOuvert(e) === "dessin") return PILULE.hauteurPt * 0.62;
   return outilOuvert(e) === "recherche" && piluleDeuxLignes() ? PILULE.hauteurDeuxLignesPt : PILULE.hauteurPt;
 }
 
@@ -181,9 +183,9 @@ export function CarteOutil({ cfg, S, etat, gauche, haut, ecran }: { cfg: IslandC
 
   // Tableau blanc : presque tout l'écran (la fenêtre de l'île s'agrandit pour lui).
   const dessin = nom === "dessin";
-  const marge = 40;
+  const marge = 14;
   const largeurDessin = Math.max(400, ecran[0] - 2 * marge);
-  const hauteurDessin = Math.max(300, ecran[1] - haut - 28);
+  const hauteurDessin = Math.max(300, ecran[1] - haut - 10);
 
   useEffect(() => {
     if (dessin) majCarte({ visible: true, hauteur: hauteurDessin / S, largeur: largeurDessin / S });
